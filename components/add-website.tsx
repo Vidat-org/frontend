@@ -33,6 +33,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { ErrUpgradePlan } from "@/lib/errors"
+import { ORPCError } from "@orpc/server"
 
 export default function AddWebsite() {
   const { mutateAsync } = useMutation({
@@ -59,6 +61,13 @@ export default function AddWebsite() {
         formApi.reset()
         setIsFormOpen(false)
       } catch (err) {
+        const error = err as ORPCError<string, unknown>
+
+        if (error.code === ErrUpgradePlan) {
+          toast.error("Uppgradera plan för att lägga till fler webbsidor.")
+          return
+        }
+
         toast.error("Något gick fel. Försök igen.")
       }
     },

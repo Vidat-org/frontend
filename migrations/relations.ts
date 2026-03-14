@@ -1,5 +1,17 @@
 import { relations } from "drizzle-orm/relations";
-import { websites, scans, scanIssues } from "./schema";
+import { users, websites, scans, scanIssues } from "./schema";
+
+export const websitesRelations = relations(websites, ({one, many}) => ({
+	user: one(users, {
+		fields: [websites.userId],
+		references: [users.id]
+	}),
+	scans: many(scans),
+}));
+
+export const usersRelations = relations(users, ({many}) => ({
+	websites: many(websites),
+}));
 
 export const scansRelations = relations(scans, ({one, many}) => ({
 	website: one(websites, {
@@ -7,10 +19,6 @@ export const scansRelations = relations(scans, ({one, many}) => ({
 		references: [websites.id]
 	}),
 	scanIssues: many(scanIssues),
-}));
-
-export const websitesRelations = relations(websites, ({many}) => ({
-	scans: many(scans),
 }));
 
 export const scanIssuesRelations = relations(scanIssues, ({one}) => ({

@@ -40,10 +40,10 @@ export default function RootLayout({
         <ClerkProvider localization={svSE}>
           <Providers>
             <ThemeProvider>
-              <Navbar />
-              <main className="container mx-auto min-h-screen px-8 pt-16">
-                {children}
-              </main>
+              {/*<Navbar />*/}
+              {/*<main className="container mx-auto min-h-screen px-8 pt-16">*/}
+              {children}
+              {/*</main>*/}
               <Toaster richColors />
             </ThemeProvider>
           </Providers>

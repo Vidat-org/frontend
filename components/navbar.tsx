@@ -1,10 +1,18 @@
 import { UserAvatar, UserButton, Show, SignInButton } from "@clerk/nextjs"
+import Link from "next/link"
 
 export default function Navbar() {
   return (
-    <nav className="flex h-16 w-full items-center justify-center border-b bg-background">
+    <nav className="fixed inset-x-0 top-0 z-50 flex h-14 items-center justify-between border-b border-border bg-background/80 px-6 backdrop-blur-md md:px-16">
       <div className="container mx-auto flex w-full items-center justify-between">
-        <h3>Vidat</h3>
+        <Link href="/" className="flex items-center gap-2">
+          <span className="text-base leading-none font-bold text-chart-1">
+            ▸
+          </span>
+          <span className="text-sm font-bold tracking-widest text-foreground">
+            VIDAT
+          </span>
+        </Link>
 
         <div>
           <Show when="signed-in">

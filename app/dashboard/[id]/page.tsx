@@ -1,10 +1,14 @@
 import { Button } from "@/components/ui/button"
 import { client } from "@/lib/orpc"
 import { useQuery } from "@tanstack/react-query"
-import { ArrowLeft, Calendar } from "lucide-react"
+import { ArrowLeft, Calendar, Monitor, Smartphone } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Activity, Globe, ShieldCheck, Zap, Clock } from "lucide-react"
 import { formatDate } from "@/lib/utils"
+import ScanChart from "@/components/scan-chart"
+import IssuesList from "@/components/issues-list"
+import WebsiteDetail from "@/components/dashboard-wrapper"
+import NewCheck from "@/components/new-check"
 
 export default async function Page({
   params,
@@ -13,6 +17,7 @@ export default async function Page({
 }) {
   const { id } = await params
   const website = await client.getWebsite({ id })
+  const latestScan = await client.getLatestScan({ website: id })
 
   return (
     <div className="mx-auto max-w-7xl space-y-8 p-6">
@@ -33,7 +38,7 @@ export default async function Page({
           <p className="text-muted-foreground underline">{website?.url}</p>
         </div>
 
-        <Button>Kör ny skanning</Button>
+        {website && <NewCheck websiteId={website.id} />}
       </div>
 
       {/* Statistik */}
@@ -71,14 +76,21 @@ export default async function Page({
         />
       </div>
 
-      {/* Graf */}
-      <Card className="col-span-4 p-6">
+      {/*<Card className="col-span-4 p-6">
         <CardTitle className="mb-4">Prestanda över tid</CardTitle>
 
-        <div className="flex h-[300px] items-center justify-center rounded-lg border-2 border-dashed">
-          [Här renderar du din chart från scans-tabellen]
+        <div className="flex h-[340px] items-center justify-center rounded-lg border-2 border-dashed pt-3 pr-3 pb-2">
+          {website && <ScanChart websiteId={website?.id} />}
         </div>
       </Card>
+
+      {website && <IssuesList websiteId={website?.id} />}*/}
+      {website && latestScan && (
+        <WebsiteDetail
+          latestScanId={latestScan?.id || ""}
+          websiteId={website?.id || ""}
+        />
+      )}
     </div>
   )
 }

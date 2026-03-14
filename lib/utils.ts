@@ -13,3 +13,16 @@ export function formatDate(date: string | Date) {
     minute: "2-digit",
   })
 }
+
+export function planToWebsiteCount(plan: string) {
+  switch (plan) {
+    case "free_user":
+      return 1
+    case "starter":
+      return 5
+    case "pro":
+      return 25
+    default:
+      return 1
+  }
+}
