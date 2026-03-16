@@ -1,9 +1,9 @@
 "use client"
 
 import { client } from "@/lib/orpc"
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import { Button } from "./ui/button"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   Select,
   SelectContent,
@@ -12,17 +12,71 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Monitor, Smartphone } from "lucide-react"
+import { toast } from "sonner"
+import { Spinner } from "./ui/spinner"
+import { getQueryClient } from "@/lib/query-client"
+import { parseAsIsoDateTime, parseAsStringEnum, useQueryState } from "nuqs"
 
-export default function NewCheck({ websiteId }: { websiteId: string }) {
-  const [device, setDevice] = useState<"mobile" | "desktop">("mobile")
+export default function NewCheck({
+  websiteId,
+  defaultDeviceType,
+}: {
+  websiteId: string
+  defaultDeviceType: "mobile" | "desktop"
+}) {
+  const [urlDevice, setUrlDevice] = useQueryState(
+    "device",
+    parseAsStringEnum(["mobile", "desktop"]).withDefault("mobile")
+  )
+  const [device, setDevice] = useState<"mobile" | "desktop">(defaultDeviceType)
 
-  const handleCheck = () => {
-    // trigger your scan with `device` value
-  }
+  const [pollingSince, setPollingSince] = useQueryState(
+    "scanning",
+    parseAsIsoDateTime
+  )
 
-  const { mutateAsync } = useMutation({
+  // Poll for new scan
+  const { data: latestScan } = useQuery({
+    queryKey: ["latestScan", websiteId],
+    queryFn: async () => await client.getLatestScan({ website: websiteId }),
+    refetchInterval: pollingSince ? 3000 : false,
+  })
+
+  // Stop polling when a fresh scan arrives
+  useEffect(() => {
+    if (
+      pollingSince &&
+      latestScan?.createdAt &&
+      new Date(latestScan.createdAt) > pollingSince
+    ) {
+      setPollingSince(null)
+      getQueryClient().invalidateQueries({
+        queryKey: ["scans", websiteId, urlDevice],
+      })
+      toast.success("Skanning klar!")
+    }
+  }, [latestScan, pollingSince])
+
+  const { mutateAsync, isPending } = useMutation({
     mutationFn: async (date: Date) =>
       await client.updateWebsiteNextCheck({ website: websiteId, date }),
+    onSuccess: () => {
+      setPollingSince(new Date())
+    },
+  })
+
+  const isScanning = isPending || pollingSince !== null
+
+  const { mutateAsync: updateDeviceType } = useMutation({
+    mutationFn: async (device: "mobile" | "desktop") =>
+      await client.updateWebsiteDeviceType({ website: websiteId, device }),
+    onSuccess: (_, device) => {
+      toast.success(
+        device === "mobile"
+          ? "Skanning sker nu som mobil"
+          : "Skanning sker nu som dator"
+      )
+    },
   })
 
   return (
@@ -30,7 +84,11 @@ export default function NewCheck({ websiteId }: { websiteId: string }) {
       <div className="flex items-center gap-3">
         <Select
           value={device}
-          onValueChange={(v) => setDevice(v as "mobile" | "desktop")}
+          onValueChange={async (v) => {
+            const newDevice = v as "mobile" | "desktop"
+            setDevice(newDevice)
+            await updateDeviceType(newDevice)
+          }}
         >
           <SelectTrigger className="w-36">
             <SelectValue />
@@ -49,7 +107,13 @@ export default function NewCheck({ websiteId }: { websiteId: string }) {
           </SelectContent>
         </Select>
 
-        <Button onClick={() => mutateAsync(new Date())}>Ny skanning</Button>
+        <Button
+          disabled={isPending || isScanning}
+          onClick={() => mutateAsync(new Date())}
+        >
+          {isPending || (isScanning && <Spinner />)}
+          {isPending || isScanning ? "Skannar" : "Ny skanning"}
+        </Button>
       </div>
       <p className="text-xs text-muted-foreground">
         {device === "mobile"

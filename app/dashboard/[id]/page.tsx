@@ -1,14 +1,22 @@
 import { Button } from "@/components/ui/button"
 import { client } from "@/lib/orpc"
 import { useQuery } from "@tanstack/react-query"
-import { ArrowLeft, Calendar, Monitor, Smartphone } from "lucide-react"
+import {
+  ArrowLeft,
+  Calendar,
+  Monitor,
+  Smartphone,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Activity, Globe, ShieldCheck, Zap, Clock } from "lucide-react"
-import { formatDate } from "@/lib/utils"
+import { cn, formatDate } from "@/lib/utils"
 import ScanChart from "@/components/scan-chart"
 import IssuesList from "@/components/issues-list"
 import WebsiteDetail from "@/components/dashboard-wrapper"
 import NewCheck from "@/components/new-check"
+import { Badge } from "@/components/ui/badge"
 
 export default async function Page({
   params,
@@ -17,7 +25,20 @@ export default async function Page({
 }) {
   const { id } = await params
   const website = await client.getWebsite({ id })
-  const latestScan = await client.getLatestScan({ website: id })
+  // const latestScan = await client.getLatestScan({ website: id })
+  const scans = await client.listWebsiteScans({
+    website: id,
+    device: "mobile",
+    limit: 2,
+  })
+
+  const latest = scans?.[0]
+  const previous = scans?.[1]
+
+  function getDelta(current?: number | null, prev?: number | null) {
+    if (current == null || prev == null) return null
+    return current - prev
+  }
 
   return (
     <div className="mx-auto max-w-7xl space-y-8 p-6">
@@ -38,7 +59,12 @@ export default async function Page({
           <p className="text-muted-foreground underline">{website?.url}</p>
         </div>
 
-        {website && <NewCheck websiteId={website.id} />}
+        {website && (
+          <NewCheck
+            websiteId={website.id}
+            defaultDeviceType={website.deviceType as "mobile" | "desktop"}
+          />
+        )}
       </div>
 
       {/* Statistik */}
@@ -46,15 +72,15 @@ export default async function Page({
         <MetricCard
           title="SEO-poäng"
           value={website?.lastSeoScore ?? "-"}
+          delta={getDelta(latest?.seoScore, previous?.seoScore)}
           icon={<Globe className="h-4 w-4" />}
         />
-
         <MetricCard
           title="Prestanda"
           value={website?.lastPerformanceScore ?? "-"}
+          delta={getDelta(latest?.performanceScore, previous?.performanceScore)}
           icon={<Zap className="h-4 w-4" />}
         />
-
         <MetricCard
           title="Senaste skanning"
           value={
@@ -64,7 +90,6 @@ export default async function Page({
           }
           icon={<Clock className="h-4 w-4" />}
         />
-
         <MetricCard
           title="Nästa skanning"
           value={
@@ -85,9 +110,9 @@ export default async function Page({
       </Card>
 
       {website && <IssuesList websiteId={website?.id} />}*/}
-      {website && latestScan && (
+      {website && latest && (
         <WebsiteDetail
-          latestScanId={latestScan?.id || ""}
+          latestScanId={latest?.id || ""}
           websiteId={website?.id || ""}
         />
       )}
@@ -95,16 +120,42 @@ export default async function Page({
   )
 }
 
-function MetricCard({ title, value, icon }: any) {
+function DeltaBadge({ delta }: { delta: number }) {
+  const positive = delta > 0
+  const neutral = delta === 0
+
+  const variant = neutral ? "secondary" : positive ? "success" : "destructive"
+
+  return (
+    <Badge variant={variant}>
+      {neutral ? "" : Math.abs(delta)}
+      {neutral ? "=" : positive ? <TrendingUp /> : <TrendingDown />}
+    </Badge>
+  )
+}
+
+function MetricCard({
+  title,
+  value,
+  icon,
+  delta,
+}: {
+  title: string
+  value: string | number
+  icon: React.ReactNode
+  delta?: number | null
+}) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
         {icon}
       </CardHeader>
-
       <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
+        <div className="flex items-end gap-2">
+          <div className="text-2xl font-bold">{value}</div>
+          {delta != null && <DeltaBadge delta={delta} />}
+        </div>
       </CardContent>
     </Card>
   )

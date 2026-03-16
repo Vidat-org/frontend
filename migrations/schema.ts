@@ -111,12 +111,14 @@ export const scans = pgTable(
     bestPracticesScore: integer("best_practices_score"),
     lcpMs: integer("lcp_ms"),
     fcpMs: integer("fcp_ms"),
+    inpMs: integer("inp_ms"),
     clsScore: numeric("cls_score", { precision: 5, scale: 3 }),
     ttfbMs: integer("ttfb_ms"),
     speedIndexMs: integer("speed_index_ms"),
     pageSizeKb: integer("page_size_kb"),
     requestCount: integer("request_count"),
     status: text().default("success").notNull(),
+    deviceType: text("device_type"),
     errorMessage: text("error_message"),
     createdAt: timestamp("created_at", {
       withTimezone: true,
@@ -155,6 +157,7 @@ export const scanIssues = pgTable(
     scanId: text("scan_id").notNull(),
     category: text(),
     title: text(),
+    key: text().notNull(),
     description: text(),
     severity: text(),
     createdAt: timestamp("created_at", {

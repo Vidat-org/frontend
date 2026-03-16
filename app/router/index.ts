@@ -1,10 +1,11 @@
 import { listScanIssues } from "./issues"
-import { getLatestScan, listWebsiteScans } from "./scans"
+import { getLatestScan, getScan, listWebsiteScans } from "./scans"
 import {
   createWebsite,
   getWebsite,
   listWebsites,
   updateNextCheck,
+  updateWebsiteDeviceType,
 } from "./website"
 
 export const router = {
@@ -13,6 +14,8 @@ export const router = {
   getWebsite: getWebsite,
   listWebsiteScans: listWebsiteScans,
   updateWebsiteNextCheck: updateNextCheck,
+  updateWebsiteDeviceType: updateWebsiteDeviceType,
   getLatestScan: getLatestScan,
   listScanIssues: listScanIssues,
+  getScan: getScan,
 }

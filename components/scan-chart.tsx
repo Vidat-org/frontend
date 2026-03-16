@@ -20,6 +20,7 @@ import {
 } from "recharts"
 import { format } from "date-fns"
 import { Skeleton } from "./ui/skeleton"
+import { parseAsStringEnum, useQueryState } from "nuqs"
 
 const chartConfig = {
   performanceScore: {
@@ -47,13 +48,17 @@ export default function ScanChart({
   websiteId: string
   onScanClick?: (scanId: string) => void
 }) {
+  const [device, setDevice] = useQueryState(
+    "device",
+    parseAsStringEnum(["mobile", "desktop"]).withDefault("mobile")
+  )
   const { data: scans, isLoading } = useQuery({
-    queryKey: ["scans", websiteId],
-    queryFn: () => client.listWebsiteScans({ website: websiteId }),
+    queryKey: ["scans", websiteId, device],
+    queryFn: () => client.listWebsiteScans({ website: websiteId, device }),
   })
 
   if (isLoading) {
-    return <Skeleton className="h-[480px] w-full" />
+    return <Skeleton className="h-120 w-full" />
   }
 
   if (!scans?.length) {

@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Tag,
 } from "lucide-react"
+import { auditLabels } from "@/lib/messages"
 
 const severityConfig: Record<
   string,
@@ -109,7 +110,7 @@ export default function IssuesList({ scanId }: { scanId: string }) {
                   <div className="min-w-0 flex-1 space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-sm leading-none font-medium">
-                        {issue.title}
+                        {auditLabels[issue.key]}
                       </p>
                       <Badge
                         variant={severity.variant}

@@ -1,662 +1,47 @@
-// "use client"
-
-// import { useState, useEffect } from "react"
-// import { Badge } from "@/components/ui/badge"
-// import { Button } from "@/components/ui/button"
-// import { Card, CardContent } from "@/components/ui/card"
-// import { Separator } from "@/components/ui/separator"
-// import { Show, useSession } from "@clerk/nextjs"
-// import { ArrowRight } from "lucide-react"
-// import Link from "next/link"
-
-// const FEATURES = [
-//   {
-//     tag: "01",
-//     title: "Dubbellägesskanning",
-//     desc: "Kör mobil- och desktopgranskningar samtidigt. Få hela bilden vid varje skanning — inte halva datan.",
-//   },
-//   {
-//     tag: "02",
-//     title: "AI-rekommendationer",
-//     desc: "Claude analyserar din Lighthouse-data och ger prioriterade, lättförståeliga åtgärder rankade efter påverkan och ansträngning.",
-//   },
-//   {
-//     tag: "03",
-//     title: "Regressionsdetektering",
-//     desc: "Automatiska varningar när poäng sjunker efter ett deploy. Vet inom minuter — inte dagar.",
-//   },
-//   {
-//     tag: "04",
-//     title: "Konkurrentövervakning",
-//     desc: "Följ dina konkurrenters Core Web Vitals parallellt med dina egna. Se exakt var du leder eller halkar efter.",
-//   },
-//   {
-//     tag: "05",
-//     title: "Deploy-webhooks",
-//     desc: "Trigga skanningar automatiskt vid push till Vercel, Netlify eller valfri CI/CD-pipeline.",
-//   },
-//   {
-//     tag: "06",
-//     title: "Månadsrapporter som PDF",
-//     desc: "White-label-rapporter levererade direkt till inkorgen. Dela med kunder utan att lyfta ett finger.",
-//   },
-// ]
-
-// const PLANS = [
-//   {
-//     name: "Gratis",
-//     price: "0",
-//     period: "för alltid",
-//     desc: "För privatpersoner som vill komma igång.",
-//     features: [
-//       "1 URL",
-//       "Mobil ELLER desktop",
-//       "Endast manuella skanningar",
-//       "30 dagars historik",
-//       "Grundläggande mätvärden",
-//     ],
-//     cta: "Kom igång gratis",
-//     highlight: false,
-//   },
-//   {
-//     name: "Pro",
-//     price: "12",
-//     period: "per månad",
-//     desc: "För utvecklare som deployer ofta.",
-//     features: [
-//       "10 URLs",
-//       "Mobil + desktop samtidigt",
-//       "Daglig / veckovis schemaläggning",
-//       "6 månaders historik",
-//       "AI-rekommendationer",
-//       "E-postvarningar vid regression",
-//     ],
-//     cta: "Starta 14-dagars test",
-//     highlight: true,
-//   },
-//   {
-//     name: "Business",
-//     price: "39",
-//     period: "per månad",
-//     desc: "För team och växande produkter.",
-//     features: [
-//       "50 URLs",
-//       "Timvis schemaläggning",
-//       "12 månaders historik",
-//       "Konkurrentövervakning",
-//       "Slack / webhook-varningar",
-//       "PDF-rapportexport",
-//       "Deploy-webhooks",
-//     ],
-//     cta: "Kom igång",
-//     highlight: false,
-//   },
-//   {
-//     name: "Byrå",
-//     price: "99",
-//     period: "per månad",
-//     desc: "För byråer som hanterar kundsajter.",
-//     features: [
-//       "200+ URLs",
-//       "Allt i Business",
-//       "White-label-rapporter",
-//       "Flera teammedlemmar",
-//       "API-åtkomst",
-//       "Prioriterad support",
-//     ],
-//     cta: "Kontakta oss",
-//     highlight: false,
-//   },
-// ]
-
-// const STEPS = [
-//   [
-//     "01",
-//     "Koppla din URL",
-//     "Lägg till valfri URL. Vi börjar skanna direkt — inga kodändringar behövs.",
-//   ],
-//   [
-//     "02",
-//     "Välj ditt schema",
-//     "Dagligen, veckovis eller vid varje deploy via webhook. Du bestämmer takten.",
-//   ],
-//   [
-//     "03",
-//     "Få varningar direkt",
-//     "Poängfall triggar varningar till e-post, Slack eller din webhook inom sekunder.",
-//   ],
-//   [
-//     "04",
-//     "Åtgärda med AI",
-//     "Claude analyserar din Lighthouse-data och berättar exakt vad du ska fixa först.",
-//   ],
-// ]
-
-// const GREEN = "oklch(0.845 0.143 164.978)"
-
-// function ScoreRing({ score }: { score: number }) {
-//   const r = 52
-//   const circ = 2 * Math.PI * r
-//   const dash = (score / 100) * circ
-//   return (
-//     <svg width="124" height="124" viewBox="0 0 124 124">
-//       <circle
-//         cx="62"
-//         cy="62"
-//         r={r}
-//         fill="none"
-//         stroke="var(--border)"
-//         strokeWidth="7"
-//       />
-//       <circle
-//         cx="62"
-//         cy="62"
-//         r={r}
-//         fill="none"
-//         stroke={GREEN}
-//         strokeWidth="7"
-//         strokeDasharray={`${dash} ${circ}`}
-//         strokeLinecap="round"
-//         transform="rotate(-90 62 62)"
-//         style={{ transition: "stroke-dasharray 1.4s cubic-bezier(.16,1,.3,1)" }}
-//       />
-//       <text
-//         x="62"
-//         y="67"
-//         textAnchor="middle"
-//         fill="var(--foreground)"
-//         fontSize="21"
-//         fontFamily="var(--font-mono)"
-//         fontWeight="700"
-//       >
-//         {score}
-//       </text>
-//     </svg>
-//   )
-// }
-
-// export default function Page() {
-//   const [score, setScore] = useState(0)
-
-//   useEffect(() => {
-//     const t = setTimeout(() => setScore(97), 500)
-//     return () => clearTimeout(t)
-//   }, [])
-
-//   const { isSignedIn } = useSession()
-
-//   return (
-//     <div className="min-h-screen overflow-x-hidden bg-background text-foreground">
-//       <style>{`
-//         @keyframes fadeUp {
-//           from { opacity: 0; transform: translateY(22px); }
-//           to   { opacity: 1; transform: translateY(0); }
-//         }
-//         @keyframes blink    { 0%,100%{opacity:1} 50%{opacity:0} }
-//         @keyframes scanline { 0%{transform:translateY(-100%)} 100%{transform:translateY(500%)} }
-//         @keyframes glowPulse {
-//           0%,100% { box-shadow: 0 0 0 1px ${GREEN}, 0 0 24px color-mix(in oklch, ${GREEN} 20%, transparent); }
-//           50%     { box-shadow: 0 0 0 1px ${GREEN}, 0 0 40px color-mix(in oklch, ${GREEN} 35%, transparent); }
-//         }
-
-//         .au1 { animation: fadeUp .65s cubic-bezier(.16,1,.3,1) .05s both; }
-//         .au2 { animation: fadeUp .65s cubic-bezier(.16,1,.3,1) .15s both; }
-//         .au3 { animation: fadeUp .65s cubic-bezier(.16,1,.3,1) .28s both; }
-//         .au4 { animation: fadeUp .65s cubic-bezier(.16,1,.3,1) .42s both; }
-//         .au5 { animation: fadeUp .65s cubic-bezier(.16,1,.3,1) .55s both; }
-
-//         .cursor-blink { animation: blink 1s step-end infinite; }
-//         .scanline-el  { animation: scanline 8s linear infinite; pointer-events:none; }
-//         .plan-glow    { animation: glowPulse 3s ease-in-out infinite; }
-
-//         .feature-card { transition: background .2s, transform .2s; position: relative; overflow: hidden; }
-//         .feature-card::after {
-//           content:''; position:absolute; inset-x-0; top:0; height:1px;
-//           background: linear-gradient(90deg, transparent, ${GREEN}, transparent);
-//           transform: scaleX(0); transition: transform .35s;
-//         }
-//         .feature-card:hover { background: var(--card) !important; transform: translateY(-2px); }
-//         .feature-card:hover::after { transform: scaleX(1); }
-
-//         .plan-card { transition: transform .25s; }
-//         .plan-card:hover { transform: translateY(-3px); }
-
-//         .grid-bg {
-//           background-image:
-//             linear-gradient(var(--border) 1px, transparent 1px),
-//             linear-gradient(90deg, var(--border) 1px, transparent 1px);
-//           background-size: 40px 40px;
-//         }
-//       `}</style>
-
-//       <nav className="fixed inset-x-0 top-0 z-50 flex h-14 items-center justify-between border-b border-border bg-background/80 px-6 backdrop-blur-md md:px-16">
-//         <div className="flex items-center gap-2">
-//           <span
-//             className="text-base leading-none font-bold"
-//             style={{ color: GREEN }}
-//           >
-//             ▸
-//           </span>
-//           <span className="text-sm font-bold tracking-widest text-foreground">
-//             VIDAT
-//           </span>
-//         </div>
-//         <div className="hidden items-center gap-10 md:flex">
-//           {[
-//             ["Funktioner", "#funktioner"],
-//             ["Priser", "#priser"],
-//             ["Docs", "#docs"],
-//           ].map(([l, h]) => (
-//             <a
-//               key={l}
-//               href={h}
-//               className="text-[11px] tracking-widest text-muted-foreground no-underline transition-colors hover:text-foreground"
-//             >
-//               {l}
-//             </a>
-//           ))}
-
-//           {isSignedIn ? (
-//             <Link href="/dashboard">
-//               <Button
-//                 size="sm"
-//                 className="h-8 rounded-sm px-5 text-[10px] tracking-widest uppercase"
-//               >
-//                 Översikt <ArrowRight />
-//               </Button>
-//             </Link>
-//           ) : (
-//             <Button
-//               size="sm"
-//               className="h-8 rounded-sm px-5 text-[10px] tracking-widest uppercase"
-//             >
-//               Kom igång
-//             </Button>
-//           )}
-//         </div>
-//       </nav>
-
-//       <section className="grid-bg relative overflow-hidden px-6 pt-36 pb-28 md:px-16">
-//         <div
-//           className="pointer-events-none absolute top-1/4 right-[8%] h-[500px] w-[500px] rounded-full"
-//           style={{
-//             background: `radial-gradient(circle, color-mix(in oklch, ${GREEN} 8%, transparent) 0%, transparent 70%)`,
-//           }}
-//         />
-//         <div
-//           className="scanline-el absolute inset-x-0 top-0 h-1/3"
-//           style={{
-//             background: `linear-gradient(180deg, color-mix(in oklch, ${GREEN} 4%, transparent) 0%, transparent 100%)`,
-//           }}
-//         />
-
-//         <div className="relative max-w-3xl">
-//           <div className="au1 mb-8 inline-flex items-center gap-2 rounded-sm border border-border bg-card px-3 py-1.5">
-//             <span
-//               className="h-1.5 w-1.5 shrink-0 rounded-full"
-//               style={{ background: GREEN }}
-//             />
-//             <span className="text-[10px] tracking-[.12em] text-muted-foreground uppercase">
-//               Core Web Vitals-övervakning
-//             </span>
-//           </div>
-
-//           <h1
-//             className="au2 mb-7 leading-[1.02] font-bold tracking-tight text-foreground"
-//             style={{ fontSize: "clamp(38px, 6vw, 72px)" }}
-//           >
-//             Vet när din sajt
-//             <br />
-//             blir <span style={{ color: GREEN }}>långsam.</span>
-//             <br />
-//             <span className="text-muted-foreground/30">
-//               Innan dina användare.
-//             </span>
-//           </h1>
-
-//           <p className="au3 mb-11 max-w-lg text-[14px] leading-relaxed text-muted-foreground">
-//             Automatiserade PageSpeed-granskningar, AI-drivna rekommendationer
-//             och regressionsvarningar — så att din prestanda aldrig tyst
-//             försämras mellan deploys.
-//           </p>
-
-//           <div className="au4 flex flex-wrap gap-3">
-//             <Button className="h-11 rounded-sm px-7 text-[11px] tracking-widest uppercase transition-transform hover:-translate-y-px">
-//               Kom igång gratis
-//             </Button>
-//             <Button
-//               variant="outline"
-//               className="h-11 rounded-sm px-7 text-[11px] tracking-wide"
-//             >
-//               Se demo →
-//             </Button>
-//           </div>
-
-//           <div className="au5 mt-16 flex flex-wrap gap-12">
-//             {[
-//               ["10k+", "skanningar/dag"],
-//               ["< 2s", "varningsfördröjning"],
-//               ["99.9%", "drifttid"],
-//             ].map(([v, l]) => (
-//               <div key={l}>
-//                 <div className="text-[22px] font-bold tracking-tight text-foreground">
-//                   {v}
-//                 </div>
-//                 <div className="mt-1 text-[9px] tracking-widest text-muted-foreground/60 uppercase">
-//                   {l}
-//                 </div>
-//               </div>
-//             ))}
-//           </div>
-//         </div>
-//       </section>
-
-//       <section className="flex flex-wrap items-center gap-14 border-y border-border bg-card/40 px-6 py-20 md:px-16">
-//         <div className="flex shrink-0 flex-col items-center gap-3">
-//           <ScoreRing score={score} />
-//           <span className="text-[9px] tracking-widest text-muted-foreground/60 uppercase">
-//             Prestanda
-//           </span>
-//         </div>
-
-//         <div className="max-w-[440px] min-w-[280px] flex-1">
-//           <Card className="rounded-sm border-border shadow-none">
-//             <div className="flex items-center gap-2 rounded-t-sm border-b border-border bg-muted/30 px-4 py-2.5">
-//               <span className="h-2.5 w-2.5 rounded-full bg-destructive/70" />
-//               <span className="h-2.5 w-2.5 rounded-full bg-yellow-500/70" />
-//               <span className="h-2.5 w-2.5 rounded-full bg-green-500/70" />
-//               <span className="ml-2 text-[10px] tracking-wider text-muted-foreground/50">
-//                 vidat — skanningsresultat
-//               </span>
-//             </div>
-//             <CardContent className="p-5">
-//               {[
-//                 ["URL", "acme.com", "text-muted-foreground"],
-//                 ["Strategi", "mobil + desktop", null],
-//                 ["LCP", "1.2s ✓", null],
-//                 ["CLS", "0.02 ✓", null],
-//                 ["INP", "80ms ✓", null],
-//                 ["Poäng", "97 / 100", null],
-//               ].map(([k, v, cls]) => (
-//                 <div
-//                   key={k}
-//                   className="flex justify-between border-b border-border/50 py-2.5 text-[11px] tracking-wider last:border-0"
-//                 >
-//                   <span className="text-muted-foreground/50">{k}</span>
-//                   <span
-//                     className={`font-medium ${cls ?? ""}`}
-//                     style={!cls ? { color: GREEN } : {}}
-//                   >
-//                     {v}
-//                   </span>
-//                 </div>
-//               ))}
-//               <div className="mt-4 text-[11px] tracking-wider text-muted-foreground/30">
-//                 <span style={{ color: GREEN }}>▸</span> AI-analys klar
-//                 <span className="cursor-blink ml-1" style={{ color: GREEN }}>
-//                   _
-//                 </span>
-//               </div>
-//             </CardContent>
-//           </Card>
-//         </div>
-
-//         <div className="min-w-[240px] flex-1">
-//           <p className="mb-4 text-[9px] tracking-[.14em] text-muted-foreground uppercase">
-//             AI-rekommendation
-//           </p>
-//           <div className="border-l-2 pl-5" style={{ borderColor: GREEN }}>
-//             <p className="text-[13px] leading-relaxed text-muted-foreground">
-//               Ditt LCP på <span className="text-foreground">1.2s</span> är
-//               utmärkt. Däremot lägger oanvänd JavaScript till{" "}
-//               <span className="text-foreground">340ms</span> på mobil. Överväg
-//               att code-splitta din analytics-bundle.
-//             </p>
-//             <div className="mt-4 flex flex-wrap gap-2">
-//               <Badge
-//                 variant="outline"
-//                 className="rounded-sm px-2.5 py-0.5 text-[9px] tracking-widest uppercase"
-//                 style={{
-//                   color: GREEN,
-//                   borderColor: `color-mix(in oklch, ${GREEN} 30%, transparent)`,
-//                 }}
-//               >
-//                 Påverkan: Hög
-//               </Badge>
-//               <Badge
-//                 variant="outline"
-//                 className="rounded-sm px-2.5 py-0.5 text-[9px] tracking-widest text-foreground/60 uppercase"
-//               >
-//                 Ansträngning: Låg
-//               </Badge>
-//             </div>
-//           </div>
-//         </div>
-//       </section>
-
-//       <section id="funktioner" className="px-6 py-24 md:px-16">
-//         <div className="mb-16">
-//           <p className="mb-4 text-[9px] tracking-[.16em] text-muted-foreground uppercase">
-//             // funktioner
-//           </p>
-//           <h2
-//             className="leading-[1.1] font-bold tracking-tight text-foreground"
-//             style={{ fontSize: "clamp(26px, 4vw, 42px)" }}
-//           >
-//             Allt ditt prestandaarbetsflöde
-//             <br />
-//             <span className="text-muted-foreground/20">behöver.</span>
-//           </h2>
-//         </div>
-
-//         <div className="grid grid-cols-1 gap-px bg-border md:grid-cols-2 lg:grid-cols-3">
-//           {FEATURES.map((f) => (
-//             <div
-//               key={f.tag}
-//               className="feature-card cursor-default bg-background p-8"
-//             >
-//               <div className="mb-5 flex items-start justify-between">
-//                 <span className="text-[10px] tracking-wider text-muted-foreground/20">
-//                   {f.tag}
-//                 </span>
-//                 <span className="text-base" style={{ color: GREEN }}>
-//                   ⬡
-//                 </span>
-//               </div>
-//               <h3 className="mb-3 text-[13px] font-semibold text-foreground">
-//                 {f.title}
-//               </h3>
-//               <p className="text-[11px] leading-relaxed text-muted-foreground">
-//                 {f.desc}
-//               </p>
-//             </div>
-//           ))}
-//         </div>
-//       </section>
-
-//       <section className="border-y border-border bg-card/30 px-6 py-20 md:px-16">
-//         <p className="mb-12 text-[9px] tracking-[.16em] text-muted-foreground uppercase">
-//           // så här fungerar det
-//         </p>
-//         <div className="grid grid-cols-1 divide-y divide-border sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4">
-//           {STEPS.map(([n, title, desc]) => (
-//             <div
-//               key={n}
-//               className="px-0 py-8 first:pl-0 last:pr-0 lg:px-8 lg:py-0"
-//             >
-//               <div className="mb-5 text-[44px] leading-none font-bold tracking-tighter text-muted-foreground/10 select-none">
-//                 {n}
-//               </div>
-//               <h3 className="mb-2.5 text-[12px] font-semibold text-foreground">
-//                 {title}
-//               </h3>
-//               <p className="text-[11px] leading-relaxed text-muted-foreground">
-//                 {desc}
-//               </p>
-//             </div>
-//           ))}
-//         </div>
-//       </section>
-
-//       <section id="priser" className="px-6 py-24 md:px-16">
-//         <div className="mb-16">
-//           <p className="mb-4 text-[9px] tracking-[.16em] text-muted-foreground uppercase">
-//             // priser
-//           </p>
-//           <h2
-//             className="leading-[1.1] font-bold tracking-tight text-foreground"
-//             style={{ fontSize: "clamp(26px, 4vw, 42px)" }}
-//           >
-//             Enkla priser.
-//             <br />
-//             <span className="text-muted-foreground/20">
-//               Inga överraskningar.
-//             </span>
-//           </h2>
-//         </div>
-
-//         <div className="grid grid-cols-1 gap-px bg-border sm:grid-cols-2 xl:grid-cols-4">
-//           {PLANS.map((plan) => (
-//             <Card
-//               key={plan.name}
-//               className={`plan-card flex flex-col rounded-none border-0 ${plan.highlight ? "plan-glow bg-card" : "bg-background"}`}
-//             >
-//               <CardContent className="relative flex flex-1 flex-col p-8">
-//                 {plan.highlight && (
-//                   <div
-//                     className="absolute -top-px left-1/2 -translate-x-1/2 px-3 py-0.5 text-[9px] font-bold tracking-widest whitespace-nowrap uppercase"
-//                     style={{ background: GREEN, color: "var(--background)" }}
-//                   >
-//                     Mest populär
-//                   </div>
-//                 )}
-//                 <p className="mb-5 text-[9px] tracking-widest text-muted-foreground uppercase">
-//                   {plan.name}
-//                 </p>
-//                 <div className="mb-2 flex items-end gap-1">
-//                   <span className="text-[38px] leading-none font-bold tracking-tighter text-foreground">
-//                     ${plan.price}
-//                   </span>
-//                   <span className="mb-1.5 ml-1 text-[10px] text-muted-foreground/40">
-//                     /{plan.period}
-//                   </span>
-//                 </div>
-//                 <p className="mb-6 text-[11px] leading-relaxed text-muted-foreground">
-//                   {plan.desc}
-//                 </p>
-//                 <Separator className="mb-5" />
-//                 <div className="mb-8 flex-1">
-//                   {plan.features.map((f) => (
-//                     <div
-//                       key={f}
-//                       className="flex items-center gap-2.5 border-b border-border/50 py-2 last:border-0"
-//                     >
-//                       <span
-//                         className="shrink-0 text-[9px]"
-//                         style={{ color: GREEN }}
-//                       >
-//                         ▸
-//                       </span>
-//                       <span className="text-[10px] text-muted-foreground">
-//                         {f}
-//                       </span>
-//                     </div>
-//                   ))}
-//                 </div>
-//                 {plan.highlight ? (
-//                   <Button className="h-11 w-full rounded-sm text-[10px] tracking-widest uppercase">
-//                     {plan.cta}
-//                   </Button>
-//                 ) : (
-//                   <Button
-//                     variant="outline"
-//                     className="h-11 w-full rounded-sm text-[10px] tracking-widest uppercase"
-//                   >
-//                     {plan.cta}
-//                   </Button>
-//                 )}
-//               </CardContent>
-//             </Card>
-//           ))}
-//         </div>
-
-//         <p className="mt-8 text-center text-[10px] tracking-wider text-muted-foreground/30">
-//           Alla planer inkluderar 14 dagars gratis provperiod. Inget kreditkort
-//           krävs.
-//         </p>
-//       </section>
-
-//       <section className="relative mx-6 mb-24 overflow-hidden rounded-lg border border-border bg-card p-12 md:mx-16 md:p-16">
-//         <div
-//           className="pointer-events-none absolute inset-0 rounded-lg"
-//           style={{
-//             background: `radial-gradient(ellipse at 30% 50%, color-mix(in oklch, ${GREEN} 6%, transparent) 0%, transparent 60%)`,
-//           }}
-//         />
-//         <div className="relative max-w-xl">
-//           <h2
-//             className="mb-4 leading-[1.2] font-bold tracking-tight text-foreground"
-//             style={{ fontSize: "clamp(20px, 3vw, 34px)" }}
-//           >
-//             Sluta få reda på prestandaproblem från dina användare.
-//           </h2>
-//           <p className="mb-8 text-[12px] leading-relaxed text-muted-foreground">
-//             Gå med de utvecklare som får varningar inom sekunder — inte dagar.
-//           </p>
-//           <Button className="h-12 rounded-sm px-8 text-[11px] tracking-widest uppercase transition-transform hover:-translate-y-px">
-//             Börja gratis — inget kort krävs
-//           </Button>
-//         </div>
-//       </section>
-
-//       <footer className="flex flex-wrap items-center justify-between gap-4 border-t border-border px-6 py-8 md:px-16">
-//         <div className="flex items-center gap-2">
-//           <span
-//             className="text-sm leading-none font-bold"
-//             style={{ color: GREEN }}
-//           >
-//             ▸
-//           </span>
-//           <span className="text-[11px] font-bold tracking-widest text-muted-foreground/30">
-//             VIDAT
-//           </span>
-//         </div>
-//         <span className="text-[9px] tracking-wider text-muted-foreground/20">
-//           © 2025 · Byggt för utvecklare som bryr sig om prestanda
-//         </span>
-//         <div className="flex gap-6">
-//           {["Integritet", "Villkor", "Docs"].map((l) => (
-//             <a
-//               key={l}
-//               href="#"
-//               className="text-[9px] tracking-wider text-muted-foreground/30 no-underline transition-colors hover:text-muted-foreground"
-//             >
-//               {l}
-//             </a>
-//           ))}
-//         </div>
-//       </footer>
-//     </div>
-//   )
-// }
-
 "use client"
 
+import Link from "next/link"
 import { useState, useEffect, useRef } from "react"
+import { Show } from "@clerk/nextjs"
+import { ArrowRight } from "lucide-react"
 
-// ─── Design tokens — matchar globals.css CSS-variabler ───────────────────────
+// ─── Design tokens — CSS-variabler från globals.css ───────────────────────────
+// Dessa är CSS-variabelreferenser; de fungerar bara i inline style-strängar
+// via var(--...) eller i CSS-regler — inte som JS-strängar i rgba().
+// För alpha-varianter används color-mix().
 const C = {
-  bg: "#060608", // --background dark
-  surface: "#0c0c10", // --card dark
-  border: "rgba(255,255,255,0.07)", // --border dark
-  accent: "#C8FF57", // --primary / --chart-1
-  accentDim: "rgba(200,255,87,0.12)",
-  blue: "#57C8FF", // --chart-2
-  teal: "#57FFD4", // --chart-3
-  red: "#FF6B57", // --destructive / --chart-4
-  fg: "#e8e8ec", // --foreground dark
-  muted: "#888892", // --muted-foreground dark (ljusare)
-  mutedLo: "#2a2a30",
+  bg: "var(--background)",
+  surface: "var(--card)",
+  border: "var(--border)",
+
+  // tone down chart-1 slightly when used as accent
+  accent: "color-mix(in oklch, var(--chart-1) 85%, black)",
+
+  // stronger fill so charts are visible
+  accentDim: "color-mix(in oklch, var(--chart-1) 30%, transparent)",
+
+  blue: "var(--chart-2)",
+  teal: "var(--chart-3)",
+  red: "var(--destructive)",
+
+  fg: "var(--foreground)",
+  muted: "var(--muted-foreground)",
+
+  // make muted slightly clearer
+  mutedLo: "color-mix(in oklch, var(--muted-foreground) 60%, transparent)",
+}
+
+// Literal oklch-värden för ställen där vi måste bädda in i rgba/radial-gradient
+// (CSS color-mix stöds inte i alla gradient-kontexter i äldre browsers)
+const RAW = {
+  accent: "oklch(0.67 0.16 165)", // toned down chart-1
+  blue: "oklch(0.64 0.17 240)", // deeper blue
+  teal: "oklch(0.62 0.14 180)", // balanced teal
+  red: "oklch(0.60 0.16 25)", // clearer red
+  fg: "oklch(0.985 0 0)",
+  muted: "oklch(0.711 0.019 323.02)",
+  mutedLo: "oklch(0.263 0.024 320.12)",
+  bg: "oklch(0.145 0.008 326)",
 }
 
 // ─── Primitive components ─────────────────────────────────────────────────────
@@ -688,7 +73,7 @@ const Btn = ({
     outline: {
       background: "transparent",
       color: C.accent,
-      border: `1px solid rgba(200,255,87,0.35)`,
+      border: `1px solid color-mix(in oklch, var(--chart-1) 35%, transparent)`,
     },
     ghost: {
       background: "transparent",
@@ -705,10 +90,11 @@ const Btn = ({
     <button
       style={{ ...base, ...variants[variant], ...sizes[size], ...s }}
       onMouseEnter={(e) => {
-        if (variant === "primary") e.currentTarget.style.background = "#b8f040"
+        if (variant === "primary")
+          e.currentTarget.style.background = `color-mix(in oklch, var(--chart-1) 85%, white)`
         if (variant === "outline") {
           e.currentTarget.style.borderColor = C.accent
-          e.currentTarget.style.background = "rgba(200,255,87,0.06)"
+          e.currentTarget.style.background = `color-mix(in oklch, var(--chart-1) 6%, transparent)`
         }
         if (variant === "ghost") e.currentTarget.style.color = C.fg
         e.currentTarget.style.transform = "translateY(-1px)"
@@ -716,7 +102,7 @@ const Btn = ({
       onMouseLeave={(e) => {
         if (variant === "primary") e.currentTarget.style.background = C.accent
         if (variant === "outline") {
-          e.currentTarget.style.borderColor = "rgba(200,255,87,0.35)"
+          e.currentTarget.style.borderColor = `color-mix(in oklch, var(--chart-1) 35%, transparent)`
           e.currentTarget.style.background = "transparent"
         }
         if (variant === "ghost") e.currentTarget.style.color = C.muted
@@ -890,7 +276,7 @@ function GridBg({ style: s = {} }) {
         position: "absolute",
         inset: 0,
         pointerEvents: "none",
-        backgroundImage: `linear-gradient(${C.border} 1px, transparent 1px), linear-gradient(90deg, ${C.border} 1px, transparent 1px)`,
+        backgroundImage: `linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px)`,
         backgroundSize: "44px 44px",
         ...s,
       }}
@@ -915,7 +301,7 @@ function Scanline() {
           position: "absolute",
           width: "100%",
           height: 2,
-          background: `linear-gradient(to right, transparent, ${C.fg}, transparent)`,
+          background: `linear-gradient(to right, transparent, var(--foreground), transparent)`,
           animation: "scanline 6s linear infinite",
         }}
       />
@@ -1089,17 +475,20 @@ export default function VidatLanding() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&display=swap');
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        ::selection { background: ${C.accent}; color: #000; }
+        ::selection { background: var(--chart-1); color: #000; }
         ::-webkit-scrollbar { width: 3px; }
-        ::-webkit-scrollbar-track { background: ${C.bg}; }
-        ::-webkit-scrollbar-thumb { background: ${C.mutedLo}; }
+        ::-webkit-scrollbar-track { background: var(--background); }
+        ::-webkit-scrollbar-thumb { background: color-mix(in oklch, var(--muted-foreground) 40%, transparent); }
         html { scroll-behavior: smooth; }
 
         @keyframes fadeUp    { from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)} }
         @keyframes scanline  { 0%{top:0%}100%{top:100%} }
         @keyframes blink-dot { 0%,100%{opacity:1}50%{opacity:0.15} }
         @keyframes spin      { from{transform:rotate(0deg)}to{transform:rotate(360deg)} }
-        @keyframes glowPulse { 0%,100%{box-shadow:0 0 0 1px ${C.accent},0 0 20px rgba(200,255,87,0.15)}50%{box-shadow:0 0 0 1px ${C.accent},0 0 40px rgba(200,255,87,0.28)} }
+        @keyframes glowPulse {
+          0%,100%{box-shadow:0 0 0 1px var(--chart-1), 0 0 20px color-mix(in oklch, var(--chart-1) 15%, transparent)}
+          50%{box-shadow:0 0 0 1px var(--chart-1), 0 0 40px color-mix(in oklch, var(--chart-1) 28%, transparent)}
+        }
         @keyframes shimmer   { 0%{background-position:-200% 0}100%{background-position:200% 0} }
 
         .au1{animation:fadeUp .7s cubic-bezier(.16,1,.3,1) .05s both}
@@ -1109,21 +498,27 @@ export default function VidatLanding() {
         .au5{animation:fadeUp .7s cubic-bezier(.16,1,.3,1) .60s both}
 
         .shimmer-text {
-          background: linear-gradient(90deg, ${C.muted} 0%, ${C.fg} 35%, ${C.accent} 50%, ${C.fg} 65%, ${C.muted} 100%);
+          background: linear-gradient(90deg,
+            var(--muted-foreground) 0%,
+            var(--foreground) 35%,
+            var(--chart-1) 50%,
+            var(--foreground) 65%,
+            var(--muted-foreground) 100%
+          );
           background-size: 200% auto;
           -webkit-background-clip: text; -webkit-text-fill-color: transparent;
           background-clip: text; animation: shimmer 5s linear infinite;
         }
         .feature-cell {
-          background: ${C.bg}; padding: 36px 32px; position: relative;
+          background: var(--background); padding: 36px 32px; position: relative;
           overflow: hidden; cursor: default; transition: background 0.2s, transform 0.2s;
         }
         .feature-cell::before {
           content:''; position:absolute; top:0; left:0; right:0; height:1px;
-          background: linear-gradient(90deg, transparent, ${C.accent}, transparent);
+          background: linear-gradient(90deg, transparent, var(--chart-1), transparent);
           transform: scaleX(0); transition: transform 0.35s;
         }
-        .feature-cell:hover { background: ${C.surface}; transform: translateY(-2px); }
+        .feature-cell:hover { background: var(--card); transform: translateY(-2px); }
         .feature-cell:hover::before { transform: scaleX(1); }
         .plan-card { transition: transform 0.2s; }
         .plan-card:hover { transform: translateY(-3px); }
@@ -1142,20 +537,26 @@ export default function VidatLanding() {
           alignItems: "center",
           justifyContent: "space-between",
           padding: "0 max(24px, calc(50% - 620px))",
-          borderBottom: `1px solid ${C.border}`,
-          background: "rgba(6,6,8,0.88)",
+          borderBottom: `1px solid var(--border)`,
+          background: `color-mix(in oklch, var(--background) 88%, transparent)`,
           backdropFilter: "blur(14px)",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <svg width="18" height="18" viewBox="0 0 18 18">
-            <rect x="0" y="0" width="7.5" height="7.5" fill={C.accent} />
+            <rect
+              x="0"
+              y="0"
+              width="7.5"
+              height="7.5"
+              fill={`var(--chart-1)`}
+            />
             <rect
               x="10.5"
               y="0"
               width="7.5"
               height="7.5"
-              fill={C.accent}
+              fill={`var(--chart-1)`}
               opacity="0.35"
             />
             <rect
@@ -1163,17 +564,23 @@ export default function VidatLanding() {
               y="10.5"
               width="7.5"
               height="7.5"
-              fill={C.accent}
+              fill={`var(--chart-1)`}
               opacity="0.35"
             />
-            <rect x="10.5" y="10.5" width="7.5" height="7.5" fill={C.accent} />
+            <rect
+              x="10.5"
+              y="10.5"
+              width="7.5"
+              height="7.5"
+              fill={`var(--chart-1)`}
+            />
           </svg>
           <span
             style={{
               fontWeight: 800,
               fontSize: 15,
               letterSpacing: "0.1em",
-              color: "#fff",
+              color: C.fg,
             }}
           >
             VIDAT
@@ -1204,10 +611,22 @@ export default function VidatLanding() {
           ))}
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <Btn variant="ghost" size="sm">
-            Logga in
-          </Btn>
-          <Btn size="sm">Registrera</Btn>
+          <Show when="signed-out">
+            <Link href="/sign-in">
+              <Btn variant="ghost" size="sm">
+                Logga in
+              </Btn>
+            </Link>
+            <Btn size="sm">Registrera</Btn>
+          </Show>
+          <Show when="signed-in">
+            <Link href="/dashboard">
+              <Btn variant="outline" className="gap-2">
+                Översikt
+                <ArrowRight size={16} />
+              </Btn>
+            </Link>
+          </Show>
         </div>
       </nav>
 
@@ -1235,7 +654,7 @@ export default function VidatLanding() {
             width: 700,
             height: 700,
             pointerEvents: "none",
-            background: `radial-gradient(circle, rgba(200,255,87,0.05) 0%, transparent 65%)`,
+            background: `radial-gradient(circle, color-mix(in oklch, var(--chart-1) 5%, transparent) 0%, transparent 65%)`,
           }}
         />
         <div
@@ -1246,7 +665,7 @@ export default function VidatLanding() {
             width: 300,
             height: 300,
             pointerEvents: "none",
-            background: `radial-gradient(circle, rgba(87,200,255,0.05) 0%, transparent 70%)`,
+            background: `radial-gradient(circle, color-mix(in oklch, var(--chart-2) 5%, transparent) 0%, transparent 70%)`,
           }}
         />
 
@@ -1256,12 +675,12 @@ export default function VidatLanding() {
               display: "inline-flex",
               alignItems: "center",
               gap: 8,
-              border: `1px solid rgba(200,255,87,0.22)`,
+              border: `1px solid color-mix(in oklch, var(--chart-1) 22%, transparent)`,
               padding: "6px 14px",
               fontSize: 10,
               letterSpacing: "0.12em",
               color: C.accent,
-              background: "rgba(200,255,87,0.04)",
+              background: `color-mix(in oklch, var(--chart-1) 4%, transparent)`,
             }}
           >
             <span
@@ -1290,7 +709,7 @@ export default function VidatLanding() {
             marginBottom: 12,
           }}
         >
-          <span style={{ color: "#fff" }}>Vet när din sajt blir</span>
+          <span style={{ color: C.fg }}>Vet när din sajt blir</span>
         </h1>
         <h1
           className="au2"
@@ -1332,8 +751,8 @@ export default function VidatLanding() {
           <div
             style={{
               display: "flex",
-              border: `1px solid rgba(255,255,255,0.1)`,
-              background: "rgba(255,255,255,0.025)",
+              border: `1px solid color-mix(in oklch, var(--foreground) 10%, transparent)`,
+              background: `color-mix(in oklch, var(--foreground) 2.5%, transparent)`,
               overflow: "hidden",
             }}
           >
@@ -1344,7 +763,7 @@ export default function VidatLanding() {
                 fontSize: 12,
                 display: "flex",
                 alignItems: "center",
-                borderRight: `1px solid rgba(255,255,255,0.08)`,
+                borderRight: `1px solid color-mix(in oklch, var(--foreground) 8%, transparent)`,
                 letterSpacing: "0.05em",
                 flexShrink: 0,
               }}
@@ -1373,7 +792,9 @@ export default function VidatLanding() {
               onClick={handleScan}
               style={{
                 padding: "14px 22px",
-                background: scanning ? "rgba(200,255,87,0.12)" : C.accent,
+                background: scanning
+                  ? `color-mix(in oklch, var(--chart-1) 12%, transparent)`
+                  : C.accent,
                 color: scanning ? C.accent : "#000",
                 border: "none",
                 cursor: "pointer",
@@ -1410,9 +831,9 @@ export default function VidatLanding() {
             <div
               style={{
                 marginTop: 1,
-                border: `1px solid rgba(200,255,87,0.14)`,
+                border: `1px solid color-mix(in oklch, var(--chart-1) 14%, transparent)`,
                 borderTop: "none",
-                background: "rgba(200,255,87,0.025)",
+                background: `color-mix(in oklch, var(--chart-1) 2.5%, transparent)`,
                 padding: "22px 26px",
                 animation: "fadeUp 0.45s cubic-bezier(.16,1,.3,1) both",
               }}
@@ -1438,20 +859,25 @@ export default function VidatLanding() {
                 <ScoreRing
                   score={92}
                   label="Prestanda"
-                  color={C.accent}
+                  color={`var(--chart-1)`}
                   delay={0}
                 />
-                <ScoreRing score={88} label="SEO" color={C.blue} delay={150} />
+                <ScoreRing
+                  score={88}
+                  label="SEO"
+                  color={`var(--chart-2)`}
+                  delay={150}
+                />
                 <ScoreRing
                   score={96}
                   label="Tillgängl"
-                  color={C.teal}
+                  color={`var(--chart-3)`}
                   delay={300}
                 />
                 <ScoreRing
                   score={79}
                   label="Best pract"
-                  color={C.red}
+                  color={`var(--destructive)`}
                   delay={450}
                 />
               </div>
@@ -1459,8 +885,8 @@ export default function VidatLanding() {
                 style={{
                   marginTop: 18,
                   padding: "10px 14px",
-                  background: "rgba(255,255,255,0.03)",
-                  borderLeft: `2px solid ${C.accent}`,
+                  background: `color-mix(in oklch, var(--foreground) 3%, transparent)`,
+                  borderLeft: `2px solid var(--chart-1)`,
                   fontSize: 11,
                   color: C.muted,
                   lineHeight: 1.9,
@@ -1470,7 +896,7 @@ export default function VidatLanding() {
                 JS-paket ökar laddningstiden med ~340 ms. Optimera hero-bilden
                 (420 kb → &lt;100 kb) och aktivera lazy loading. Förväntad
                 förbättring: +12 poäng.
-                <span style={{ color: "#555560" }}>
+                <span style={{ color: C.mutedLo }}>
                   {" "}
                   Aktivera Pro för full analys.
                 </span>
@@ -1502,7 +928,7 @@ export default function VidatLanding() {
             style={{
               width: 1,
               height: 44,
-              background: `linear-gradient(to bottom, transparent, rgba(255,255,255,0.18))`,
+              background: `linear-gradient(to bottom, transparent, color-mix(in oklch, var(--foreground) 18%, transparent))`,
             }}
           />
           <span
@@ -1516,13 +942,13 @@ export default function VidatLanding() {
       {/* ── STATS BAR ───────────────────────────────────────────────────────── */}
       <div
         style={{
-          borderTop: `1px solid ${C.border}`,
-          borderBottom: `1px solid ${C.border}`,
+          borderTop: `1px solid var(--border)`,
+          borderBottom: `1px solid var(--border)`,
           padding: "30px max(24px, calc(50% - 620px))",
           display: "grid",
           gridTemplateColumns: "repeat(4, 1fr)",
           gap: 24,
-          background: "rgba(255,255,255,0.008)",
+          background: `color-mix(in oklch, var(--foreground) 0.8%, transparent)`,
         }}
       >
         {[
@@ -1567,8 +993,8 @@ export default function VidatLanding() {
       >
         <div
           style={{
-            border: `1px solid ${C.border}`,
-            background: "#040406",
+            border: `1px solid var(--border)`,
+            background: `color-mix(in oklch, var(--background) 97%, black)`,
             overflow: "hidden",
             maxWidth: 860,
             margin: "0 auto",
@@ -1577,11 +1003,11 @@ export default function VidatLanding() {
           <div
             style={{
               padding: "10px 16px",
-              borderBottom: `1px solid ${C.border}`,
+              borderBottom: `1px solid var(--border)`,
               display: "flex",
               alignItems: "center",
               gap: 8,
-              background: "rgba(255,255,255,0.02)",
+              background: `color-mix(in oklch, var(--foreground) 2%, transparent)`,
             }}
           >
             {["#FF5F57", "#FEBC2E", "#28C840"].map((c, i) => (
@@ -1615,7 +1041,7 @@ export default function VidatLanding() {
                 padding: "28px 28px",
                 fontSize: 12,
                 lineHeight: 2.1,
-                borderRight: `1px solid ${C.border}`,
+                borderRight: `1px solid var(--border)`,
               }}
             >
               <div>
@@ -1643,10 +1069,10 @@ export default function VidatLanding() {
               </div>
               <div style={{ marginTop: 16 }}>
                 {[
-                  ["Performance  ", 92, C.accent],
-                  ["SEO          ", 88, C.blue],
-                  ["Accessibility", 96, C.teal],
-                  ["Best Practices", 79, C.red],
+                  ["Performance  ", 92, `var(--chart-1)`],
+                  ["SEO          ", 88, `var(--chart-2)`],
+                  ["Accessibility", 96, `var(--chart-3)`],
+                  ["Best Practices", 79, `var(--destructive)`],
                 ].map(([label, val, color], i) => (
                   <div
                     key={i}
@@ -1695,28 +1121,28 @@ export default function VidatLanding() {
                 <ScoreRing
                   score={92}
                   label="Prestanda"
-                  color={C.accent}
+                  color={`var(--chart-1)`}
                   size={72}
                   delay={3200}
                 />
                 <ScoreRing
                   score={88}
                   label="SEO"
-                  color={C.blue}
+                  color={`var(--chart-2)`}
                   size={72}
                   delay={3400}
                 />
                 <ScoreRing
                   score={96}
                   label="Tillgängl"
-                  color={C.teal}
+                  color={`var(--chart-3)`}
                   size={72}
                   delay={3600}
                 />
                 <ScoreRing
                   score={79}
                   label="Best pract"
-                  color={C.red}
+                  color={`var(--destructive)`}
                   size={72}
                   delay={3800}
                 />
@@ -1724,8 +1150,8 @@ export default function VidatLanding() {
               <div
                 style={{
                   padding: "14px 16px",
-                  background: "rgba(200,255,87,0.04)",
-                  borderLeft: `2px solid ${C.accent}`,
+                  background: `color-mix(in oklch, var(--chart-1) 4%, transparent)`,
+                  borderLeft: `2px solid var(--chart-1)`,
                   fontSize: 11,
                   color: C.muted,
                   lineHeight: 1.8,
@@ -1774,7 +1200,7 @@ export default function VidatLanding() {
               fontSize: "clamp(28px, 4vw, 48px)",
               fontWeight: 800,
               letterSpacing: "-0.02em",
-              color: "#fff",
+              color: C.fg,
               lineHeight: 1.1,
               maxWidth: 480,
             }}
@@ -1802,7 +1228,7 @@ export default function VidatLanding() {
                     right: 0,
                     width: 100,
                     height: 100,
-                    background: `radial-gradient(circle at top right, rgba(200,255,87,0.07), transparent)`,
+                    background: `radial-gradient(circle at top right, color-mix(in oklch, var(--chart-1) 7%, transparent), transparent)`,
                     pointerEvents: "none",
                   }}
                 />
@@ -1837,7 +1263,7 @@ export default function VidatLanding() {
                 style={{
                   fontSize: 13,
                   fontWeight: 700,
-                  color: "#fff",
+                  color: C.fg,
                   marginBottom: 10,
                   letterSpacing: "0.02em",
                 }}
@@ -1860,7 +1286,7 @@ export default function VidatLanding() {
                   letterSpacing: "0.12em",
                   textTransform: "uppercase",
                   color: f.accent ? C.accent : C.mutedLo,
-                  border: `1px solid ${f.accent ? "rgba(200,255,87,0.25)" : C.border}`,
+                  border: `1px solid ${f.accent ? "color-mix(in oklch, var(--chart-1) 25%, transparent)" : "var(--border)"}`,
                   padding: "3px 9px",
                 }}
               >
@@ -1875,9 +1301,9 @@ export default function VidatLanding() {
       <section
         style={{
           padding: "80px max(24px, calc(50% - 620px))",
-          borderTop: `1px solid ${C.border}`,
-          borderBottom: `1px solid ${C.border}`,
-          background: "rgba(255,255,255,0.01)",
+          borderTop: `1px solid var(--border)`,
+          borderBottom: `1px solid var(--border)`,
+          background: `color-mix(in oklch, var(--foreground) 1%, transparent)`,
         }}
       >
         <div
@@ -1906,7 +1332,7 @@ export default function VidatLanding() {
                   fontWeight: 800,
                   lineHeight: 1,
                   letterSpacing: "-0.04em",
-                  color: "rgba(255,255,255,0.04)",
+                  color: `color-mix(in oklch, var(--foreground) 4%, transparent)`,
                   marginBottom: 20,
                   userSelect: "none",
                 }}
@@ -1917,7 +1343,7 @@ export default function VidatLanding() {
                 style={{
                   fontSize: 12,
                   fontWeight: 700,
-                  color: "#fff",
+                  color: C.fg,
                   marginBottom: 10,
                   letterSpacing: "0.03em",
                 }}
@@ -1953,7 +1379,7 @@ export default function VidatLanding() {
               fontSize: "clamp(28px, 4vw, 48px)",
               fontWeight: 800,
               letterSpacing: "-0.02em",
-              color: "#fff",
+              color: C.fg,
               lineHeight: 1.1,
             }}
           >
@@ -1981,7 +1407,7 @@ export default function VidatLanding() {
                 padding: "40px 30px",
                 position: "relative",
                 borderTop: plan.highlight
-                  ? `2px solid ${C.accent}`
+                  ? `2px solid var(--chart-1)`
                   : `2px solid transparent`,
                 display: "flex",
                 flexDirection: "column",
@@ -2028,7 +1454,7 @@ export default function VidatLanding() {
                     fontWeight: 800,
                     letterSpacing: "-0.03em",
                     lineHeight: 1,
-                    color: plan.highlight ? C.accent : "#fff",
+                    color: plan.highlight ? C.accent : C.fg,
                   }}
                 >
                   {plan.price}
@@ -2080,7 +1506,7 @@ export default function VidatLanding() {
                   color: plan.highlight ? "#000" : C.accent,
                   border: plan.highlight
                     ? "none"
-                    : `1px solid rgba(200,255,87,0.3)`,
+                    : `1px solid color-mix(in oklch, var(--chart-1) 30%, transparent)`,
                   cursor: "pointer",
                   fontSize: 11,
                   fontWeight: 800,
@@ -2091,12 +1517,13 @@ export default function VidatLanding() {
                 onMouseEnter={(e) => {
                   if (!plan.highlight) {
                     e.currentTarget.style.borderColor = C.accent
-                    e.currentTarget.style.background = "rgba(200,255,87,0.06)"
-                  } else e.currentTarget.style.background = "#b8f040"
+                    e.currentTarget.style.background = `color-mix(in oklch, var(--chart-1) 6%, transparent)`
+                  } else
+                    e.currentTarget.style.background = `color-mix(in oklch, var(--chart-1) 85%, white)`
                 }}
                 onMouseLeave={(e) => {
                   if (!plan.highlight) {
-                    e.currentTarget.style.borderColor = "rgba(200,255,87,0.3)"
+                    e.currentTarget.style.borderColor = `color-mix(in oklch, var(--chart-1) 30%, transparent)`
                     e.currentTarget.style.background = "transparent"
                   } else e.currentTarget.style.background = C.accent
                 }}
@@ -2124,7 +1551,7 @@ export default function VidatLanding() {
       <section
         style={{
           margin: "0 max(24px, calc(50% - 620px)) 80px",
-          border: `1px solid ${C.border}`,
+          border: `1px solid var(--border)`,
           padding: "64px max(32px, 8%)",
           position: "relative",
           overflow: "hidden",
@@ -2136,7 +1563,7 @@ export default function VidatLanding() {
             position: "absolute",
             inset: 0,
             pointerEvents: "none",
-            background: `radial-gradient(ellipse at 20% 50%, rgba(200,255,87,0.05) 0%, transparent 55%)`,
+            background: `radial-gradient(ellipse at 20% 50%, color-mix(in oklch, var(--chart-1) 5%, transparent) 0%, transparent 55%)`,
           }}
         />
         <GridBg style={{ opacity: 0.4 }} />
@@ -2146,7 +1573,7 @@ export default function VidatLanding() {
               fontSize: "clamp(22px, 3.5vw, 40px)",
               fontWeight: 800,
               letterSpacing: "-0.02em",
-              color: "#fff",
+              color: C.fg,
               lineHeight: 1.15,
               marginBottom: 16,
             }}
@@ -2177,7 +1604,7 @@ export default function VidatLanding() {
       {/* ── FOOTER ──────────────────────────────────────────────────────────── */}
       <footer
         style={{
-          borderTop: `1px solid ${C.border}`,
+          borderTop: `1px solid var(--border)`,
           padding: "28px max(24px, calc(50% - 620px))",
           display: "flex",
           justifyContent: "space-between",
@@ -2188,13 +1615,13 @@ export default function VidatLanding() {
       >
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <svg width="14" height="14" viewBox="0 0 18 18">
-            <rect x="0" y="0" width="7.5" height="7.5" fill={C.accent} />
+            <rect x="0" y="0" width="7.5" height="7.5" fill="var(--chart-1)" />
             <rect
               x="10.5"
               y="0"
               width="7.5"
               height="7.5"
-              fill={C.accent}
+              fill="var(--chart-1)"
               opacity="0.35"
             />
             <rect
@@ -2202,10 +1629,16 @@ export default function VidatLanding() {
               y="10.5"
               width="7.5"
               height="7.5"
-              fill={C.accent}
+              fill="var(--chart-1)"
               opacity="0.35"
             />
-            <rect x="10.5" y="10.5" width="7.5" height="7.5" fill={C.accent} />
+            <rect
+              x="10.5"
+              y="10.5"
+              width="7.5"
+              height="7.5"
+              fill="var(--chart-1)"
+            />
           </svg>
           <span
             style={{

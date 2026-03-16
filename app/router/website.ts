@@ -64,3 +64,16 @@ export const updateNextCheck = protectedProcedure
         and(eq(websites.userId, context.userId), eq(websites.id, input.website))
       )
   })
+
+export const updateWebsiteDeviceType = protectedProcedure
+  .input(
+    z.object({ website: z.string(), device: z.enum(["mobile", "desktop"]) })
+  )
+  .handler(async ({ context, input }) => {
+    await db
+      .update(websites)
+      .set({ deviceType: input.device })
+      .where(
+        and(eq(websites.userId, context.userId), eq(websites.id, input.website))
+      )
+  })
