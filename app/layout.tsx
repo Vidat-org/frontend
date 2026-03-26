@@ -1,6 +1,5 @@
 import "../lib/orpc.server"
-import { Geist, Geist_Mono, JetBrains_Mono } from "next/font/google"
-
+import { Inter, Playfair_Display, JetBrains_Mono } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from "@/lib/utils"
@@ -9,13 +8,19 @@ import { svSE } from "@clerk/localizations"
 import Navbar from "@/components/navbar"
 import Providers from "./providers"
 import { Toaster } from "@/components/ui/sonner"
+import { shadcn } from "@clerk/themes"
 
-const fontSans = Geist({
+const fontSans = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
 })
 
-const jetbrainsMono = JetBrains_Mono({
+const fontSerif = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-serif",
+})
+
+const fontMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
 })
@@ -29,15 +34,22 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn(
-        "antialiased",
-        fontSans.variable,
-        "font-mono",
-        jetbrainsMono.variable
-      )}
+      // className={cn(
+      //   "antialiased",
+      //   fontSans.variable,
+      //   "font-mono",
+      //   jetbrainsMono.variable
+      // )}
     >
-      <body>
-        <ClerkProvider localization={svSE}>
+      <body
+        className={`${fontSans.variable} ${fontSerif.variable} ${fontMono.variable} antialiased`}
+      >
+        <ClerkProvider
+          localization={svSE}
+          appearance={{
+            baseTheme: shadcn,
+          }}
+        >
           <Providers>
             <ThemeProvider>
               {/*<Navbar />*/}

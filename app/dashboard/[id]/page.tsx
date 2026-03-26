@@ -41,10 +41,10 @@ export default async function Page({
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-8 p-6">
+    <div className="mx-auto max-w-7xl space-y-8">
       {/* Sidhuvud */}
       <div className="flex items-center justify-between">
-        <div className="space-y-1">
+        <div className="min-w-0 space-y-1">
           <a
             href="/dashboard"
             className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary"
@@ -52,11 +52,27 @@ export default async function Page({
             <ArrowLeft className="h-4 w-4" /> Tillbaka till översikten
           </a>
 
-          <h1 className="text-4xl font-extrabold tracking-tight">
-            {website?.name}
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-4xl font-extrabold tracking-tight">
+              {website?.name}
+            </h1>
+            {/*{website && (
+              <Badge variant="outline" className="capitalize">
+                {website.deviceType === "mobile" ? (
+                  <Smartphone className="h-3 w-3" />
+                ) : (
+                  <Monitor className="h-3 w-3" />
+                )}
+                {website.deviceType}
+              </Badge>
+            )}*/}
+          </div>
 
-          <p className="text-muted-foreground underline">{website?.url}</p>
+          <a href={website?.url} target="_blank" rel="noopener noreferrer">
+            <p className="max-w-xs truncate text-muted-foreground underline hover:text-primary">
+              {website?.url}
+            </p>
+          </a>
         </div>
 
         {website && (
@@ -101,15 +117,6 @@ export default async function Page({
         />
       </div>
 
-      {/*<Card className="col-span-4 p-6">
-        <CardTitle className="mb-4">Prestanda över tid</CardTitle>
-
-        <div className="flex h-[340px] items-center justify-center rounded-lg border-2 border-dashed pt-3 pr-3 pb-2">
-          {website && <ScanChart websiteId={website?.id} />}
-        </div>
-      </Card>
-
-      {website && <IssuesList websiteId={website?.id} />}*/}
       {website && latest && (
         <WebsiteDetail
           latestScanId={latest?.id || ""}
@@ -154,7 +161,7 @@ function MetricCard({
       <CardContent>
         <div className="flex items-end gap-2">
           <div className="text-2xl font-bold">{value}</div>
-          {delta != null && <DeltaBadge delta={delta} />}
+          {delta != null && delta !== 0 && <DeltaBadge delta={delta} />}
         </div>
       </CardContent>
     </Card>

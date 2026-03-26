@@ -53,6 +53,9 @@ export default function NewCheck({
       getQueryClient().invalidateQueries({
         queryKey: ["scans", websiteId, urlDevice],
       })
+      // getQueryClient().invalidateQueries({
+      //   queryKey: ["scan", latestScan.id],
+      // })
       toast.success("Skanning klar!")
     }
   }, [latestScan, pollingSince])

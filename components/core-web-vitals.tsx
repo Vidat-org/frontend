@@ -32,23 +32,27 @@ const statusConfig = {
   good: {
     label: "Bra",
     bar: "bg-emerald-500",
-    text: "text-emerald-600 dark:text-emerald-400",
-    bg: "bg-emerald-50 dark:bg-emerald-950/40",
+    // Emerald-800 provides the necessary depth for your warm-tinted background
+    text: "text-emerald-800 dark:text-emerald-400",
+    bg: "bg-emerald-100/50 dark:bg-emerald-950/40",
     border: "border-emerald-200 dark:border-emerald-800",
   },
   "needs-improvement": {
     label: "Kan förbättras",
     bar: "bg-amber-500",
-    text: "text-amber-600 dark:text-amber-400",
-    bg: "bg-amber-50 dark:bg-amber-950/40",
+    // Amber-900 or 950 is often required for true legibility on light modes
+    text: "text-amber-900 dark:text-amber-400",
+    bg: "bg-amber-100/50 dark:bg-amber-950/40",
     border: "border-amber-200 dark:border-amber-800",
   },
   poor: {
     label: "Dålig",
-    bar: "bg-red-500",
-    text: "text-red-600 dark:text-red-400",
-    bg: "bg-red-50 dark:bg-red-950/40",
-    border: "border-red-200 dark:border-red-800",
+    bar: "bg-destructive",
+    // text-destructive ensures it pulls from your OKLCH variable
+    text: "text-destructive dark:text-red-400",
+    // Increased opacity from /7 or /10 to /15 for light mode
+    bg: "bg-destructive/15 dark:bg-destructive/25",
+    border: "border-destructive/30 dark:border-destructive/50",
   },
   unknown: {
     label: "–",

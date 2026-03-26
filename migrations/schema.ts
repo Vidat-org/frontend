@@ -1,17 +1,40 @@
 import {
   pgTable,
+  foreignKey,
+  text,
+  timestamp,
   integer,
   bigint,
   boolean,
-  timestamp,
   unique,
-  text,
   index,
-  foreignKey,
   check,
   numeric,
 } from "drizzle-orm/pg-core"
 import { InferSelectModel, sql } from "drizzle-orm"
+
+export const reports = pgTable(
+  "reports",
+  {
+    id: text()
+      .default(sql`nanoid('rep_', 22)`)
+      .primaryKey()
+      .notNull(),
+    websiteId: text("website_id").notNull(),
+    content: text().notNull(),
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "string",
+    }).defaultNow(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.websiteId],
+      foreignColumns: [websites.id],
+      name: "reports_website_id_fkey",
+    }).onDelete("cascade"),
+  ]
+)
 
 export const gooseDbVersion = pgTable("goose_db_version", {
   id: integer().primaryKey().generatedByDefaultAsIdentity({
@@ -179,3 +202,4 @@ export const scanIssues = pgTable(
 )
 
 export type Website = InferSelectModel<typeof websites>
+export type Report = InferSelectModel<typeof reports>

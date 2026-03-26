@@ -1,4 +1,5 @@
 import { listScanIssues } from "./issues"
+import { getReportById, listReports } from "./reports"
 import { getLatestScan, getScan, listWebsiteScans } from "./scans"
 import {
   createWebsite,
@@ -18,4 +19,7 @@ export const router = {
   getLatestScan: getLatestScan,
   listScanIssues: listScanIssues,
   getScan: getScan,
+
+  listReports: listReports,
+  getReportById: getReportById,
 }
