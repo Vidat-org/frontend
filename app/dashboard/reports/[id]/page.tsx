@@ -9,5 +9,11 @@ export default async function Page({
   const { id } = await params
   const report = await client.getReportById({ id })
 
-  return report?.content && <ReportContent content={report?.content} />
+  return (
+    report?.content && (
+      <div className="mx-auto w-fit">
+        <ReportContent content={report?.content} />
+      </div>
+    )
+  )
 }

@@ -538,9 +538,10 @@ export default function VidatLanding() {
           justifyContent: "space-between",
           padding: "0 max(24px, calc(50% - 620px))",
           borderBottom: `1px solid var(--border)`,
-          background: `color-mix(in oklch, var(--background) 88%, transparent)`,
+          // background: `color-mix(in oklch, var(--background) 88%, transparent)`,
           backdropFilter: "blur(14px)",
         }}
+        className="bg-background"
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <svg width="18" height="18" viewBox="0 0 18 18">
