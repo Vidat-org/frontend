@@ -30,9 +30,10 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const locale = (process.env.NEXT_PUBLIC_DEFAULT_LOCALE ?? "sv") as string
   return (
     <html
-      lang="en"
+      lang={locale}
       suppressHydrationWarning
       // className={cn(
       //   "antialiased",

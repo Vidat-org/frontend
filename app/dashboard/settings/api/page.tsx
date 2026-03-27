@@ -1,13 +1,15 @@
 import SettingsCenter from "@/components/settings-center"
+import { t } from "@/lib/i18n"
 
 export default function Page() {
   return (
     <div className="space-y-4">
       <SettingsCenter section="api" />
       <div className="rounded-[1.5rem] border bg-card p-6">
-        <h2 className="text-lg font-semibold tracking-tight">REST API</h2>
+        <h2 className="text-lg font-semibold tracking-tight">{t("settingsApi.restApiTitle")}</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          Autentisera med <code>Authorization: Bearer &lt;api_key&gt;</code> eller
+          {t("settingsApi.authPrefix")}{" "}
+          <code>Authorization: Bearer &lt;api_key&gt;</code> {t("settingsApi.authOr")}
           <code> x-api-key</code>.
         </p>
         <div className="mt-4 space-y-2 font-mono text-xs text-muted-foreground">

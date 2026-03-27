@@ -183,7 +183,7 @@ export default function CoreWebVitals({ scanId }: { scanId: string }) {
       thresholds: [200, 500],
     },
     {
-      label: "Speed Index",
+      label: t("vitals.speedIndex"),
       value: scan?.speedIndexMs ? scan.speedIndexMs / 1000 : null,
       unit: "s",
       thresholds: [3.4, 5.8],

@@ -438,12 +438,12 @@ export default function SettingsCenter({
       {showSection("all") ? (
       <div className="grid gap-4 md:grid-cols-4">
         <StatCard
-          title="Workspace"
+          title={t("settingsCenter.stats.workspace")}
           value={account.workspace.memberCount.toString()}
           description={t("settingsCenter.activeMembers")}
         />
         <StatCard
-          title="Onboarding"
+          title={t("settingsCenter.stats.onboarding")}
           value={`${account.onboarding.completedSteps}/${account.onboarding.totalSteps}`}
           description={t("settingsCenter.stepsDone")}
         />
@@ -453,7 +453,7 @@ export default function SettingsCenter({
           description={t("settingsCenter.failedCount", { count: account.notifications.failed })}
         />
         <StatCard
-          title="Billing"
+          title={t("settingsCenter.stats.billing")}
           value={account.billing.status}
           description={account.billing.dunningStatus}
         />
@@ -521,7 +521,7 @@ export default function SettingsCenter({
               </div>
             </Field>
             <Field>
-              <FieldLabel>Status</FieldLabel>
+              <FieldLabel>{t("settingsCenter.billingStatus")}</FieldLabel>
               <div className="flex flex-wrap gap-2">
                 {billingStatuses.map((status) => (
                   <Button
@@ -542,7 +542,7 @@ export default function SettingsCenter({
               </div>
             </Field>
             <Field>
-              <FieldLabel>Dunning</FieldLabel>
+              <FieldLabel>{t("settingsCenter.dunningStatus")}</FieldLabel>
               <div className="flex flex-wrap gap-2">
                 {dunningStatuses.map((status) => (
                   <Button
@@ -566,7 +566,7 @@ export default function SettingsCenter({
             </Field>
             <div className="grid gap-3 md:grid-cols-2">
               <Field>
-                <FieldLabel>Portal-URL</FieldLabel>
+                <FieldLabel>{t("settingsCenter.portalUrl")}</FieldLabel>
                 <Input
                   value={resolvedBilling.portalUrl}
                   onChange={(e) =>
@@ -578,7 +578,7 @@ export default function SettingsCenter({
                 />
               </Field>
               <Field>
-                <FieldLabel>Checkout-URL</FieldLabel>
+                <FieldLabel>{t("settingsCenter.checkoutUrl")}</FieldLabel>
                 <Input
                   value={resolvedBilling.checkoutUrl}
                   onChange={(e) =>
@@ -599,14 +599,15 @@ export default function SettingsCenter({
                   target="_blank"
                   className="inline-flex items-center gap-1 underline underline-offset-4"
                 >
-                  Öppna billing-portal <ExternalLink className="h-3 w-3" />
+                  {t("settingsCenter.openBillingPortal")}{" "}
+                  <ExternalLink className="h-3 w-3" />
                 </Link>
               ) : (
-                "Ingen billing-portal konfigurerad."
+                t("settingsCenter.noBillingPortalConfigured")
               )}
             </div>
             <Button disabled={!isAdmin || saveBilling.isPending} onClick={() => saveBilling.mutate()}>
-              Spara billing
+              {t("settingsCenter.saveBilling")}
             </Button>
           </CardFooter>
         </Card>
@@ -615,36 +616,36 @@ export default function SettingsCenter({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Rocket className="h-4 w-4" />
-              Onboarding
+              {t("settingsCenter.onboardingTitle")}
             </CardTitle>
             <CardDescription>
-              Håll koll på första värde-stegen för workspacet.
+              {t("settingsCenter.onboardingDescription")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <OnboardingRow
-              label="Lagt till första webbplats"
+              label={t("settingsCenter.onboarding.firstWebsiteAdded")}
               checked={onboarding?.hasAddedWebsite ?? account.onboarding.hasAddedWebsite}
               onToggle={(completed) =>
                 updateOnboarding.mutate({ key: "hasAddedWebsite", completed })
               }
             />
             <OnboardingRow
-              label="Första scan körd"
+              label={t("settingsCenter.onboarding.firstScanRun")}
               checked={onboarding?.hasRunFirstScan ?? account.onboarding.hasRunFirstScan}
               onToggle={(completed) =>
                 updateOnboarding.mutate({ key: "hasRunFirstScan", completed })
               }
             />
             <OnboardingRow
-              label="Rapport öppnad"
+              label={t("settingsCenter.onboarding.reportOpened")}
               checked={onboarding?.hasViewedReport ?? account.onboarding.hasViewedReport}
               onToggle={(completed) =>
                 updateOnboarding.mutate({ key: "hasViewedReport", completed })
               }
             />
             <OnboardingRow
-              label="Alerts konfigurerade"
+              label={t("settingsCenter.onboarding.alertsConfigured")}
               checked={
                 onboarding?.hasConfiguredAlerts ??
                 account.onboarding.hasConfiguredAlerts
@@ -654,7 +655,7 @@ export default function SettingsCenter({
               }
             />
             <OnboardingRow
-              label="Integration ansluten"
+              label={t("settingsCenter.onboarding.integrationConnected")}
               checked={
                 onboarding?.hasConnectedIntegration ??
                 account.onboarding.hasConnectedIntegration
@@ -664,9 +665,9 @@ export default function SettingsCenter({
               }
             />
             <div className="rounded-xl border p-4">
-              <p className="text-sm font-medium">REST API</p>
+              <p className="text-sm font-medium">{t("settingsApi.restApiTitle")}</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Använd `Authorization: Bearer &lt;api_key&gt;` eller `x-api-key`.
+                {t("settingsCenter.restApiHint")}
               </p>
               <div className="mt-3 space-y-2 font-mono text-xs text-muted-foreground">
                 <p>GET /api/v1/workspaces/current</p>
@@ -686,17 +687,17 @@ export default function SettingsCenter({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Bell className="h-4 w-4" />
-              Notifieringar
+              {t("settingsPage.notificationsTitle")}
             </CardTitle>
             <CardDescription>
-              Styr vilka händelser som ska skickas och till vilka kanaler.
+              {t("settingsCenter.notificationsDescription")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <FieldGroup>
               <ToggleRow
-                label="E-postaviseringar"
-                description="Skicka kritiska drift- och regressionsnotiser via e-post."
+                label={t("settingsCenter.notifications.emailLabel")}
+                description={t("settingsCenter.notifications.emailDescription")}
                 checked={resolvedSettings.emailAlerts}
                 onToggle={() =>
                   setSettingsForm((prev) => ({
@@ -706,8 +707,8 @@ export default function SettingsCenter({
                 }
               />
               <ToggleRow
-                label="Scan failure alerts"
-                description="Notis när en skanning misslyckas eller timeoutar."
+                label={t("settingsCenter.notifications.scanFailureLabel")}
+                description={t("settingsCenter.notifications.scanFailureDescription")}
                 checked={resolvedSettings.notifyOnScanFailure}
                 onToggle={() =>
                   setSettingsForm((prev) => ({
@@ -717,8 +718,8 @@ export default function SettingsCenter({
                 }
               />
               <ToggleRow
-                label="Score drop alerts"
-                description="Notis när resultatet faller under vald tröskel."
+                label={t("settingsCenter.notifications.scoreDropLabel")}
+                description={t("settingsCenter.notifications.scoreDropDescription")}
                 checked={resolvedSettings.notifyOnScoreDrop}
                 onToggle={() =>
                   setSettingsForm((prev) => ({
@@ -728,7 +729,7 @@ export default function SettingsCenter({
                 }
               />
               <Field>
-                <FieldLabel>Tröskel för poängfall</FieldLabel>
+                <FieldLabel>{t("settingsCenter.notifications.scoreDropThreshold")}</FieldLabel>
                 <Input
                   type="number"
                   min={1}
@@ -773,15 +774,15 @@ export default function SettingsCenter({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-4 w-4" />
-              Team och invites
+              {t("settingsCenter.team.title")}
             </CardTitle>
             <CardDescription>
-              Lägg till admins och medlemmar i samma workspace.
+              {t("settingsCenter.team.description")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <p className="text-sm font-medium">Dina workspaces</p>
+              <p className="text-sm font-medium">{t("settingsCenter.team.yourWorkspaces")}</p>
               {userWorkspaces.map((entry) => (
                 <div
                   key={entry.workspaceId}
@@ -794,7 +795,7 @@ export default function SettingsCenter({
                     </p>
                   </div>
                   {entry.isActive ? (
-                    <Badge variant="success">Aktiv</Badge>
+                    <Badge variant="success">{t("settingsCenter.team.active")}</Badge>
                   ) : (
                     <Button
                       size="sm"
@@ -802,7 +803,7 @@ export default function SettingsCenter({
                       disabled={switchWorkspace.isPending}
                       onClick={() => switchWorkspace.mutate(entry.workspaceId)}
                     >
-                      Byt workspace
+                      {t("settingsCenter.team.switchWorkspace")}
                     </Button>
                   )}
                 </div>
@@ -810,7 +811,7 @@ export default function SettingsCenter({
             </div>
             {pendingInvites.length > 0 ? (
               <div className="space-y-2 rounded-xl border border-chart-1/20 bg-chart-1/5 p-4">
-                <p className="text-sm font-medium">Väntande inbjudningar</p>
+                <p className="text-sm font-medium">{t("settingsCenter.team.pendingInvites")}</p>
                 {pendingInvites.map((invite) => (
                   <div
                     key={invite.id}
@@ -819,7 +820,8 @@ export default function SettingsCenter({
                     <div>
                       <p className="text-sm font-medium">{invite.workspaceName}</p>
                       <p className="text-xs text-muted-foreground">
-                        {invite.role} · giltig till {formatStamp(invite.expiresAt)}
+                        {invite.role} · {t("settingsCenter.team.validUntil")}{" "}
+                        {formatStamp(invite.expiresAt)}
                       </p>
                     </div>
                     <div className="flex gap-2">
@@ -828,7 +830,7 @@ export default function SettingsCenter({
                         disabled={acceptInvite.isPending}
                         onClick={() => acceptInvite.mutate(invite.id)}
                       >
-                        Acceptera
+                        {t("settingsCenter.team.accept")}
                       </Button>
                       <Button
                         size="sm"
@@ -867,7 +869,9 @@ export default function SettingsCenter({
                             })
                           }
                         >
-                          {member.role === "admin" ? "Gör medlem" : "Gör admin"}
+                          {member.role === "admin"
+                            ? t("settingsCenter.team.makeMember")
+                            : t("settingsCenter.team.makeAdmin")}
                         </Button>
                       ) : null}
                       {member.role !== "owner" && isAdmin ? (
@@ -890,9 +894,9 @@ export default function SettingsCenter({
             <div className="rounded-xl border p-4">
               <div className="grid gap-3">
                 <Field>
-                  <FieldLabel>E-post</FieldLabel>
+                  <FieldLabel>{t("settingsCenter.team.email")}</FieldLabel>
                   <Input
-                    placeholder="teammedlem@bolag.se"
+                    placeholder={t("settingsCenter.team.emailPlaceholder")}
                     value={inviteForm.email}
                     onChange={(e) =>
                       setInviteForm((prev) => ({ ...prev, email: e.target.value }))
@@ -900,7 +904,7 @@ export default function SettingsCenter({
                   />
                 </Field>
                 <Field>
-                  <FieldLabel>Roll</FieldLabel>
+                  <FieldLabel>{t("settingsCenter.team.role")}</FieldLabel>
                   <div className="flex flex-wrap gap-2">
                     {(["member", "admin"] as const).map((role) => (
                       <Button
@@ -964,18 +968,18 @@ export default function SettingsCenter({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Webhook className="h-4 w-4" />
-            Webhook-destinationer
+            {t("settingsCenter.integrations.title")}
           </CardTitle>
           <CardDescription>
-            Skicka händelser till externa system med historik i driftloggen.
+            {t("settingsCenter.integrations.description")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid gap-3 md:grid-cols-2">
             <Field>
-              <FieldLabel>Namn</FieldLabel>
+              <FieldLabel>{t("settingsCenter.integrations.name")}</FieldLabel>
               <Input
-                placeholder="Ops webhook"
+                placeholder={t("settingsCenter.integrations.namePlaceholder")}
                 value={webhookForm.label}
                 onChange={(e) =>
                   setWebhookForm((prev) => ({ ...prev, label: e.target.value }))
@@ -983,7 +987,7 @@ export default function SettingsCenter({
               />
             </Field>
             <Field>
-              <FieldLabel>URL</FieldLabel>
+              <FieldLabel>{t("settingsCenter.integrations.url")}</FieldLabel>
               <Input
                 placeholder="https://example.com/hooks/vidat"
                 value={webhookForm.url}
@@ -994,7 +998,7 @@ export default function SettingsCenter({
             </Field>
           </div>
           <Field>
-            <FieldLabel>Händelser</FieldLabel>
+            <FieldLabel>{t("settingsCenter.integrations.events")}</FieldLabel>
             <div className="flex flex-wrap gap-2">
               {webhookEvents.map((eventType) => {
                 const checked = webhookForm.eventTypes.includes(eventType)
@@ -1029,7 +1033,7 @@ export default function SettingsCenter({
                 webhookForm.eventTypes.length === 0
               }
             >
-              Lägg till webhook
+              {t("settingsCenter.integrations.addWebhook")}
             </Button>
           </div>
           <div className="space-y-3">
@@ -1044,7 +1048,9 @@ export default function SettingsCenter({
                     <div className="flex items-center gap-2">
                       <p className="font-medium">{webhook.label}</p>
                       <Badge variant={webhook.isEnabled ? "success" : "outline"}>
-                        {webhook.isEnabled ? "Aktiv" : "Pausad"}
+                        {webhook.isEnabled
+                          ? t("settingsCenter.integrations.active")
+                          : t("settingsCenter.integrations.paused")}
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">{webhook.url}</p>
@@ -1071,7 +1077,9 @@ export default function SettingsCenter({
                         })
                       }
                     >
-                      {webhook.isEnabled ? "Pausa" : "Aktivera"}
+                      {webhook.isEnabled
+                        ? t("settingsCenter.integrations.pause")
+                        : t("settingsCenter.integrations.activate")}
                     </Button>
                     <Button
                       variant="destructive"
@@ -1096,22 +1104,22 @@ export default function SettingsCenter({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <KeyRound className="h-4 w-4" />
-              API-nycklar
+              {t("settingsCenter.apiKeys.title")}
             </CardTitle>
             <CardDescription>
-              Skapa och återkalla nycklar för integrationer och framtida API-anrop.
+              {t("settingsCenter.apiKeys.description")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {latestApiKey ? (
               <div className="rounded-lg border border-chart-1/30 bg-chart-1/5 p-3">
-                <p className="text-sm font-medium">Nyckeln visas bara en gång</p>
+                <p className="text-sm font-medium">{t("settingsCenter.apiKeys.shownOnce")}</p>
                 <p className="mt-1 break-all font-mono text-xs">{latestApiKey}</p>
               </div>
             ) : null}
             <div className="flex gap-3">
               <Input
-                placeholder="Production integration"
+                placeholder={t("settingsCenter.apiKeys.labelPlaceholder")}
                 value={apiKeyLabel}
                 onChange={(e) => setApiKeyLabel(e.target.value)}
               />
@@ -1119,12 +1127,12 @@ export default function SettingsCenter({
                 disabled={!isAdmin || !apiKeyLabel || createApiKey.isPending}
                 onClick={() => createApiKey.mutate()}
               >
-                Skapa nyckel
+                {t("settingsCenter.apiKeys.create")}
               </Button>
             </div>
             <div className="space-y-2">
               {apiKeys.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Inga API-nycklar ännu.</p>
+                <p className="text-sm text-muted-foreground">{t("settingsCenter.apiKeys.empty")}</p>
               ) : (
                 apiKeys.map((key) => (
                   <div
@@ -1134,7 +1142,10 @@ export default function SettingsCenter({
                     <div>
                       <p className="text-sm font-medium">{key.label}</p>
                       <p className="text-xs text-muted-foreground">
-                        {key.keyPrefix}... · {key.revokedAt ? "återkallad" : "aktiv"}
+                        {key.keyPrefix}... ·{" "}
+                        {key.revokedAt
+                          ? t("settingsCenter.apiKeys.revoked")
+                          : t("settingsCenter.apiKeys.active")}
                       </p>
                     </div>
                     <Button
@@ -1143,7 +1154,7 @@ export default function SettingsCenter({
                       disabled={!isAdmin || Boolean(key.revokedAt)}
                       onClick={() => revokeApiKey.mutate(key.id)}
                     >
-                      Återkalla
+                      {t("settingsCenter.apiKeys.revoke")}
                     </Button>
                   </div>
                 ))
@@ -1158,16 +1169,16 @@ export default function SettingsCenter({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <LifeBuoy className="h-4 w-4" />
-              Supportärenden
+              {t("settingsCenter.support.title")}
             </CardTitle>
             <CardDescription>
-              Skapa ärenden för support, billing, security eller success.
+              {t("settingsCenter.support.description")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-3">
               <Input
-                placeholder="Ämne"
+                placeholder={t("settingsCenter.support.subjectPlaceholder")}
                 value={supportForm.subject}
                 onChange={(e) =>
                   setSupportForm((prev) => ({ ...prev, subject: e.target.value }))
@@ -1204,7 +1215,7 @@ export default function SettingsCenter({
                 ))}
               </div>
               <Textarea
-                placeholder="Beskriv problemet eller önskemålet"
+                placeholder={t("settingsCenter.support.messagePlaceholder")}
                 value={supportForm.message}
                 onChange={(e) =>
                   setSupportForm((prev) => ({ ...prev, message: e.target.value }))
@@ -1218,12 +1229,12 @@ export default function SettingsCenter({
                 }
                 onClick={() => createSupportRequest.mutate()}
               >
-                Skapa supportärende
+                {t("settingsCenter.support.create")}
               </Button>
             </div>
             <div className="space-y-2">
               {supportRequests.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Inga supportärenden ännu.</p>
+                <p className="text-sm text-muted-foreground">{t("settingsCenter.support.empty")}</p>
               ) : (
                 supportRequests.map((request) => (
                   <div key={request.id} className="rounded-lg border p-3">
@@ -1250,8 +1261,8 @@ export default function SettingsCenter({
       <div className="grid gap-4 xl:grid-cols-2">
         <LogCard
           icon={<History className="h-4 w-4" />}
-          title="Audit log"
-          description="Senaste administrativa och operativa händelserna."
+          title={t("settingsCenter.logs.auditTitle")}
+          description={t("settingsCenter.logs.auditDescription")}
           items={auditLogs.map((item) => ({
             id: item.id,
             title: item.summary,
@@ -1261,8 +1272,8 @@ export default function SettingsCenter({
         />
         <LogCard
           icon={<CheckCircle2 className="h-4 w-4" />}
-          title="Leveranslogg"
-          description="Historik över notifieringar och integrationsleveranser."
+          title={t("settingsCenter.logs.deliveryTitle")}
+          description={t("settingsCenter.logs.deliveryDescription")}
           items={deliveries.map((item) => ({
             id: item.id,
             title: `${item.channel} → ${item.destination}`,
@@ -1292,7 +1303,7 @@ function invalidateAccountViews() {
 }
 
 function formatStamp(value: string | null | undefined) {
-  if (!value) return "okänd tid"
+  if (!value) return t("dashboard.unknownTime")
   return new Date(value).toLocaleString("sv-SE", {
     dateStyle: "short",
     timeStyle: "short",

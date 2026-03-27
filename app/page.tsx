@@ -15,166 +15,152 @@ import {
   Users,
   Webhook,
 } from "lucide-react"
+import { t } from "@/lib/i18n"
 
 const productPillars = [
   {
-    title: "Prestanda utan manuellt arbete",
-    description:
-      "Schemalagda Lighthouse-körningar, historik och regressionsspårning för varje webbplats.",
+    titleKey: "home.productPillars.performance.title",
+    descriptionKey: "home.productPillars.performance.description",
     icon: Gauge,
   },
   {
-    title: "Insikter som går att agera på",
-    description:
-      "AI-förklaringar, prioriterade förbättringsförslag och rapporter som kan delas internt eller med kund.",
+    titleKey: "home.productPillars.insights.title",
+    descriptionKey: "home.productPillars.insights.description",
     icon: Activity,
   },
   {
-    title: "Byggd för operativ drift",
-    description:
-      "Webhook-flöden, notifieringar, billing-stöd och tydliga planbegränsningar redan i produkten.",
+    titleKey: "home.productPillars.ops.title",
+    descriptionKey: "home.productPillars.ops.description",
     icon: Webhook,
   },
 ]
 
 const featureRows = [
   {
-    eyebrow: "Övervakning",
-    title: "Följ varje deploy som om den vore affärskritisk.",
-    description:
-      "Vidat fångar förändringar i Core Web Vitals, SEO och teknisk kvalitet innan användarna märker att något gått fel.",
-    bullets: [
-      "Dagliga, veckovisa eller deploy-triggade skanningar",
-      "Mobil- och desktopperspektiv i samma arbetsflöde",
-      "Historik som gör regressionsmönster tydliga",
+    eyebrowKey: "home.features.monitoring.eyebrow",
+    titleKey: "home.features.monitoring.title",
+    descriptionKey: "home.features.monitoring.description",
+    bulletKeys: [
+      "home.features.monitoring.bullet1",
+      "home.features.monitoring.bullet2",
+      "home.features.monitoring.bullet3",
     ],
   },
   {
-    eyebrow: "Rapportering",
-    title: "Gör siffror begripliga för både team och kund.",
-    description:
-      "Rapporterna fokuserar på vad som förändrats, varför det spelar roll och vad som bör göras härnäst.",
-    bullets: [
-      "AI-summeringar på svenska",
-      "Tydliga prioriteringar i stället för rådata",
-      "White-label-redo för byråer och konsultteam",
+    eyebrowKey: "home.features.reporting.eyebrow",
+    titleKey: "home.features.reporting.title",
+    descriptionKey: "home.features.reporting.description",
+    bulletKeys: [
+      "home.features.reporting.bullet1",
+      "home.features.reporting.bullet2",
+      "home.features.reporting.bullet3",
     ],
   },
   {
-    eyebrow: "Automatisering",
-    title: "Koppla ihop produkten med resten av din drift.",
-    description:
-      "Notiser och händelser går att skicka vidare till Slack, interna verktyg eller externa system via webhook.",
-    bullets: [
-      "Scan failure alerts och score-drop-varningar",
-      "Webhook-destinationer per konto",
-      "Billing- och planstyrning för SaaS-upplägg",
+    eyebrowKey: "home.features.automation.eyebrow",
+    titleKey: "home.features.automation.title",
+    descriptionKey: "home.features.automation.description",
+    bulletKeys: [
+      "home.features.automation.bullet1",
+      "home.features.automation.bullet2",
+      "home.features.automation.bullet3",
     ],
   },
 ]
 
 const completeSaasItems = [
   {
-    title: "Riktiga betalflöden",
-    description:
-      "Checkout, abonnemangsändringar, kvitton, dunning och självservice i billing-portalen måste fungera utan manuell hantering.",
+    titleKey: "home.completeSaas.billing.title",
+    descriptionKey: "home.completeSaas.billing.description",
     icon: CreditCard,
   },
   {
-    title: "Organisationer och roller",
-    description:
-      "Teamkonton, inbjudningar, ägare/admin/medlem-roller och separata arbetsytor är ofta det som skiljer en bra produkt från en verklig SaaS.",
+    titleKey: "home.completeSaas.orgs.title",
+    descriptionKey: "home.completeSaas.orgs.description",
     icon: Users,
   },
   {
-    title: "Onboarding som konverterar",
-    description:
-      "Guidad första upplevelse, sample-data, checklista och tydlig aktivering efter signup minskar churn direkt.",
+    titleKey: "home.completeSaas.onboarding.title",
+    descriptionKey: "home.completeSaas.onboarding.description",
     icon: Rocket,
   },
   {
-    title: "Trust och compliance",
-    description:
-      "Audit logs, databevarande, incidentprocess, backup-strategi, rate limiting och säker hantering av webhooks behöver vara tydligt definierade.",
+    titleKey: "home.completeSaas.trust.title",
+    descriptionKey: "home.completeSaas.trust.description",
     icon: Lock,
   },
   {
-    title: "Support och kundresa",
-    description:
-      "Inbyggd hjälp, statuskommunikation, SLA-nivåer, kontaktvägar och success-flöden för större kunder bör vara produktiserade.",
+    titleKey: "home.completeSaas.support.title",
+    descriptionKey: "home.completeSaas.support.description",
     icon: MessagesSquare,
   },
   {
-    title: "Go-to-market underbyggt i produkten",
-    description:
-      "Referral-spårning, trial-regler, usage limits, uppgraderingspunkter och expansionsdrivande triggers behöver vara medvetet designade.",
+    titleKey: "home.completeSaas.gtm.title",
+    descriptionKey: "home.completeSaas.gtm.description",
     icon: Building2,
   },
 ]
 
 const pricing = [
   {
-    name: "Free",
+    name: t("home.pricing.free.name"),
     price: "0 kr",
-    description: "För solo-test och första webbplatsen.",
+    description: t("home.pricing.free.description"),
     features: [
-      "1 aktiv webbplats",
-      "Manuella skanningar",
-      "7 dagars historik",
-      "Grundläggande rapporter",
+      t("home.pricing.free.feature1"),
+      t("home.pricing.free.feature2"),
+      t("home.pricing.free.feature3"),
+      t("home.pricing.free.feature4"),
     ],
   },
   {
-    name: "Starter",
+    name: t("home.pricing.starter.name"),
     price: "149 kr",
-    description: "För mindre team som vill börja automatisera.",
+    description: t("home.pricing.starter.description"),
     features: [
-      "5 aktiva webbplatser",
-      "Schemalagda skanningar",
-      "90 dagars historik",
-      "E-postaviseringar",
+      t("home.pricing.starter.feature1"),
+      t("home.pricing.starter.feature2"),
+      t("home.pricing.starter.feature3"),
+      t("home.pricing.starter.feature4"),
     ],
     featured: true,
   },
   {
-    name: "Pro",
+    name: t("home.pricing.pro.name"),
     price: "399 kr",
-    description: "För team som arbetar aktivt med deploys och regressionsrisk.",
+    description: t("home.pricing.pro.description"),
     features: [
-      "25 aktiva webbplatser",
-      "Mobil + desktop",
-      "Webhook- och Slack-stöd",
-      "Regressionsdetektering",
+      t("home.pricing.pro.feature1"),
+      t("home.pricing.pro.feature2"),
+      t("home.pricing.pro.feature3"),
+      t("home.pricing.pro.feature4"),
     ],
   },
   {
-    name: "Enterprise",
+    name: t("home.pricing.enterprise.name"),
     price: "999 kr",
-    description: "För byråer, större produktteam och fler intressenter.",
+    description: t("home.pricing.enterprise.description"),
     features: [
-      "Nästan obegränsade webbplatser",
-      "Lång historik",
-      "Team och white-label",
-      "Prioriterad support",
+      t("home.pricing.enterprise.feature1"),
+      t("home.pricing.enterprise.feature2"),
+      t("home.pricing.enterprise.feature3"),
+      t("home.pricing.enterprise.feature4"),
     ],
   },
 ]
 
 const faq = [
   {
-    question: "Vad finns redan på plats i produkten?",
-    answer:
-      "Dashboard, rapporter, planstyrning, settings, webhooks, notifieringsinställningar och grunden för billing finns redan i kodbasen.",
+    question: t("home.faq.q1.question"),
+    answer: t("home.faq.q1.answer"),
   },
   {
-    question: "Vad skulle jag prioritera härnäst?",
-    answer:
-      "1) riktiga betalflöden, 2) organisationskonton, 3) onboarding/aktivering, 4) robust notifieringsleverans och 5) audit/compliance.",
+    question: t("home.faq.q2.question"),
+    answer: t("home.faq.q2.answer"),
   },
   {
-    question: "Är produkten byggd för byråer eller interna team?",
-    answer:
-      "Båda. White-label, teamfunktioner, fler arbetsytor och kundvänliga rapporter gör den särskilt stark för byråspåret.",
+    question: t("home.faq.q3.question"),
+    answer: t("home.faq.q3.answer"),
   },
 ]
 
@@ -222,26 +208,26 @@ export default function HomePage() {
             </div>
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.24em]">
-                Vidat
+                {t("home.brand")}
               </p>
               <p className="text-xs text-muted-foreground">
-                Performance monitoring for teams
+                {t("home.tagline")}
               </p>
             </div>
             </Link>
 
             <nav className="hidden items-center gap-5 text-sm text-muted-foreground lg:flex">
               <a href="#features" className="transition-colors hover:text-foreground">
-                Funktioner
+                {t("home.nav.features")}
               </a>
               <a href="#complete-saas" className="transition-colors hover:text-foreground">
-                Komplett SaaS
+                {t("home.nav.completeSaas")}
               </a>
               <a href="#pricing" className="transition-colors hover:text-foreground">
-                Priser
+                {t("home.nav.pricing")}
               </a>
               <Link href="/docs" className="transition-colors hover:text-foreground">
-                Docs
+                {t("home.nav.docs")}
               </Link>
             </nav>
 
@@ -251,25 +237,25 @@ export default function HomePage() {
                   href="#features"
                   className="rounded-full border border-border/80 px-3 py-1.5 transition-colors hover:text-foreground"
                 >
-                  Funktioner
+                  {t("home.nav.features")}
                 </a>
                 <a
                   href="#complete-saas"
                   className="rounded-full border border-border/80 px-3 py-1.5 transition-colors hover:text-foreground"
                 >
-                  SaaS
+                  {t("home.nav.saasShort")}
                 </a>
                 <a
                   href="#pricing"
                   className="rounded-full border border-border/80 px-3 py-1.5 transition-colors hover:text-foreground"
                 >
-                  Priser
+                  {t("home.nav.pricing")}
                 </a>
                 <Link
                   href="/docs"
                   className="rounded-full border border-border/80 px-3 py-1.5 transition-colors hover:text-foreground"
                 >
-                  Docs
+                  {t("home.nav.docs")}
                 </Link>
               </nav>
 
@@ -278,13 +264,13 @@ export default function HomePage() {
                   href="/sign-in"
                   className="text-sm text-muted-foreground transition-colors hover:text-foreground md:inline-flex"
                 >
-                  Logga in
+                  {t("home.actions.signIn")}
                 </Link>
                 <Link
                   href="/sign-in"
                   className="inline-flex items-center justify-center gap-2 rounded-full bg-chart-1 px-4 py-2 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5"
                 >
-                  Starta gratis
+                  {t("home.actions.startFree")}
                   <ChevronRight className="h-4 w-4" />
                 </Link>
               </div>
@@ -296,18 +282,15 @@ export default function HomePage() {
           <div className="max-w-3xl space-y-8">
             <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-chart-1/20 bg-chart-1/8 px-4 py-2 text-[11px] uppercase tracking-[0.18em] text-chart-1 sm:text-xs sm:tracking-[0.22em]">
               <BellRing className="h-3.5 w-3.5" />
-              Upptäck regressionsproblem innan kunden gör det
+              {t("home.hero.pill")}
             </div>
 
             <div className="space-y-6">
               <h1 className="font-serif text-4xl leading-none tracking-tight text-foreground sm:text-5xl md:text-6xl lg:text-7xl">
-                Gör prestanda till en produkt, inte en eftertanke.
+                {t("home.hero.title")}
               </h1>
               <p className="max-w-2xl text-base leading-8 text-muted-foreground md:text-lg">
-                Vidat hjälper team att övervaka Lighthouse, förstå förändringar
-                över tid och agera direkt när en release försämrar upplevelsen.
-                Tjänsten har redan kärnan för en modern SaaS, men några avgörande
-                lager återstår för att den ska bli kommersiellt komplett.
+                {t("home.hero.description")}
               </p>
             </div>
 
@@ -316,14 +299,14 @@ export default function HomePage() {
                 href="/sign-in"
                 className="inline-flex items-center gap-2 rounded-full bg-foreground px-6 py-3 text-sm font-semibold text-background transition-transform hover:-translate-y-0.5"
               >
-                Skapa konto
+                {t("home.actions.createAccount")}
                 <ChevronRight className="h-4 w-4" />
               </Link>
               <Link
                 href="/dashboard/settings"
                 className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3 text-sm font-semibold transition-colors hover:bg-muted/70"
               >
-                Se SaaS-inställningar
+                {t("home.actions.viewSaasSettings")}
               </Link>
             </div>
 
@@ -331,19 +314,19 @@ export default function HomePage() {
               <div>
                 <p className="text-2xl font-semibold tracking-tight sm:text-3xl">24/7</p>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Monitorering av sajter, rapporter och score-förändringar.
+                  {t("home.metrics.m1")}
                 </p>
               </div>
               <div>
                 <p className="text-2xl font-semibold tracking-tight sm:text-3xl">4</p>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Planer från gratisnivå till enterprise-stöd.
+                  {t("home.metrics.m2")}
                 </p>
               </div>
               <div>
                 <p className="text-2xl font-semibold tracking-tight sm:text-3xl">1 plats</p>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  För dashboard, rapporter, webhooks och account controls.
+                  {t("home.metrics.m3")}
                 </p>
               </div>
             </div>
@@ -355,14 +338,14 @@ export default function HomePage() {
               <div className="flex flex-col gap-3 border-b border-border/80 pb-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
-                    Live Overview
+                    {t("home.demo.eyebrow")}
                   </p>
                   <h3 className="mt-2 text-2xl font-semibold tracking-tight">
-                    Deploy health
+                    {t("home.demo.title")}
                   </h3>
                 </div>
                 <span className="rounded-full bg-chart-1/15 px-3 py-1 text-xs font-semibold text-chart-1">
-                  Pro workspace
+                  {t("home.demo.pill")}
                 </span>
               </div>
 
@@ -376,44 +359,41 @@ export default function HomePage() {
                 <div className="rounded-2xl border border-border/80 bg-background/80 p-4">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                      <p className="text-sm font-semibold">Regression upptäckt</p>
+                      <p className="text-sm font-semibold">{t("home.demo.alertTitle")}</p>
                       <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                        LCP har försämrats med 380 ms efter senaste deploy på
-                        mobil. Analytics-bundeln har vuxit markant.
+                        {t("home.demo.alertDescription")}
                       </p>
                     </div>
                     <span className="rounded-full bg-destructive/10 px-3 py-1 text-xs font-semibold text-destructive">
-                      Alert
+                      {t("home.demo.alertPill")}
                     </span>
                   </div>
                 </div>
 
                 <div className="rounded-2xl border border-border/80 bg-background/80 p-4">
                   <p className="text-xs uppercase tracking-[0.22em] text-chart-1">
-                    AI rekommendation
+                    {t("home.demo.aiEyebrow")}
                   </p>
                   <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                    Bryt ut tredjepartsskript från kritisk rendering, fördröj
-                    tag manager på mobil och kontrollera senaste deploy för nya
-                    bildblock ovanför folden.
+                    {t("home.demo.aiDescription")}
                   </p>
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="rounded-2xl border border-border/80 bg-background/80 p-4">
                     <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
-                      Integrations
+                      {t("home.demo.integrationsLabel")}
                     </p>
                     <p className="mt-2 text-sm font-medium">
-                      Slack, webhooks, e-post
+                      {t("home.demo.integrationsValue")}
                     </p>
                   </div>
                   <div className="rounded-2xl border border-border/80 bg-background/80 p-4">
                     <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
-                      Billing status
+                      {t("home.demo.billingLabel")}
                     </p>
                     <p className="mt-2 text-sm font-medium">
-                      Portal + upgrade paths redo
+                      {t("home.demo.billingValue")}
                     </p>
                   </div>
                 </div>
@@ -427,17 +407,17 @@ export default function HomePage() {
             const Icon = pillar.icon
             return (
               <article
-                key={pillar.title}
+                key={pillar.titleKey}
                 className="rounded-[1.75rem] border border-border/80 bg-card/70 p-6"
               >
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-chart-1/12 text-chart-1">
                   <Icon className="h-5 w-5" />
                 </div>
                 <h3 className="mt-5 text-xl font-semibold tracking-tight">
-                  {pillar.title}
+                  {t(pillar.titleKey)}
                 </h3>
                 <p className="mt-3 text-sm leading-7 text-muted-foreground">
-                  {pillar.description}
+                  {t(pillar.descriptionKey)}
                 </p>
               </article>
             )
@@ -449,33 +429,33 @@ export default function HomePage() {
           className="grid gap-10 py-20 lg:grid-cols-[0.85fr_1.15fr]"
         >
           <SectionHeading
-            eyebrow="Funktioner"
-            title="Landningssidan ska sälja ett arbetsflöde, inte bara features."
-            description="Det här upplägget gör tydligare vad produkten faktiskt löser: övervakning, rapportering och driftkoppling i samma verktyg."
+            eyebrow={t("home.sections.features.eyebrow")}
+            title={t("home.sections.features.title")}
+            description={t("home.sections.features.description")}
           />
 
           <div className="space-y-4">
             {featureRows.map((row) => (
               <article
-                key={row.title}
+                key={row.titleKey}
                 className="rounded-[1.75rem] border border-border/80 bg-card/85 p-6 md:p-8"
               >
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-chart-1">
-                  {row.eyebrow}
+                  {t(row.eyebrowKey)}
                 </p>
                 <h3 className="mt-4 text-2xl font-semibold tracking-tight">
-                  {row.title}
+                  {t(row.titleKey)}
                 </h3>
                 <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
-                  {row.description}
+                  {t(row.descriptionKey)}
                 </p>
                 <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                  {row.bullets.map((bullet) => (
+                  {row.bulletKeys.map((bulletKey) => (
                     <div
-                      key={bullet}
+                      key={bulletKey}
                       className="rounded-2xl border border-border/80 bg-background/80 p-4 text-sm leading-6 text-muted-foreground"
                     >
-                      {bullet}
+                      {t(bulletKey)}
                     </div>
                   ))}
                 </div>
@@ -489,9 +469,9 @@ export default function HomePage() {
           className="rounded-[2rem] border border-border/80 bg-card/75 px-4 py-12 sm:px-6 sm:py-16 md:px-10"
         >
           <SectionHeading
-            eyebrow="Komplett SaaS"
-            title="Det här bör du lägga till för att tjänsten ska kännas färdig på riktigt."
-            description="Produkten har en stark kärna, men en kommersiell SaaS behöver även de delar som användaren bara märker när de saknas."
+            eyebrow={t("home.sections.completeSaas.eyebrow")}
+            title={t("home.sections.completeSaas.title")}
+            description={t("home.sections.completeSaas.description")}
           />
 
           <div className="mt-10 grid gap-4 lg:grid-cols-3">
@@ -499,17 +479,17 @@ export default function HomePage() {
               const Icon = item.icon
               return (
                 <article
-                  key={item.title}
+                  key={item.titleKey}
                   className="rounded-[1.75rem] border border-border/80 bg-background/85 p-6"
                 >
                   <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-foreground text-background">
                     <Icon className="h-5 w-5" />
                   </div>
                   <h3 className="mt-5 text-lg font-semibold tracking-tight">
-                    {item.title}
+                    {t(item.titleKey)}
                   </h3>
                   <p className="mt-3 text-sm leading-7 text-muted-foreground">
-                    {item.description}
+                    {t(item.descriptionKey)}
                   </p>
                 </article>
               )
@@ -519,35 +499,35 @@ export default function HomePage() {
 
         <section className="grid gap-10 py-20 lg:grid-cols-[0.9fr_1.1fr]">
           <SectionHeading
-            eyebrow="Trust Layer"
-            title="Många SaaS-produkter tappar affären här."
-            description="Säkerhet, support och transparens bör synas redan på startsidan om du vill att större kunder ska ta produkten på allvar."
+            eyebrow={t("home.sections.trust.eyebrow")}
+            title={t("home.sections.trust.title")}
+            description={t("home.sections.trust.description")}
           />
 
           <div className="grid gap-4 sm:grid-cols-3">
             <TrustCard
               icon={<ShieldCheck className="h-5 w-5" />}
-              title="Säker drift"
-              description="Webhook-secrets, rollback-rutiner, felhantering och kontrollerad retention."
+              title={t("home.trust.cards.ops.title")}
+              description={t("home.trust.cards.ops.description")}
             />
             <TrustCard
               icon={<FileText className="h-5 w-5" />}
-              title="Tydliga policies"
-              description="Privacy, terms, billingflöden och planregler som går att förstå innan köp."
+              title={t("home.trust.cards.policies.title")}
+              description={t("home.trust.cards.policies.description")}
             />
             <TrustCard
               icon={<BellRing className="h-5 w-5" />}
-              title="Aktiv kommunikation"
-              description="Status, supportvägar och notiser som gör att kunden känner sig trygg efter signup."
+              title={t("home.trust.cards.comms.title")}
+              description={t("home.trust.cards.comms.description")}
             />
           </div>
         </section>
 
         <section id="pricing" className="py-6">
           <SectionHeading
-            eyebrow="Priser"
-            title="Prisstrukturen finns redan. Nu säljer den också bättre."
-            description="Planerna nedan är justerade för att spegla det som finns i kodbasens entitlements och ge tydligare uppgraderingslogik."
+            eyebrow={t("home.sections.pricing.eyebrow")}
+            title={t("home.sections.pricing.title")}
+            description={t("home.sections.pricing.description")}
           />
 
           <div className="mt-10 grid gap-4 lg:grid-cols-4">
@@ -582,7 +562,7 @@ export default function HomePage() {
                   </div>
                   {plan.featured ? (
                     <span className="rounded-full bg-chart-1 px-3 py-1 text-xs font-semibold text-white">
-                      Rekommenderad
+                      {t("home.pricing.recommended")}
                     </span>
                   ) : null}
                 </div>
@@ -608,8 +588,8 @@ export default function HomePage() {
 
         <section className="grid gap-10 py-20 lg:grid-cols-[0.9fr_1.1fr]">
           <SectionHeading
-            eyebrow="FAQ"
-            title="Korta svar på det viktigaste du behöver besluta nu."
+            eyebrow={t("home.sections.faq.eyebrow")}
+            title={t("home.sections.faq.title")}
           />
 
           <div className="space-y-4">
@@ -633,15 +613,13 @@ export default function HomePage() {
           <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
             <div className="max-w-2xl">
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-chart-1">
-                Nästa steg
+                {t("home.nextSteps.eyebrow")}
               </p>
               <h2 className="mt-4 font-serif text-3xl leading-tight tracking-tight sm:text-4xl md:text-5xl">
-                Vill du, kan jag ta nästa steg och bygga de saknade SaaS-delarna
-                också.
+                {t("home.nextSteps.title")}
               </h2>
               <p className="mt-4 text-sm leading-7 text-background/72 md:text-base">
-                Rimlig ordning i den här kodbasen är billing checkout, team och
-                roller, onboardingflöde samt verklig notifieringsleverans.
+                {t("home.nextSteps.description")}
               </p>
             </div>
 
@@ -650,14 +628,14 @@ export default function HomePage() {
                 href="/dashboard/settings"
                 className="inline-flex items-center gap-2 rounded-full bg-chart-1 px-5 py-3 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5"
               >
-                Öppna settings
+                {t("home.nextSteps.actions.openSettings")}
                 <ChevronRight className="h-4 w-4" />
               </Link>
               <Link
                 href="/contact"
                 className="inline-flex items-center gap-2 rounded-full border border-white/15 px-5 py-3 text-sm font-semibold text-background transition-colors hover:bg-white/8"
               >
-                Kontakta oss
+                {t("home.nextSteps.actions.contactUs")}
               </Link>
             </div>
           </div>
@@ -666,25 +644,25 @@ export default function HomePage() {
         <footer className="flex flex-col gap-5 border-t border-border/80 py-8 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between">
           <div>
             <p className="font-semibold uppercase tracking-[0.24em] text-foreground">
-              Vidat
+              {t("home.brand")}
             </p>
             <p className="mt-1">
-              Byggd för team som vill upptäcka prestandaproblem tidigt.
+              {t("home.footer.tagline")}
             </p>
           </div>
 
           <div className="flex flex-wrap gap-5">
             <Link href="/privacy" className="transition-colors hover:text-foreground">
-              Privacy
+              {t("home.footer.links.privacy")}
             </Link>
             <Link href="/terms" className="transition-colors hover:text-foreground">
-              Terms
+              {t("home.footer.links.terms")}
             </Link>
             <Link href="/docs" className="transition-colors hover:text-foreground">
-              Docs
+              {t("home.footer.links.docs")}
             </Link>
             <Link href="/contact" className="transition-colors hover:text-foreground">
-              Contact
+              {t("home.footer.links.contact")}
             </Link>
           </div>
         </footer>
