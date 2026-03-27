@@ -4,6 +4,9 @@ type Dictionary = Record<string, string>
 
 const dictionaries: Record<Locale, Dictionary> = {
   sv: {
+    "common.theme.light": "Ljust",
+    "common.theme.dark": "Mörkt",
+    "common.theme.system": "System",
     "common.somethingWentWrongTryAgain": "Något gick fel. Försök igen.",
     "common.never": "Aldrig",
     "common.loading": "Laddar...",
@@ -18,6 +21,8 @@ const dictionaries: Record<Locale, Dictionary> = {
     "addWebsite.title": "Lägg till en webbplats",
     "addWebsite.description":
       "Ange adressen till den webbplats du vill övervaka.",
+    "addWebsite.nameLabel": "Namn",
+    "addWebsite.namePlaceholder": "Ex. Min personliga hemsida",
     "addWebsite.urlLabel": "Webbadress",
     "addWebsite.urlPlaceholder": "https://exempel.se",
     "addWebsite.intervalLabel": "Intervall",
@@ -338,6 +343,8 @@ const dictionaries: Record<Locale, Dictionary> = {
     "settingsCenter.logs.deliveryTitle": "Leveranslogg",
     "settingsCenter.logs.deliveryDescription":
       "Historik över notifieringar och integrationsleveranser.",
+    "settingsCenter.logs.loadMore": "Ladda fler",
+    "settingsCenter.logs.loadingMore": "Laddar fler...",
     "sidebar.toggle": "Växla sidopanel",
     "vitals.speedIndex": "Speed Index",
     "home.brand": "Vidat",
@@ -521,6 +528,9 @@ const dictionaries: Record<Locale, Dictionary> = {
     "settingsApi.authOr": "eller",
   },
   en: {
+    "common.theme.light": "Light",
+    "common.theme.dark": "Dark",
+    "common.theme.system": "System",
     "common.somethingWentWrongTryAgain":
       "Something went wrong. Please try again.",
     "common.never": "Never",
@@ -535,6 +545,8 @@ const dictionaries: Record<Locale, Dictionary> = {
     "addWebsite.title": "Add a website",
     "addWebsite.description":
       "Enter the URL of the website you want to monitor.",
+    "addWebsite.nameLabel": "Name",
+    "addWebsite.namePlaceholder": "Ex. My personal website",
     "addWebsite.urlLabel": "Website URL",
     "addWebsite.urlPlaceholder": "https://example.com",
     "addWebsite.intervalLabel": "Interval",
@@ -855,6 +867,8 @@ const dictionaries: Record<Locale, Dictionary> = {
     "settingsCenter.logs.deliveryTitle": "Delivery log",
     "settingsCenter.logs.deliveryDescription":
       "History of notifications and integration deliveries.",
+    "settingsCenter.logs.loadMore": "Load more",
+    "settingsCenter.logs.loadingMore": "Loading more...",
     "sidebar.toggle": "Toggle sidebar",
     "vitals.speedIndex": "Speed Index",
     "home.brand": "Vidat",

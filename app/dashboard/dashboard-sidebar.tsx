@@ -30,6 +30,7 @@ import {
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { t } from "@/lib/i18n"
+import { ThemeSwitcher } from "@/components/theme-switch"
 
 type NavItem = {
   title: string
@@ -60,7 +61,7 @@ export default function DashboardSidebar() {
     <Sidebar variant="sidebar" collapsible="icon">
       <SidebarHeader>
         <SidebarMenu>
-          <SidebarMenuItem>
+          <SidebarMenuItem className="w-full">
             <SidebarMenuButton asChild size="lg">
               <Link href="/dashboard" className="flex items-center gap-2">
                 <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -72,6 +73,7 @@ export default function DashboardSidebar() {
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
+
         </SidebarMenu>
       </SidebarHeader>
 
@@ -81,12 +83,15 @@ export default function DashboardSidebar() {
       </SidebarContent>
 
       <SidebarFooter>
-        <UserButton
-          appearance={{
-            elements: {},
-          }}
-          showName={state === "expanded"}
-        />
+        <div className={`flex items-center justify-between gap-2 ${state === 'collapsed' && 'flex-col flex-col-reverse'}`}>
+          <UserButton
+            appearance={{
+              elements: {},
+            }}
+            showName={state === "expanded"}
+          />
+          <ThemeSwitcher />
+        </div>
       </SidebarFooter>
     </Sidebar>
   )

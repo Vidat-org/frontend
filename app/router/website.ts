@@ -75,7 +75,7 @@ export const createWebsite = protectedProcedure
         workspaceId: context.workspaceId,
         url: input.url,
         intervalSeconds: interval,
-        name: "",
+        name: input.name,
       })
       .returning({ id: websites.id })
 

@@ -41,7 +41,8 @@ export default function AddWebsite() {
   const { mutateAsync } = useMutation({
     mutationFn: async (values: {
       url: string
-      interval: (typeof intervals)[number]
+      interval: (typeof intervals)[number],
+      name: string,
     }) => await client.createWebsite(values),
   })
 
@@ -52,6 +53,7 @@ export default function AddWebsite() {
       onSubmit: createWebsiteSchema,
     },
     defaultValues: {
+      name: "",
       url: "",
       interval: "",
     },
@@ -60,6 +62,7 @@ export default function AddWebsite() {
         await mutateAsync({
           url: value.url,
           interval: value.interval as (typeof intervals)[number],
+          name: value.name,
         })
 
         getQueryClient().invalidateQueries({ queryKey: ["websites"] })
@@ -104,6 +107,36 @@ export default function AddWebsite() {
           className="space-y-4"
         >
           <FieldGroup>
+            <form.Field name="name">
+              {(field) => {
+                const isInvalid =
+                  field.state.meta.isTouched && !field.state.meta.isValid
+
+                return (
+                  <Field data-invalid={isInvalid}>
+                    <FieldLabel htmlFor={field.name}>
+                      {t("addWebsite.nameLabel")}
+                    </FieldLabel>
+
+                    <Input
+                      id={field.name}
+                      name={field.name}
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      type="text"
+                      aria-invalid={isInvalid}
+                      placeholder={t("addWebsite.namePlaceholder")}
+                      autoComplete="off"
+                    />
+
+                    {isInvalid && (
+                      <FieldError errors={field.state.meta.errors} />
+                    )}
+                  </Field>
+                )
+              }}
+            </form.Field>
             <form.Field name="url">
               {(field) => {
                 const isInvalid =

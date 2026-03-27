@@ -126,6 +126,11 @@ const supportRequestSchema = z.object({
   message: z.string().trim().min(10).max(4000),
 })
 
+const listAuditLogsSchema = z.object({
+  limit: z.number().int().min(1).max(50).default(10),
+  offset: z.number().int().min(0).default(0),
+})
+
 function normalizeEmail(email: string | null | undefined) {
   return email?.trim().toLowerCase() ?? null
 }
@@ -1164,21 +1169,24 @@ export const updateBillingState = protectedProcedure
     return updated
   })
 
-export const listAuditLogs = protectedProcedure.handler(async ({ context }) => {
-  return cachedQuery(
-    {
-      key: `account:audit-logs:${context.workspaceId}`,
-      ttlSeconds: 30,
-      tags: [workspaceTag(context.workspaceId)],
-    },
-    () =>
-      db.query.auditLogs.findMany({
-        where: eq(auditLogs.workspaceId, context.workspaceId),
-        orderBy: desc(auditLogs.createdAt),
-        limit: 25,
-      })
-  )
-})
+export const listAuditLogs = protectedProcedure
+  .input(listAuditLogsSchema)
+  .handler(async ({ context, input }) => {
+    return cachedQuery(
+      {
+        key: `account:audit-logs:${context.workspaceId}:${input.limit}:${input.offset}`,
+        ttlSeconds: 30,
+        tags: [workspaceTag(context.workspaceId)],
+      },
+      () =>
+        db.query.auditLogs.findMany({
+          where: eq(auditLogs.workspaceId, context.workspaceId),
+          orderBy: desc(auditLogs.createdAt),
+          limit: input.limit,
+          offset: input.offset,
+        })
+    )
+  })
 
 export const listNotificationDeliveries = protectedProcedure.handler(
   async ({ context }) => {

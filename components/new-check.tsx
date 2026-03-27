@@ -39,7 +39,7 @@ export default function NewCheck({
   const { data: latestScan } = useQuery({
     queryKey: ["latestScan", websiteId],
     queryFn: async () => await client.getLatestScan({ website: websiteId }),
-    refetchInterval: pollingSince ? 3000 : false,
+    refetchInterval: pollingSince ? 6000 : false,
   })
 
   useEffect(() => {
@@ -79,8 +79,8 @@ export default function NewCheck({
   })
 
   return (
-    <div className="flex flex-col items-end gap-1">
-      <div className="flex items-center gap-3">
+    <div className="flex flex-col gap-2 w-full">
+      <div className="flex flex-col justify-end sm:flex-row items-stretch sm:items-center gap-3 w-full">
         <Select
           value={device}
           onValueChange={async (value) => {
@@ -89,7 +89,7 @@ export default function NewCheck({
             await updateDeviceType(nextDevice)
           }}
         >
-          <SelectTrigger className="w-36">
+          <SelectTrigger className="w-full sm:w-36">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -109,12 +109,13 @@ export default function NewCheck({
         <Button
           disabled={isPending || isScanning}
           onClick={() => mutateAsync(new Date())}
+          className="w-full sm:w-auto"
         >
           {(isPending || isScanning) && <Spinner />}
           {isPending || isScanning ? t("newCheck.scanning") : t("newCheck.newScan")}
         </Button>
       </div>
-      <p className="text-xs text-muted-foreground">
+      <p className="text-xs text-muted-foreground text-center sm:text-left">
         {device === "mobile" ? t("newCheck.mobileHint") : t("newCheck.desktopHint")}
       </p>
     </div>

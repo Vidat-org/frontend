@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useState, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { client } from "@/lib/orpc"
 import { getQueryClient } from "@/lib/query-client"
@@ -98,9 +98,16 @@ export default function SettingsCenter({
     queryKey: ["workspaceMembers"],
     queryFn: async () => client.listWorkspaceMembers(),
   })
-  const auditQuery = useQuery({
-    queryKey: ["auditLogs"],
-    queryFn: async () => client.listAuditLogs(),
+  const auditLogsPageSize = 10
+  const auditQuery = useInfiniteQuery({
+    queryKey: ["auditLogs", auditLogsPageSize],
+    initialPageParam: 0,
+    queryFn: async ({ pageParam }) =>
+      client.listAuditLogs({ limit: auditLogsPageSize, offset: pageParam }),
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length === auditLogsPageSize
+        ? allPages.reduce((total, page) => total + page.length, 0)
+        : undefined,
   })
   const deliveriesQuery = useQuery({
     queryKey: ["notificationDeliveries"],
@@ -325,11 +332,11 @@ export default function SettingsCenter({
   const updateOnboarding = useMutation({
     mutationFn: async (step: {
       key:
-        | "hasAddedWebsite"
-        | "hasRunFirstScan"
-        | "hasViewedReport"
-        | "hasConfiguredAlerts"
-        | "hasConnectedIntegration"
+      | "hasAddedWebsite"
+      | "hasRunFirstScan"
+      | "hasViewedReport"
+      | "hasConfiguredAlerts"
+      | "hasConnectedIntegration"
       completed: boolean
     }) => client.updateOnboardingStep({ step: step.key, completed: step.completed }),
     onSuccess: () => invalidateAccountViews(),
@@ -376,7 +383,7 @@ export default function SettingsCenter({
   }
 
   const workspace = workspaceQuery.data
-  const auditLogs = auditQuery.data ?? []
+  const auditLogs = auditQuery.data?.pages.flatMap((page) => page) ?? []
   const deliveries = deliveriesQuery.data ?? []
   const onboarding = onboardingQuery.data
   const webhooks = webhooksQuery.data ?? []
@@ -414,7 +421,7 @@ export default function SettingsCenter({
       dunningStatus: account.billing.dunningStatus,
       checkoutUrl:
         account.billing.checkout[
-          account.billing.recommendedUpgrade as keyof typeof account.billing.checkout
+        account.billing.recommendedUpgrade as keyof typeof account.billing.checkout
         ] ?? "",
       portalUrl: account.billing.manageUrl ?? "",
       lastInvoiceUrl: account.billing.lastInvoiceUrl ?? "",
@@ -436,852 +443,866 @@ export default function SettingsCenter({
         </div>
       </div>
       {showSection("all") ? (
-      <div className="grid gap-4 md:grid-cols-4">
-        <StatCard
-          title={t("settingsCenter.stats.workspace")}
-          value={account.workspace.memberCount.toString()}
-          description={t("settingsCenter.activeMembers")}
-        />
-        <StatCard
-          title={t("settingsCenter.stats.onboarding")}
-          value={`${account.onboarding.completedSteps}/${account.onboarding.totalSteps}`}
-          description={t("settingsCenter.stepsDone")}
-        />
-        <StatCard
-          title={t("settingsCenter.notifications")}
-          value={String(account.notifications.sent)}
-          description={t("settingsCenter.failedCount", { count: account.notifications.failed })}
-        />
-        <StatCard
-          title={t("settingsCenter.stats.billing")}
-          value={account.billing.status}
-          description={account.billing.dunningStatus}
-        />
-      </div>
+        <div className="grid gap-4 md:grid-cols-4">
+          <StatCard
+            title={t("settingsCenter.stats.workspace")}
+            value={account.workspace.memberCount.toString()}
+            description={t("settingsCenter.activeMembers")}
+          />
+          <StatCard
+            title={t("settingsCenter.stats.onboarding")}
+            value={`${account.onboarding.completedSteps}/${account.onboarding.totalSteps}`}
+            description={t("settingsCenter.stepsDone")}
+          />
+          <StatCard
+            title={t("settingsCenter.notifications")}
+            value={String(account.notifications.sent)}
+            description={t("settingsCenter.failedCount", { count: account.notifications.failed })}
+          />
+          <StatCard
+            title={t("settingsCenter.stats.billing")}
+            value={account.billing.status}
+            description={account.billing.dunningStatus}
+          />
+        </div>
       ) : null}
 
       {showSection("billing") ? (
-      <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CreditCard className="h-4 w-4" />
-              {t("settingsCenter.billingTitle")}
-            </CardTitle>
-            <CardDescription>
-              {t("settingsCenter.billingDescription")}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-3 md:grid-cols-2">
-              <Field>
-                <FieldLabel>{t("settingsCenter.provider")}</FieldLabel>
-                <Input
-                  value={resolvedBilling.provider}
-                  onChange={(e) =>
-                    setBillingForm((prev) => ({
-                      ...(prev ?? resolvedBilling),
-                      provider: e.target.value,
-                    }))
-                  }
-                />
-              </Field>
-              <Field>
-                <FieldLabel>{t("settingsCenter.monthlyAmount")}</FieldLabel>
-                <Input
-                  type="number"
-                  value={resolvedBilling.amountSek}
-                  onChange={(e) =>
-                    setBillingForm((prev) => ({
-                      ...(prev ?? resolvedBilling),
-                      amountSek: Number(e.target.value),
-                    }))
-                  }
-                />
-              </Field>
-            </div>
-            <Field>
-              <FieldLabel>{t("settingsCenter.plan")}</FieldLabel>
-              <div className="flex flex-wrap gap-2">
-                {(["free_user", "starter", "pro", "enterprise"] as const).map((plan) => (
-                  <Button
-                    key={plan}
-                    type="button"
-                    size="sm"
-                    variant={resolvedBilling.planSlug === plan ? "default" : "outline"}
-                    onClick={() =>
-                      setBillingForm((prev) => ({
-                        ...(prev ?? resolvedBilling),
-                        planSlug: plan,
-                      }))
-                    }
-                  >
-                    {plan}
-                  </Button>
-                ))}
-              </div>
-            </Field>
-            <Field>
-              <FieldLabel>{t("settingsCenter.billingStatus")}</FieldLabel>
-              <div className="flex flex-wrap gap-2">
-                {billingStatuses.map((status) => (
-                  <Button
-                    key={status}
-                    type="button"
-                    size="sm"
-                    variant={resolvedBilling.status === status ? "default" : "outline"}
-                    onClick={() =>
-                      setBillingForm((prev) => ({
-                        ...(prev ?? resolvedBilling),
-                        status,
-                      }))
-                    }
-                  >
-                    {status}
-                  </Button>
-                ))}
-              </div>
-            </Field>
-            <Field>
-              <FieldLabel>{t("settingsCenter.dunningStatus")}</FieldLabel>
-              <div className="flex flex-wrap gap-2">
-                {dunningStatuses.map((status) => (
-                  <Button
-                    key={status}
-                    type="button"
-                    size="sm"
-                    variant={
-                      resolvedBilling.dunningStatus === status ? "default" : "outline"
-                    }
-                    onClick={() =>
-                      setBillingForm((prev) => ({
-                        ...(prev ?? resolvedBilling),
-                        dunningStatus: status,
-                      }))
-                    }
-                  >
-                    {status}
-                  </Button>
-                ))}
-              </div>
-            </Field>
-            <div className="grid gap-3 md:grid-cols-2">
-              <Field>
-                <FieldLabel>{t("settingsCenter.portalUrl")}</FieldLabel>
-                <Input
-                  value={resolvedBilling.portalUrl}
-                  onChange={(e) =>
-                    setBillingForm((prev) => ({
-                      ...(prev ?? resolvedBilling),
-                      portalUrl: e.target.value,
-                    }))
-                  }
-                />
-              </Field>
-              <Field>
-                <FieldLabel>{t("settingsCenter.checkoutUrl")}</FieldLabel>
-                <Input
-                  value={resolvedBilling.checkoutUrl}
-                  onChange={(e) =>
-                    setBillingForm((prev) => ({
-                      ...(prev ?? resolvedBilling),
-                      checkoutUrl: e.target.value,
-                    }))
-                  }
-                />
-              </Field>
-            </div>
-          </CardContent>
-          <CardFooter className="flex items-center justify-between gap-3">
-            <div className="text-xs text-muted-foreground">
-              {account.billing.manageUrl ? (
-                <Link
-                  href={account.billing.manageUrl}
-                  target="_blank"
-                  className="inline-flex items-center gap-1 underline underline-offset-4"
-                >
-                  {t("settingsCenter.openBillingPortal")}{" "}
-                  <ExternalLink className="h-3 w-3" />
-                </Link>
-              ) : (
-                t("settingsCenter.noBillingPortalConfigured")
-              )}
-            </div>
-            <Button disabled={!isAdmin || saveBilling.isPending} onClick={() => saveBilling.mutate()}>
-              {t("settingsCenter.saveBilling")}
-            </Button>
-          </CardFooter>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Rocket className="h-4 w-4" />
-              {t("settingsCenter.onboardingTitle")}
-            </CardTitle>
-            <CardDescription>
-              {t("settingsCenter.onboardingDescription")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <OnboardingRow
-              label={t("settingsCenter.onboarding.firstWebsiteAdded")}
-              checked={onboarding?.hasAddedWebsite ?? account.onboarding.hasAddedWebsite}
-              onToggle={(completed) =>
-                updateOnboarding.mutate({ key: "hasAddedWebsite", completed })
-              }
-            />
-            <OnboardingRow
-              label={t("settingsCenter.onboarding.firstScanRun")}
-              checked={onboarding?.hasRunFirstScan ?? account.onboarding.hasRunFirstScan}
-              onToggle={(completed) =>
-                updateOnboarding.mutate({ key: "hasRunFirstScan", completed })
-              }
-            />
-            <OnboardingRow
-              label={t("settingsCenter.onboarding.reportOpened")}
-              checked={onboarding?.hasViewedReport ?? account.onboarding.hasViewedReport}
-              onToggle={(completed) =>
-                updateOnboarding.mutate({ key: "hasViewedReport", completed })
-              }
-            />
-            <OnboardingRow
-              label={t("settingsCenter.onboarding.alertsConfigured")}
-              checked={
-                onboarding?.hasConfiguredAlerts ??
-                account.onboarding.hasConfiguredAlerts
-              }
-              onToggle={(completed) =>
-                updateOnboarding.mutate({ key: "hasConfiguredAlerts", completed })
-              }
-            />
-            <OnboardingRow
-              label={t("settingsCenter.onboarding.integrationConnected")}
-              checked={
-                onboarding?.hasConnectedIntegration ??
-                account.onboarding.hasConnectedIntegration
-              }
-              onToggle={(completed) =>
-                updateOnboarding.mutate({ key: "hasConnectedIntegration", completed })
-              }
-            />
-            <div className="rounded-xl border p-4">
-              <p className="text-sm font-medium">{t("settingsApi.restApiTitle")}</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {t("settingsCenter.restApiHint")}
-              </p>
-              <div className="mt-3 space-y-2 font-mono text-xs text-muted-foreground">
-                <p>GET /api/v1/workspaces/current</p>
-                <p>GET /api/v1/websites</p>
-                <p>GET /api/v1/websites/:id/scans/latest</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-      ) : null}
-
-      {showSection("notifications", "team") ? (
-      <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-        {showSection("notifications") ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bell className="h-4 w-4" />
-              {t("settingsPage.notificationsTitle")}
-            </CardTitle>
-            <CardDescription>
-              {t("settingsCenter.notificationsDescription")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <FieldGroup>
-              <ToggleRow
-                label={t("settingsCenter.notifications.emailLabel")}
-                description={t("settingsCenter.notifications.emailDescription")}
-                checked={resolvedSettings.emailAlerts}
-                onToggle={() =>
-                  setSettingsForm((prev) => ({
-                    ...prev,
-                    emailAlerts: !resolvedSettings.emailAlerts,
-                  }))
-                }
-              />
-              <ToggleRow
-                label={t("settingsCenter.notifications.scanFailureLabel")}
-                description={t("settingsCenter.notifications.scanFailureDescription")}
-                checked={resolvedSettings.notifyOnScanFailure}
-                onToggle={() =>
-                  setSettingsForm((prev) => ({
-                    ...prev,
-                    notifyOnScanFailure: !resolvedSettings.notifyOnScanFailure,
-                  }))
-                }
-              />
-              <ToggleRow
-                label={t("settingsCenter.notifications.scoreDropLabel")}
-                description={t("settingsCenter.notifications.scoreDropDescription")}
-                checked={resolvedSettings.notifyOnScoreDrop}
-                onToggle={() =>
-                  setSettingsForm((prev) => ({
-                    ...prev,
-                    notifyOnScoreDrop: !resolvedSettings.notifyOnScoreDrop,
-                  }))
-                }
-              />
-              <Field>
-                <FieldLabel>{t("settingsCenter.notifications.scoreDropThreshold")}</FieldLabel>
-                <Input
-                  type="number"
-                  min={1}
-                  max={100}
-                  value={resolvedSettings.scoreDropThreshold}
-                  onChange={(e) =>
-                    setSettingsForm((prev) => ({
-                      ...prev,
-                      scoreDropThreshold: Number(e.target.value),
-                    }))
-                  }
-                />
-                <FieldDescription>
-                  Antal poäng som måste tappas innan regression skickas.
-                </FieldDescription>
-              </Field>
-              <Field>
-                <FieldLabel>Slack webhook URL</FieldLabel>
-                <Input
-                  placeholder="https://hooks.slack.com/services/..."
-                  value={resolvedSettings.slackWebhookUrl}
-                  onChange={(e) =>
-                    setSettingsForm((prev) => ({
-                      ...prev,
-                      slackWebhookUrl: e.target.value,
-                    }))
-                  }
-                />
-              </Field>
-            </FieldGroup>
-          </CardContent>
-          <CardFooter className="justify-end">
-            <Button onClick={() => saveSettings.mutate()} disabled={saveSettings.isPending}>
-              Spara inställningar
-            </Button>
-          </CardFooter>
-        </Card>
-        ) : null}
-
-        {showSection("team") ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              {t("settingsCenter.team.title")}
-            </CardTitle>
-            <CardDescription>
-              {t("settingsCenter.team.description")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <p className="text-sm font-medium">{t("settingsCenter.team.yourWorkspaces")}</p>
-              {userWorkspaces.map((entry) => (
-                <div
-                  key={entry.workspaceId}
-                  className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div>
-                    <p className="text-sm font-medium">{entry.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {entry.role} · {entry.plan.label}
-                    </p>
-                  </div>
-                  {entry.isActive ? (
-                    <Badge variant="success">{t("settingsCenter.team.active")}</Badge>
-                  ) : (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={switchWorkspace.isPending}
-                      onClick={() => switchWorkspace.mutate(entry.workspaceId)}
-                    >
-                      {t("settingsCenter.team.switchWorkspace")}
-                    </Button>
-                  )}
-                </div>
-              ))}
-            </div>
-            {pendingInvites.length > 0 ? (
-              <div className="space-y-2 rounded-xl border border-chart-1/20 bg-chart-1/5 p-4">
-                <p className="text-sm font-medium">{t("settingsCenter.team.pendingInvites")}</p>
-                {pendingInvites.map((invite) => (
-                  <div
-                    key={invite.id}
-                    className="flex items-center justify-between gap-3 rounded-lg border bg-background p-3"
-                  >
-                    <div>
-                      <p className="text-sm font-medium">{invite.workspaceName}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {invite.role} · {t("settingsCenter.team.validUntil")}{" "}
-                        {formatStamp(invite.expiresAt)}
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        disabled={acceptInvite.isPending}
-                        onClick={() => acceptInvite.mutate(invite.id)}
-                      >
-                        {t("settingsCenter.team.accept")}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={declineInvite.isPending}
-                        onClick={() => declineInvite.mutate(invite.id)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : null}
-            <div className="space-y-2">
-              {(workspace?.members ?? []).map((member) => (
-                <div key={member.id} className="rounded-lg border p-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-medium">
-                        {member.email || member.clerkUserId}
-                      </p>
-                      <p className="text-xs text-muted-foreground">{member.role}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {member.role !== "owner" && isOwner ? (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          disabled={updateMemberRole.isPending}
-                          onClick={() =>
-                            updateMemberRole.mutate({
-                              memberId: member.id,
-                              role: member.role === "admin" ? "member" : "admin",
-                            })
-                          }
-                        >
-                          {member.role === "admin"
-                            ? t("settingsCenter.team.makeMember")
-                            : t("settingsCenter.team.makeAdmin")}
-                        </Button>
-                      ) : null}
-                      {member.role !== "owner" && isAdmin ? (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="destructive"
-                          disabled={removeMember.isPending}
-                          onClick={() => removeMember.mutate(member.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      ) : null}
-                      <Badge variant="outline">{member.role}</Badge>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="rounded-xl border p-4">
-              <div className="grid gap-3">
+        <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="h-4 w-4" />
+                {t("settingsCenter.billingTitle")}
+              </CardTitle>
+              <CardDescription>
+                {t("settingsCenter.billingDescription")}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-3 md:grid-cols-2">
                 <Field>
-                  <FieldLabel>{t("settingsCenter.team.email")}</FieldLabel>
+                  <FieldLabel>{t("settingsCenter.provider")}</FieldLabel>
                   <Input
-                    placeholder={t("settingsCenter.team.emailPlaceholder")}
-                    value={inviteForm.email}
+                    value={resolvedBilling.provider}
                     onChange={(e) =>
-                      setInviteForm((prev) => ({ ...prev, email: e.target.value }))
+                      setBillingForm((prev) => ({
+                        ...(prev ?? resolvedBilling),
+                        provider: e.target.value,
+                      }))
                     }
                   />
                 </Field>
                 <Field>
-                  <FieldLabel>{t("settingsCenter.team.role")}</FieldLabel>
-                  <div className="flex flex-wrap gap-2">
-                    {(["member", "admin"] as const).map((role) => (
-                      <Button
-                        key={role}
-                        type="button"
-                        size="sm"
-                        variant={inviteForm.role === role ? "default" : "outline"}
-                        onClick={() =>
-                          setInviteForm((prev) => ({ ...prev, role }))
-                        }
-                      >
-                        {role}
-                      </Button>
-                    ))}
-                  </div>
-                </Field>
-                <Button
-                  variant="outline"
-                  disabled={!isAdmin || !inviteForm.email || createInvite.isPending}
-                  onClick={() => createInvite.mutate()}
-                >
-                  <MailPlus className="h-4 w-4" />
-                  Skicka inbjudan
-                </Button>
-              </div>
-            </div>
-            <div className="space-y-2">
-              {(workspace?.invites ?? []).map((invite) => (
-                <div
-                  key={invite.id}
-                  className="flex items-center justify-between gap-3 rounded-lg border p-3"
-                >
-                  <div>
-                    <p className="text-sm font-medium">{invite.email}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {invite.role} · {invite.status}
-                    </p>
-                  </div>
-                  {invite.status === "pending" ? (
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      disabled={!isAdmin}
-                      onClick={() => revokeInvite.mutate(invite.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  ) : (
-                    <Badge variant="outline">{invite.status}</Badge>
-                  )}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-        ) : null}
-      </div>
-      ) : null}
-      {showSection("integrations") ? (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Webhook className="h-4 w-4" />
-            {t("settingsCenter.integrations.title")}
-          </CardTitle>
-          <CardDescription>
-            {t("settingsCenter.integrations.description")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid gap-3 md:grid-cols-2">
-            <Field>
-              <FieldLabel>{t("settingsCenter.integrations.name")}</FieldLabel>
-              <Input
-                placeholder={t("settingsCenter.integrations.namePlaceholder")}
-                value={webhookForm.label}
-                onChange={(e) =>
-                  setWebhookForm((prev) => ({ ...prev, label: e.target.value }))
-                }
-              />
-            </Field>
-            <Field>
-              <FieldLabel>{t("settingsCenter.integrations.url")}</FieldLabel>
-              <Input
-                placeholder="https://example.com/hooks/vidat"
-                value={webhookForm.url}
-                onChange={(e) =>
-                  setWebhookForm((prev) => ({ ...prev, url: e.target.value }))
-                }
-              />
-            </Field>
-          </div>
-          <Field>
-            <FieldLabel>{t("settingsCenter.integrations.events")}</FieldLabel>
-            <div className="flex flex-wrap gap-2">
-              {webhookEvents.map((eventType) => {
-                const checked = webhookForm.eventTypes.includes(eventType)
-                return (
-                  <Button
-                    key={eventType}
-                    type="button"
-                    size="sm"
-                    variant={checked ? "default" : "outline"}
-                    onClick={() =>
-                      setWebhookForm((prev) => ({
-                        ...prev,
-                        eventTypes: checked
-                          ? prev.eventTypes.filter((item) => item !== eventType)
-                          : [...prev.eventTypes, eventType],
+                  <FieldLabel>{t("settingsCenter.monthlyAmount")}</FieldLabel>
+                  <Input
+                    type="number"
+                    value={resolvedBilling.amountSek}
+                    onChange={(e) =>
+                      setBillingForm((prev) => ({
+                        ...(prev ?? resolvedBilling),
+                        amountSek: Number(e.target.value),
                       }))
                     }
+                  />
+                </Field>
+              </div>
+              <Field>
+                <FieldLabel>{t("settingsCenter.plan")}</FieldLabel>
+                <div className="flex flex-wrap gap-2">
+                  {(["free_user", "starter", "pro", "enterprise"] as const).map((plan) => (
+                    <Button
+                      key={plan}
+                      type="button"
+                      size="sm"
+                      variant={resolvedBilling.planSlug === plan ? "default" : "outline"}
+                      onClick={() =>
+                        setBillingForm((prev) => ({
+                          ...(prev ?? resolvedBilling),
+                          planSlug: plan,
+                        }))
+                      }
+                    >
+                      {plan}
+                    </Button>
+                  ))}
+                </div>
+              </Field>
+              <Field>
+                <FieldLabel>{t("settingsCenter.billingStatus")}</FieldLabel>
+                <div className="flex flex-wrap gap-2">
+                  {billingStatuses.map((status) => (
+                    <Button
+                      key={status}
+                      type="button"
+                      size="sm"
+                      variant={resolvedBilling.status === status ? "default" : "outline"}
+                      onClick={() =>
+                        setBillingForm((prev) => ({
+                          ...(prev ?? resolvedBilling),
+                          status,
+                        }))
+                      }
+                    >
+                      {status}
+                    </Button>
+                  ))}
+                </div>
+              </Field>
+              <Field>
+                <FieldLabel>{t("settingsCenter.dunningStatus")}</FieldLabel>
+                <div className="flex flex-wrap gap-2">
+                  {dunningStatuses.map((status) => (
+                    <Button
+                      key={status}
+                      type="button"
+                      size="sm"
+                      variant={
+                        resolvedBilling.dunningStatus === status ? "default" : "outline"
+                      }
+                      onClick={() =>
+                        setBillingForm((prev) => ({
+                          ...(prev ?? resolvedBilling),
+                          dunningStatus: status,
+                        }))
+                      }
+                    >
+                      {status}
+                    </Button>
+                  ))}
+                </div>
+              </Field>
+              <div className="grid gap-3 md:grid-cols-2">
+                <Field>
+                  <FieldLabel>{t("settingsCenter.portalUrl")}</FieldLabel>
+                  <Input
+                    value={resolvedBilling.portalUrl}
+                    onChange={(e) =>
+                      setBillingForm((prev) => ({
+                        ...(prev ?? resolvedBilling),
+                        portalUrl: e.target.value,
+                      }))
+                    }
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel>{t("settingsCenter.checkoutUrl")}</FieldLabel>
+                  <Input
+                    value={resolvedBilling.checkoutUrl}
+                    onChange={(e) =>
+                      setBillingForm((prev) => ({
+                        ...(prev ?? resolvedBilling),
+                        checkoutUrl: e.target.value,
+                      }))
+                    }
+                  />
+                </Field>
+              </div>
+            </CardContent>
+            <CardFooter className="flex items-center justify-between gap-3">
+              <div className="text-xs text-muted-foreground">
+                {account.billing.manageUrl ? (
+                  <Link
+                    href={account.billing.manageUrl}
+                    target="_blank"
+                    className="inline-flex items-center gap-1 underline underline-offset-4"
                   >
-                    {eventType}
-                  </Button>
+                    {t("settingsCenter.openBillingPortal")}{" "}
+                    <ExternalLink className="h-3 w-3" />
+                  </Link>
+                ) : (
+                  t("settingsCenter.noBillingPortalConfigured")
+                )}
+              </div>
+              <Button disabled={!isAdmin || saveBilling.isPending} onClick={() => saveBilling.mutate()}>
+                {t("settingsCenter.saveBilling")}
+              </Button>
+            </CardFooter>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Rocket className="h-4 w-4" />
+                {t("settingsCenter.onboardingTitle")}
+              </CardTitle>
+              <CardDescription>
+                {t("settingsCenter.onboardingDescription")}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <OnboardingRow
+                label={t("settingsCenter.onboarding.firstWebsiteAdded")}
+                checked={onboarding?.hasAddedWebsite ?? account.onboarding.hasAddedWebsite}
+                onToggle={(completed) =>
+                  updateOnboarding.mutate({ key: "hasAddedWebsite", completed })
+                }
+              />
+              <OnboardingRow
+                label={t("settingsCenter.onboarding.firstScanRun")}
+                checked={onboarding?.hasRunFirstScan ?? account.onboarding.hasRunFirstScan}
+                onToggle={(completed) =>
+                  updateOnboarding.mutate({ key: "hasRunFirstScan", completed })
+                }
+              />
+              <OnboardingRow
+                label={t("settingsCenter.onboarding.reportOpened")}
+                checked={onboarding?.hasViewedReport ?? account.onboarding.hasViewedReport}
+                onToggle={(completed) =>
+                  updateOnboarding.mutate({ key: "hasViewedReport", completed })
+                }
+              />
+              <OnboardingRow
+                label={t("settingsCenter.onboarding.alertsConfigured")}
+                checked={
+                  onboarding?.hasConfiguredAlerts ??
+                  account.onboarding.hasConfiguredAlerts
+                }
+                onToggle={(completed) =>
+                  updateOnboarding.mutate({ key: "hasConfiguredAlerts", completed })
+                }
+              />
+              <OnboardingRow
+                label={t("settingsCenter.onboarding.integrationConnected")}
+                checked={
+                  onboarding?.hasConnectedIntegration ??
+                  account.onboarding.hasConnectedIntegration
+                }
+                onToggle={(completed) =>
+                  updateOnboarding.mutate({ key: "hasConnectedIntegration", completed })
+                }
+              />
+              <div className="rounded-xl border p-4">
+                <p className="text-sm font-medium">{t("settingsApi.restApiTitle")}</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {t("settingsCenter.restApiHint")}
+                </p>
+                <div className="mt-3 space-y-2 font-mono text-xs text-muted-foreground">
+                  <p>GET /api/v1/workspaces/current</p>
+                  <p>GET /api/v1/websites</p>
+                  <p>GET /api/v1/websites/:id/scans/latest</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : null}
+
+      {showSection("notifications", "team") ? (
+        <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+          {showSection("notifications") ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bell className="h-4 w-4" />
+                  {t("settingsPage.notificationsTitle")}
+                </CardTitle>
+                <CardDescription>
+                  {t("settingsCenter.notificationsDescription")}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FieldGroup>
+                  <ToggleRow
+                    label={t("settingsCenter.notifications.emailLabel")}
+                    description={t("settingsCenter.notifications.emailDescription")}
+                    checked={resolvedSettings.emailAlerts}
+                    onToggle={() =>
+                      setSettingsForm((prev) => ({
+                        ...prev,
+                        emailAlerts: !resolvedSettings.emailAlerts,
+                      }))
+                    }
+                  />
+                  <ToggleRow
+                    label={t("settingsCenter.notifications.scanFailureLabel")}
+                    description={t("settingsCenter.notifications.scanFailureDescription")}
+                    checked={resolvedSettings.notifyOnScanFailure}
+                    onToggle={() =>
+                      setSettingsForm((prev) => ({
+                        ...prev,
+                        notifyOnScanFailure: !resolvedSettings.notifyOnScanFailure,
+                      }))
+                    }
+                  />
+                  <ToggleRow
+                    label={t("settingsCenter.notifications.scoreDropLabel")}
+                    description={t("settingsCenter.notifications.scoreDropDescription")}
+                    checked={resolvedSettings.notifyOnScoreDrop}
+                    onToggle={() =>
+                      setSettingsForm((prev) => ({
+                        ...prev,
+                        notifyOnScoreDrop: !resolvedSettings.notifyOnScoreDrop,
+                      }))
+                    }
+                  />
+                  <Field>
+                    <FieldLabel>{t("settingsCenter.notifications.scoreDropThreshold")}</FieldLabel>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={100}
+                      value={resolvedSettings.scoreDropThreshold}
+                      onChange={(e) =>
+                        setSettingsForm((prev) => ({
+                          ...prev,
+                          scoreDropThreshold: Number(e.target.value),
+                        }))
+                      }
+                    />
+                    <FieldDescription>
+                      Antal poäng som måste tappas innan regression skickas.
+                    </FieldDescription>
+                  </Field>
+                  <Field>
+                    <FieldLabel>Slack webhook URL</FieldLabel>
+                    <Input
+                      placeholder="https://hooks.slack.com/services/..."
+                      value={resolvedSettings.slackWebhookUrl}
+                      onChange={(e) =>
+                        setSettingsForm((prev) => ({
+                          ...prev,
+                          slackWebhookUrl: e.target.value,
+                        }))
+                      }
+                    />
+                  </Field>
+                </FieldGroup>
+              </CardContent>
+              <CardFooter className="justify-end">
+                <Button onClick={() => saveSettings.mutate()} disabled={saveSettings.isPending}>
+                  Spara inställningar
+                </Button>
+              </CardFooter>
+            </Card>
+          ) : null}
+
+          {showSection("team") ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  {t("settingsCenter.team.title")}
+                </CardTitle>
+                <CardDescription>
+                  {t("settingsCenter.team.description")}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">{t("settingsCenter.team.yourWorkspaces")}</p>
+                  {userWorkspaces.map((entry) => (
+                    <div
+                      key={entry.workspaceId}
+                      className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div>
+                        <p className="text-sm font-medium">{entry.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {entry.role} · {entry.plan.label}
+                        </p>
+                      </div>
+                      {entry.isActive ? (
+                        <Badge variant="success">{t("settingsCenter.team.active")}</Badge>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={switchWorkspace.isPending}
+                          onClick={() => switchWorkspace.mutate(entry.workspaceId)}
+                        >
+                          {t("settingsCenter.team.switchWorkspace")}
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {pendingInvites.length > 0 ? (
+                  <div className="space-y-2 rounded-xl border border-chart-1/20 bg-chart-1/5 p-4">
+                    <p className="text-sm font-medium">{t("settingsCenter.team.pendingInvites")}</p>
+                    {pendingInvites.map((invite) => (
+                      <div
+                        key={invite.id}
+                        className="flex items-center justify-between gap-3 rounded-lg border bg-background p-3"
+                      >
+                        <div>
+                          <p className="text-sm font-medium">{invite.workspaceName}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {invite.role} · {t("settingsCenter.team.validUntil")}{" "}
+                            {formatStamp(invite.expiresAt)}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            disabled={acceptInvite.isPending}
+                            onClick={() => acceptInvite.mutate(invite.id)}
+                          >
+                            {t("settingsCenter.team.accept")}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={declineInvite.isPending}
+                            onClick={() => declineInvite.mutate(invite.id)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+                <div className="space-y-2">
+                  {(workspace?.members ?? []).map((member) => (
+                    <div key={member.id} className="rounded-lg border p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-medium">
+                            {member.email || member.clerkUserId}
+                          </p>
+                          <p className="text-xs text-muted-foreground">{member.role}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {member.role !== "owner" && isOwner ? (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              disabled={updateMemberRole.isPending}
+                              onClick={() =>
+                                updateMemberRole.mutate({
+                                  memberId: member.id,
+                                  role: member.role === "admin" ? "member" : "admin",
+                                })
+                              }
+                            >
+                              {member.role === "admin"
+                                ? t("settingsCenter.team.makeMember")
+                                : t("settingsCenter.team.makeAdmin")}
+                            </Button>
+                          ) : null}
+                          {member.role !== "owner" && isAdmin ? (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="destructive"
+                              disabled={removeMember.isPending}
+                              onClick={() => removeMember.mutate(member.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          ) : null}
+                          <Badge variant="outline">{member.role}</Badge>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="rounded-xl border p-4">
+                  <div className="grid gap-3">
+                    <Field>
+                      <FieldLabel>{t("settingsCenter.team.email")}</FieldLabel>
+                      <Input
+                        placeholder={t("settingsCenter.team.emailPlaceholder")}
+                        value={inviteForm.email}
+                        onChange={(e) =>
+                          setInviteForm((prev) => ({ ...prev, email: e.target.value }))
+                        }
+                      />
+                    </Field>
+                    <Field>
+                      <FieldLabel>{t("settingsCenter.team.role")}</FieldLabel>
+                      <div className="flex flex-wrap gap-2">
+                        {(["member", "admin"] as const).map((role) => (
+                          <Button
+                            key={role}
+                            type="button"
+                            size="sm"
+                            variant={inviteForm.role === role ? "default" : "outline"}
+                            onClick={() =>
+                              setInviteForm((prev) => ({ ...prev, role }))
+                            }
+                          >
+                            {role}
+                          </Button>
+                        ))}
+                      </div>
+                    </Field>
+                    <Button
+                      variant="outline"
+                      disabled={!isAdmin || !inviteForm.email || createInvite.isPending}
+                      onClick={() => createInvite.mutate()}
+                    >
+                      <MailPlus className="h-4 w-4" />
+                      Skicka inbjudan
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  {(workspace?.invites ?? []).map((invite) => (
+                    <div
+                      key={invite.id}
+                      className="flex items-center justify-between gap-3 rounded-lg border p-3"
+                    >
+                      <div>
+                        <p className="text-sm font-medium">{invite.email}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {invite.role} · {invite.status}
+                        </p>
+                      </div>
+                      {invite.status === "pending" ? (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          disabled={!isAdmin}
+                          onClick={() => revokeInvite.mutate(invite.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      ) : (
+                        <Badge variant="outline">{invite.status}</Badge>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
+        </div>
+      ) : null}
+      {showSection("integrations") ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Webhook className="h-4 w-4" />
+              {t("settingsCenter.integrations.title")}
+            </CardTitle>
+            <CardDescription>
+              {t("settingsCenter.integrations.description")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid gap-3 md:grid-cols-2">
+              <Field>
+                <FieldLabel>{t("settingsCenter.integrations.name")}</FieldLabel>
+                <Input
+                  placeholder={t("settingsCenter.integrations.namePlaceholder")}
+                  value={webhookForm.label}
+                  onChange={(e) =>
+                    setWebhookForm((prev) => ({ ...prev, label: e.target.value }))
+                  }
+                />
+              </Field>
+              <Field>
+                <FieldLabel>{t("settingsCenter.integrations.url")}</FieldLabel>
+                <Input
+                  placeholder="https://example.com/hooks/vidat"
+                  value={webhookForm.url}
+                  onChange={(e) =>
+                    setWebhookForm((prev) => ({ ...prev, url: e.target.value }))
+                  }
+                />
+              </Field>
+            </div>
+            <Field>
+              <FieldLabel>{t("settingsCenter.integrations.events")}</FieldLabel>
+              <div className="flex flex-wrap gap-2">
+                {webhookEvents.map((eventType) => {
+                  const checked = webhookForm.eventTypes.includes(eventType)
+                  return (
+                    <Button
+                      key={eventType}
+                      type="button"
+                      size="sm"
+                      variant={checked ? "default" : "outline"}
+                      onClick={() =>
+                        setWebhookForm((prev) => ({
+                          ...prev,
+                          eventTypes: checked
+                            ? prev.eventTypes.filter((item) => item !== eventType)
+                            : [...prev.eventTypes, eventType],
+                        }))
+                      }
+                    >
+                      {eventType}
+                    </Button>
+                  )
+                })}
+              </div>
+            </Field>
+            <div className="flex justify-start sm:justify-end">
+              <Button
+                onClick={() => createWebhook.mutate()}
+                disabled={
+                  createWebhook.isPending ||
+                  !webhookForm.label ||
+                  !webhookForm.url ||
+                  webhookForm.eventTypes.length === 0
+                }
+              >
+                {t("settingsCenter.integrations.addWebhook")}
+              </Button>
+            </div>
+            <div className="space-y-3">
+              {webhooks.map((webhook) => {
+                const eventTypes = webhook.eventTypes.split(",").filter(Boolean)
+                return (
+                  <div
+                    key={webhook.id}
+                    className="flex flex-col gap-3 rounded-xl border p-4 md:flex-row md:items-start md:justify-between"
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">{webhook.label}</p>
+                        <Badge variant={webhook.isEnabled ? "success" : "outline"}>
+                          {webhook.isEnabled
+                            ? t("settingsCenter.integrations.active")
+                            : t("settingsCenter.integrations.paused")}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{webhook.url}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {eventTypes.map((eventType) => (
+                          <Badge key={eventType} variant="outline">
+                            {eventType}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          toggleWebhook.mutate({
+                            id: webhook.id,
+                            label: webhook.label,
+                            url: webhook.url,
+                            eventTypes,
+                            secret: webhook.secret ?? "",
+                            isEnabled: !webhook.isEnabled,
+                          })
+                        }
+                      >
+                        {webhook.isEnabled
+                          ? t("settingsCenter.integrations.pause")
+                          : t("settingsCenter.integrations.activate")}
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => deleteWebhook.mutate(webhook.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
                 )
               })}
             </div>
-          </Field>
-          <div className="flex justify-start sm:justify-end">
-            <Button
-              onClick={() => createWebhook.mutate()}
-              disabled={
-                createWebhook.isPending ||
-                !webhookForm.label ||
-                !webhookForm.url ||
-                webhookForm.eventTypes.length === 0
-              }
-            >
-              {t("settingsCenter.integrations.addWebhook")}
-            </Button>
-          </div>
-          <div className="space-y-3">
-            {webhooks.map((webhook) => {
-              const eventTypes = webhook.eventTypes.split(",").filter(Boolean)
-              return (
-                <div
-                  key={webhook.id}
-                  className="flex flex-col gap-3 rounded-xl border p-4 md:flex-row md:items-start md:justify-between"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium">{webhook.label}</p>
-                      <Badge variant={webhook.isEnabled ? "success" : "outline"}>
-                        {webhook.isEnabled
-                          ? t("settingsCenter.integrations.active")
-                          : t("settingsCenter.integrations.paused")}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground">{webhook.url}</p>
-                    <div className="flex flex-wrap gap-2">
-                      {eventTypes.map((eventType) => (
-                        <Badge key={eventType} variant="outline">
-                          {eventType}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        toggleWebhook.mutate({
-                          id: webhook.id,
-                          label: webhook.label,
-                          url: webhook.url,
-                          eventTypes,
-                          secret: webhook.secret ?? "",
-                          isEnabled: !webhook.isEnabled,
-                        })
-                      }
-                    >
-                      {webhook.isEnabled
-                        ? t("settingsCenter.integrations.pause")
-                        : t("settingsCenter.integrations.activate")}
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => deleteWebhook.mutate(webhook.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
       ) : null}
 
       {showSection("api", "support") ? (
-      <div className="grid gap-4 xl:grid-cols-2">
-        {showSection("api") ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <KeyRound className="h-4 w-4" />
-              {t("settingsCenter.apiKeys.title")}
-            </CardTitle>
-            <CardDescription>
-              {t("settingsCenter.apiKeys.description")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {latestApiKey ? (
-              <div className="rounded-lg border border-chart-1/30 bg-chart-1/5 p-3">
-                <p className="text-sm font-medium">{t("settingsCenter.apiKeys.shownOnce")}</p>
-                <p className="mt-1 break-all font-mono text-xs">{latestApiKey}</p>
-              </div>
-            ) : null}
-            <div className="flex gap-3">
-              <Input
-                placeholder={t("settingsCenter.apiKeys.labelPlaceholder")}
-                value={apiKeyLabel}
-                onChange={(e) => setApiKeyLabel(e.target.value)}
-              />
-              <Button
-                disabled={!isAdmin || !apiKeyLabel || createApiKey.isPending}
-                onClick={() => createApiKey.mutate()}
-              >
-                {t("settingsCenter.apiKeys.create")}
-              </Button>
-            </div>
-            <div className="space-y-2">
-              {apiKeys.length === 0 ? (
-                <p className="text-sm text-muted-foreground">{t("settingsCenter.apiKeys.empty")}</p>
-              ) : (
-                apiKeys.map((key) => (
-                  <div
-                    key={key.id}
-                    className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div>
-                      <p className="text-sm font-medium">{key.label}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {key.keyPrefix}... ·{" "}
-                        {key.revokedAt
-                          ? t("settingsCenter.apiKeys.revoked")
-                          : t("settingsCenter.apiKeys.active")}
-                      </p>
-                    </div>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      disabled={!isAdmin || Boolean(key.revokedAt)}
-                      onClick={() => revokeApiKey.mutate(key.id)}
-                    >
-                      {t("settingsCenter.apiKeys.revoke")}
-                    </Button>
+        <div className="grid gap-4 xl:grid-cols-2">
+          {showSection("api") ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <KeyRound className="h-4 w-4" />
+                  {t("settingsCenter.apiKeys.title")}
+                </CardTitle>
+                <CardDescription>
+                  {t("settingsCenter.apiKeys.description")}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {latestApiKey ? (
+                  <div className="rounded-lg border border-chart-1/30 bg-chart-1/5 p-3">
+                    <p className="text-sm font-medium">{t("settingsCenter.apiKeys.shownOnce")}</p>
+                    <p className="mt-1 break-all font-mono text-xs">{latestApiKey}</p>
                   </div>
-                ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
-        ) : null}
-
-        {showSection("support") ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <LifeBuoy className="h-4 w-4" />
-              {t("settingsCenter.support.title")}
-            </CardTitle>
-            <CardDescription>
-              {t("settingsCenter.support.description")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-3">
-              <Input
-                placeholder={t("settingsCenter.support.subjectPlaceholder")}
-                value={supportForm.subject}
-                onChange={(e) =>
-                  setSupportForm((prev) => ({ ...prev, subject: e.target.value }))
-                }
-              />
-              <div className="flex flex-wrap gap-2">
-                {(["support", "billing", "security", "success"] as const).map((category) => (
+                ) : null}
+                <div className="flex gap-3">
+                  <Input
+                    placeholder={t("settingsCenter.apiKeys.labelPlaceholder")}
+                    value={apiKeyLabel}
+                    onChange={(e) => setApiKeyLabel(e.target.value)}
+                  />
                   <Button
-                    key={category}
-                    type="button"
-                    size="sm"
-                    variant={supportForm.category === category ? "default" : "outline"}
-                    onClick={() =>
-                      setSupportForm((prev) => ({ ...prev, category }))
-                    }
+                    disabled={!isAdmin || !apiKeyLabel || createApiKey.isPending}
+                    onClick={() => createApiKey.mutate()}
                   >
-                    {category}
+                    {t("settingsCenter.apiKeys.create")}
                   </Button>
-                ))}
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {(["low", "normal", "high", "urgent"] as const).map((priority) => (
-                  <Button
-                    key={priority}
-                    type="button"
-                    size="sm"
-                    variant={supportForm.priority === priority ? "default" : "outline"}
-                    onClick={() =>
-                      setSupportForm((prev) => ({ ...prev, priority }))
-                    }
-                  >
-                    {priority}
-                  </Button>
-                ))}
-              </div>
-              <Textarea
-                placeholder={t("settingsCenter.support.messagePlaceholder")}
-                value={supportForm.message}
-                onChange={(e) =>
-                  setSupportForm((prev) => ({ ...prev, message: e.target.value }))
-                }
-              />
-              <Button
-                disabled={
-                  createSupportRequest.isPending ||
-                  !supportForm.subject ||
-                  supportForm.message.length < 10
-                }
-                onClick={() => createSupportRequest.mutate()}
-              >
-                {t("settingsCenter.support.create")}
-              </Button>
-            </div>
-            <div className="space-y-2">
-              {supportRequests.length === 0 ? (
-                <p className="text-sm text-muted-foreground">{t("settingsCenter.support.empty")}</p>
-              ) : (
-                supportRequests.map((request) => (
-                  <div key={request.id} className="rounded-lg border p-3">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <p className="text-sm font-medium">{request.subject}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {request.category} · {request.priority} · {request.status}
-                        </p>
+                </div>
+                <div className="space-y-2">
+                  {apiKeys.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">{t("settingsCenter.apiKeys.empty")}</p>
+                  ) : (
+                    apiKeys.map((key) => (
+                      <div
+                        key={key.id}
+                        className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
+                      >
+                        <div>
+                          <p className="text-sm font-medium">{key.label}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {key.keyPrefix}... ·{" "}
+                            {key.revokedAt
+                              ? t("settingsCenter.apiKeys.revoked")
+                              : t("settingsCenter.apiKeys.active")}
+                          </p>
+                        </div>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          disabled={!isAdmin || Boolean(key.revokedAt)}
+                          onClick={() => revokeApiKey.mutate(key.id)}
+                        >
+                          {t("settingsCenter.apiKeys.revoke")}
+                        </Button>
                       </div>
-                      <Badge variant="outline">{request.status}</Badge>
-                    </div>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
+
+          {showSection("support") ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <LifeBuoy className="h-4 w-4" />
+                  {t("settingsCenter.support.title")}
+                </CardTitle>
+                <CardDescription>
+                  {t("settingsCenter.support.description")}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-3">
+                  <Input
+                    placeholder={t("settingsCenter.support.subjectPlaceholder")}
+                    value={supportForm.subject}
+                    onChange={(e) =>
+                      setSupportForm((prev) => ({ ...prev, subject: e.target.value }))
+                    }
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    {(["support", "billing", "security", "success"] as const).map((category) => (
+                      <Button
+                        key={category}
+                        type="button"
+                        size="sm"
+                        variant={supportForm.category === category ? "default" : "outline"}
+                        onClick={() =>
+                          setSupportForm((prev) => ({ ...prev, category }))
+                        }
+                      >
+                        {category}
+                      </Button>
+                    ))}
                   </div>
-                ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
-        ) : null}
-      </div>
+                  <div className="flex flex-wrap gap-2">
+                    {(["low", "normal", "high", "urgent"] as const).map((priority) => (
+                      <Button
+                        key={priority}
+                        type="button"
+                        size="sm"
+                        variant={supportForm.priority === priority ? "default" : "outline"}
+                        onClick={() =>
+                          setSupportForm((prev) => ({ ...prev, priority }))
+                        }
+                      >
+                        {priority}
+                      </Button>
+                    ))}
+                  </div>
+                  <Textarea
+                    placeholder={t("settingsCenter.support.messagePlaceholder")}
+                    value={supportForm.message}
+                    onChange={(e) =>
+                      setSupportForm((prev) => ({ ...prev, message: e.target.value }))
+                    }
+                  />
+                  <Button
+                    disabled={
+                      createSupportRequest.isPending ||
+                      !supportForm.subject ||
+                      supportForm.message.length < 10
+                    }
+                    onClick={() => createSupportRequest.mutate()}
+                  >
+                    {t("settingsCenter.support.create")}
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  {supportRequests.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">{t("settingsCenter.support.empty")}</p>
+                  ) : (
+                    supportRequests.map((request) => (
+                      <div key={request.id} className="rounded-lg border p-3">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div>
+                            <p className="text-sm font-medium">{request.subject}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {request.category} · {request.priority} · {request.status}
+                            </p>
+                          </div>
+                          <Badge variant="outline">{request.status}</Badge>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
+        </div>
       ) : null}
 
       {showSection("logs") ? (
-      <div className="grid gap-4 xl:grid-cols-2">
-        <LogCard
-          icon={<History className="h-4 w-4" />}
-          title={t("settingsCenter.logs.auditTitle")}
-          description={t("settingsCenter.logs.auditDescription")}
-          items={auditLogs.map((item) => ({
-            id: item.id,
-            title: item.summary,
-            meta: `${item.action} · ${formatStamp(item.createdAt)}`,
-            tone: "neutral" as const,
-          }))}
-        />
-        <LogCard
-          icon={<CheckCircle2 className="h-4 w-4" />}
-          title={t("settingsCenter.logs.deliveryTitle")}
-          description={t("settingsCenter.logs.deliveryDescription")}
-          items={deliveries.map((item) => ({
-            id: item.id,
-            title: `${item.channel} → ${item.destination}`,
-            meta: `${item.eventType} · ${item.status} · ${formatStamp(item.createdAt)}`,
-            tone: item.status === "failed" ? ("danger" as const) : ("success" as const),
-          }))}
-        />
-      </div>
+        <div className="grid gap-4 xl:grid-cols-2">
+          <div className="space-y-3">
+            <LogCard
+              icon={<History className="h-4 w-4" />}
+              title={t("settingsCenter.logs.auditTitle")}
+              description={t("settingsCenter.logs.auditDescription")}
+              items={auditLogs.map((item) => ({
+                id: item.id,
+                title: item.summary,
+                meta: `${item.action} · ${formatStamp(item.createdAt)}`,
+                tone: "neutral" as const,
+              }))}
+            />
+            {auditQuery.hasNextPage ? (
+              <Button
+                variant="secondary"
+                className="w-full"
+                disabled={auditQuery.isFetchingNextPage}
+                onClick={() => auditQuery.fetchNextPage()}
+              >
+                {auditQuery.isFetchingNextPage
+                  ? t("settingsCenter.logs.loadingMore")
+                  : t("settingsCenter.logs.loadMore")}
+              </Button>
+            ) : null}
+          </div>
+          <LogCard
+            icon={<CheckCircle2 className="h-4 w-4" />}
+            title={t("settingsCenter.logs.deliveryTitle")}
+            description={t("settingsCenter.logs.deliveryDescription")}
+            items={deliveries.map((item) => ({
+              id: item.id,
+              title: `${item.channel} → ${item.destination}`,
+              meta: `${item.eventType} · ${item.status} · ${formatStamp(item.createdAt)}`,
+              tone: item.status === "failed" ? ("danger" as const) : ("success" as const),
+            }))}
+          />
+        </div>
       ) : null}
     </div>
   )
@@ -1413,13 +1434,12 @@ function LogCard({
             <div key={item.id} className="rounded-lg border p-3">
               <p className="text-sm font-medium">{item.title}</p>
               <p
-                className={`text-xs ${
-                  item.tone === "danger"
+                className={`text-xs ${item.tone === "danger"
                     ? "text-destructive"
                     : item.tone === "success"
                       ? "text-chart-1"
                       : "text-muted-foreground"
-                }`}
+                  }`}
               >
                 {item.meta}
               </p>

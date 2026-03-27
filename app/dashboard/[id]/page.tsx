@@ -32,32 +32,47 @@ export default async function Page({
 
   return (
     <div className="mx-auto max-w-7xl space-y-8">
-      <div className="flex items-center justify-between">
-        <div className="min-w-0 space-y-1">
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary"
-          >
-            <ArrowLeft className="h-4 w-4" /> {t("websitePage.backToOverview")}
-          </Link>
+      <div>
+        {/* Back button */}
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary mb-4"
+        >
+          <ArrowLeft className="h-4 w-4" /> {t("websitePage.backToOverview")}
+        </Link>
 
-          <div className="flex items-center gap-2">
-            <h1 className="text-4xl font-extrabold tracking-tight">{website?.name}</h1>
+        {/* Header content */}
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+          {/* Left side - Website info */}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight truncate">
+                {website?.name}
+              </h1>
+            </div>
+
+            <a
+              href={website?.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block max-w-full"
+            >
+              <p className="truncate text-muted-foreground underline hover:text-primary text-sm sm:text-base">
+                {website?.url}
+              </p>
+            </a>
           </div>
 
-          <a href={website?.url} target="_blank" rel="noopener noreferrer">
-            <p className="max-w-xs truncate text-muted-foreground underline hover:text-primary">
-              {website?.url}
-            </p>
-          </a>
+          {/* Right side - Scan component with fixed min-width */}
+          <div className="sm:min-w-[280px] sm:flex-shrink-0 w-full sm:w-auto">
+            {website && (
+              <NewCheck
+                websiteId={website.id}
+                defaultDeviceType={website.deviceType as "mobile" | "desktop"}
+              />
+            )}
+          </div>
         </div>
-
-        {website && (
-          <NewCheck
-            websiteId={website.id}
-            defaultDeviceType={website.deviceType as "mobile" | "desktop"}
-          />
-        )}
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">

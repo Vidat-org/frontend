@@ -3,6 +3,7 @@ import z from "zod"
 export const intervals = ["12h", "24h", "36h", "48h", "72h"] as const
 
 export const createWebsiteSchema = z.object({
+  name: z.string(),
   url: z.url(),
   interval: z.enum(intervals),
 })
