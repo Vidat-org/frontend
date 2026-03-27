@@ -16,15 +16,15 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  ResponsiveContainer,
 } from "recharts"
 import { format } from "date-fns"
 import { Skeleton } from "./ui/skeleton"
 import { parseAsStringEnum, useQueryState } from "nuqs"
+import { t } from "@/lib/i18n"
 
 const chartConfig = {
   performanceScore: {
-    label: "Prestanda",
+    label: t("scanChart.performance"),
     color: "oklch(var(--chart-1))",
   },
   seoScore: {
@@ -32,11 +32,11 @@ const chartConfig = {
     color: "oklch(var(--chart-2))",
   },
   accessibilityScore: {
-    label: "Tillgänglighet",
+    label: t("scanChart.accessibility"),
     color: "oklch(var(--chart-3))",
   },
   bestPracticesScore: {
-    label: "Bästa praxis",
+    label: t("scanChart.bestPractices"),
     color: "oklch(var(--chart-4))",
   },
 } satisfies ChartConfig
@@ -48,7 +48,7 @@ export default function ScanChart({
   websiteId: string
   onScanClick?: (scanId: string) => void
 }) {
-  const [device, setDevice] = useQueryState(
+  const [device] = useQueryState(
     "device",
     parseAsStringEnum(["mobile", "desktop"]).withDefault("mobile")
   )
@@ -64,7 +64,7 @@ export default function ScanChart({
   if (!scans?.length) {
     return (
       <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-        Inga skanningar ännu
+        {t("scanChart.noScansYet")}
       </div>
     )
   }
@@ -72,7 +72,7 @@ export default function ScanChart({
   const chartData = scans
     .filter((s) => s.status === "success")
     .map((s) => ({
-      id: s.id, // ← add this
+      id: s.id,
       date: format(new Date(s.createdAt || ""), "d MMM"),
       performanceScore: s.performanceScore,
       seoScore: s.seoScore,

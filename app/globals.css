@@ -191,6 +191,23 @@
     @apply bg-background font-mono text-foreground;
     letter-spacing: var(--tracking-normal);
   }
+  html {
+    overflow-x: hidden;
+  }
+  body {
+    overflow-x: hidden;
+  }
+  a,
+  p,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  span {
+    overflow-wrap: anywhere;
+  }
   /*html {
     @apply font-mono;
   }*/

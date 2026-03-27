@@ -3,12 +3,13 @@ import { useQuery } from "@tanstack/react-query"
 import { client } from "@/lib/orpc"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
+import { t } from "@/lib/i18n"
 
 type Metric = {
   label: string
   value: number | null
   unit: string
-  thresholds: [number, number] // [good, needs-improvement]
+  thresholds: [number, number]
   higherIsBetter?: boolean
 }
 
@@ -30,32 +31,28 @@ function getStatus(
 
 const statusConfig = {
   good: {
-    label: "Bra",
+    label: t("vitals.statusGood"),
     bar: "bg-emerald-500",
-    // Emerald-800 provides the necessary depth for your warm-tinted background
     text: "text-emerald-800 dark:text-emerald-400",
     bg: "bg-emerald-100/50 dark:bg-emerald-950/40",
     border: "border-emerald-200 dark:border-emerald-800",
   },
   "needs-improvement": {
-    label: "Kan förbättras",
+    label: t("vitals.statusNeedsImprovement"),
     bar: "bg-amber-500",
-    // Amber-900 or 950 is often required for true legibility on light modes
     text: "text-amber-900 dark:text-amber-400",
     bg: "bg-amber-100/50 dark:bg-amber-950/40",
     border: "border-amber-200 dark:border-amber-800",
   },
   poor: {
-    label: "Dålig",
+    label: t("vitals.statusPoor"),
     bar: "bg-destructive",
-    // text-destructive ensures it pulls from your OKLCH variable
     text: "text-destructive dark:text-red-400",
-    // Increased opacity from /7 or /10 to /15 for light mode
     bg: "bg-destructive/15 dark:bg-destructive/25",
     border: "border-destructive/30 dark:border-destructive/50",
   },
   unknown: {
-    label: "–",
+    label: "-",
     bar: "bg-muted",
     text: "text-muted-foreground",
     bg: "bg-muted/30",
@@ -74,7 +71,6 @@ function MetricBar({
 }) {
   if (value === null) return <div className="h-1.5 rounded-full bg-muted" />
 
-  // Normalize to 0–100 for the bar fill
   const max = higherIsBetter ? thresholds[0] * 1.2 : thresholds[1] * 1.5
   const pct = higherIsBetter
     ? Math.min(100, (value / max) * 100)
@@ -112,7 +108,7 @@ function MetricTile({ metric }: { metric: Metric }) {
           : metric.unit === "kb"
             ? `${Math.round(metric.value)}kb`
             : metric.value.toFixed(3)
-      : "–"
+      : "-"
 
   return (
     <div className={cn("space-y-3 rounded-lg border p-4", cfg.bg, cfg.border)}>
@@ -132,13 +128,13 @@ function MetricTile({ metric }: { metric: Metric }) {
       />
       <div className="flex justify-between text-[10px] text-muted-foreground">
         <span>
-          Bra:{" "}
+          {t("vitals.goodLabel")}{" "}
           {metric.higherIsBetter
-            ? `≥${metric.thresholds[0]}`
-            : `≤${metric.thresholds[0]}${metric.unit}`}
+            ? `>=${metric.thresholds[0]}`
+            : `<=${metric.thresholds[0]}${metric.unit}`}
         </span>
         <span>
-          Dålig:{" "}
+          {t("vitals.poorLabel")}{" "}
           {metric.higherIsBetter
             ? `<${metric.thresholds[1]}`
             : `>${metric.thresholds[1]}${metric.unit}`}
@@ -192,26 +188,20 @@ export default function CoreWebVitals({ scanId }: { scanId: string }) {
       unit: "s",
       thresholds: [3.4, 5.8],
     },
-    // {
-    //   label: "Sidstorlek",
-    //   value: scan?.pageSizeKb ?? null,
-    //   unit: "kb",
-    //   thresholds: [1000, 3000],
-    // },
   ]
 
   return (
     <Card>
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
-          <CardTitle>Core Web Vitals</CardTitle>
+          <CardTitle>{t("vitals.title")}</CardTitle>
           <a
             href="https://web.dev/explore/metrics"
             target="_blank"
             rel="noopener noreferrer"
             className="text-xs text-muted-foreground transition-colors hover:text-primary"
           >
-            Vad är detta? ↗
+            {t("vitals.whatIsThis")}
           </a>
         </div>
       </CardHeader>

@@ -2,13 +2,13 @@ import ReportCard from "@/components/report-card"
 import { client } from "@/lib/orpc"
 import {
   Empty,
-  EmptyContent,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty"
 import { FileChartColumn } from "lucide-react"
+import { t } from "@/lib/i18n"
 
 export default async function Page() {
   const query = await client.listReports()
@@ -27,9 +27,9 @@ export default async function Page() {
                 <EmptyMedia variant="icon">
                   <FileChartColumn />
                 </EmptyMedia>
-                <EmptyTitle>Inga rapporter</EmptyTitle>
+                <EmptyTitle>{t("reportsPage.noReports")}</EmptyTitle>
                 <EmptyDescription>
-                  Rapporter skapas var 14:e dag
+                  {t("reportsPage.reportEvery14Days")}
                 </EmptyDescription>
               </EmptyHeader>
             </Empty>

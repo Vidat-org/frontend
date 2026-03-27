@@ -11,20 +11,25 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarSeparator,
   useSidebar,
 } from "@/components/ui/sidebar"
 import { UserButton } from "@clerk/nextjs"
 import {
+  BadgeDollarSign,
   FileChartColumn,
-  LucideIcon,
+  History,
+  KeyRound,
+  LifeBuoy,
+  type LucideIcon,
   PanelsTopLeft,
   Settings,
+  Users,
+  Webhook,
   Zap,
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useEffect, useState } from "react"
+import { t } from "@/lib/i18n"
 
 type NavItem = {
   title: string
@@ -32,27 +37,24 @@ type NavItem = {
   icon: LucideIcon
 }
 
-const navItems: NavItem[] = [
-  { title: "Mina sajter", url: "/dashboard", icon: PanelsTopLeft },
-  { title: "Rapporter", url: "/dashboard/reports", icon: FileChartColumn },
-  { title: "Inställningar", url: "/dashboard/settings", icon: Settings },
+const productNav: NavItem[] = [
+  { title: t("sidebar.mySites"), url: "/dashboard", icon: PanelsTopLeft },
+  { title: t("sidebar.reports"), url: "/dashboard/reports", icon: FileChartColumn },
+]
+
+const settingsNav: NavItem[] = [
+  { title: t("sidebar.settings"), url: "/dashboard/settings", icon: Settings },
+  { title: t("sidebar.billing"), url: "/dashboard/settings/billing", icon: BadgeDollarSign },
+  { title: t("sidebar.team"), url: "/dashboard/settings/team", icon: Users },
+  { title: t("sidebar.integrations"), url: "/dashboard/settings/integrations", icon: Webhook },
+  { title: t("sidebar.api"), url: "/dashboard/settings/api", icon: KeyRound },
+  { title: t("sidebar.support"), url: "/dashboard/settings/support", icon: LifeBuoy },
+  { title: t("sidebar.logs"), url: "/dashboard/settings/logs", icon: History },
 ]
 
 export default function DashboardSidebar() {
   const pathname = usePathname()
-
   const { state } = useSidebar()
-
-  const [open, setOpen] = useState<boolean>(() => {
-    if (typeof window === "undefined") return true
-
-    const saved = localStorage.getItem("sidebar_open")
-    return saved === null ? true : saved === "true"
-  })
-
-  useEffect(() => {
-    localStorage.setItem("sidebar_open", JSON.stringify(open))
-  }, [open])
 
   return (
     <Sidebar variant="sidebar" collapsible="icon">
@@ -65,9 +67,7 @@ export default function DashboardSidebar() {
                   <Zap className="size-4" />
                 </div>
                 {state === "expanded" && (
-                  <span className="text-base font-bold tracking-tight">
-                    VIDAT
-                  </span>
+                  <span className="text-base font-bold tracking-tight">VIDAT</span>
                 )}
               </Link>
             </SidebarMenuButton>
@@ -76,34 +76,8 @@ export default function DashboardSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navItems.map((item) => {
-                const isActive =
-                  item.url === "/dashboard"
-                    ? pathname === "/dashboard"
-                    : pathname.startsWith(item.url)
-
-                return (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive}
-                      tooltip={item.title}
-                    >
-                      <Link href={item.url}>
-                        <item.icon />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        <NavSection title={t("sidebar.product")} items={productNav} pathname={pathname} />
+        <NavSection title={t("sidebar.settingsSection")} items={settingsNav} pathname={pathname} />
       </SidebarContent>
 
       <SidebarFooter>
@@ -115,5 +89,42 @@ export default function DashboardSidebar() {
         />
       </SidebarFooter>
     </Sidebar>
+  )
+}
+
+function NavSection({
+  title,
+  items,
+  pathname,
+}: {
+  title: string
+  items: NavItem[]
+  pathname: string
+}) {
+  return (
+    <SidebarGroup>
+      <SidebarGroupLabel>{title}</SidebarGroupLabel>
+      <SidebarGroupContent>
+        <SidebarMenu>
+          {items.map((item) => {
+            const isActive =
+              item.url === "/dashboard"
+                ? pathname === "/dashboard"
+                : pathname.startsWith(item.url)
+
+            return (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
+                  <Link href={item.url}>
+                    <item.icon />
+                    <span>{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )
+          })}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
   )
 }

@@ -1,1676 +1,741 @@
-"use client"
-
 import Link from "next/link"
-import { useState, useEffect, useRef } from "react"
-import { Show } from "@clerk/nextjs"
-import { ArrowRight } from "lucide-react"
+import type { ReactNode } from "react"
+import {
+  Activity,
+  BellRing,
+  Building2,
+  ChevronRight,
+  CreditCard,
+  FileText,
+  Gauge,
+  Lock,
+  MessagesSquare,
+  Rocket,
+  ShieldCheck,
+  Users,
+  Webhook,
+} from "lucide-react"
 
-// ─── Design tokens — CSS-variabler från globals.css ───────────────────────────
-// Dessa är CSS-variabelreferenser; de fungerar bara i inline style-strängar
-// via var(--...) eller i CSS-regler — inte som JS-strängar i rgba().
-// För alpha-varianter används color-mix().
-const C = {
-  bg: "var(--background)",
-  surface: "var(--card)",
-  border: "var(--border)",
-
-  // tone down chart-1 slightly when used as accent
-  accent: "color-mix(in oklch, var(--chart-1) 85%, black)",
-
-  // stronger fill so charts are visible
-  accentDim: "color-mix(in oklch, var(--chart-1) 30%, transparent)",
-
-  blue: "var(--chart-2)",
-  teal: "var(--chart-3)",
-  red: "var(--destructive)",
-
-  fg: "var(--foreground)",
-  muted: "var(--muted-foreground)",
-
-  // make muted slightly clearer
-  mutedLo: "color-mix(in oklch, var(--muted-foreground) 60%, transparent)",
-}
-
-// Literal oklch-värden för ställen där vi måste bädda in i rgba/radial-gradient
-// (CSS color-mix stöds inte i alla gradient-kontexter i äldre browsers)
-const RAW = {
-  accent: "oklch(0.67 0.16 165)", // toned down chart-1
-  blue: "oklch(0.64 0.17 240)", // deeper blue
-  teal: "oklch(0.62 0.14 180)", // balanced teal
-  red: "oklch(0.60 0.16 25)", // clearer red
-  fg: "oklch(0.985 0 0)",
-  muted: "oklch(0.711 0.019 323.02)",
-  mutedLo: "oklch(0.263 0.024 320.12)",
-  bg: "oklch(0.145 0.008 326)",
-}
-
-// ─── Primitive components ─────────────────────────────────────────────────────
-const Btn = ({
-  children,
-  variant = "primary",
-  size = "md",
-  style: s = {},
-  ...p
-}) => {
-  const base = {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontFamily: "inherit",
-    fontWeight: 700,
-    letterSpacing: "0.08em",
-    cursor: "pointer",
-    border: "none",
-    transition: "all 0.15s",
-    textTransform: "uppercase",
-  }
-  const variants = {
-    primary: {
-      background: C.accent,
-      color: "#000",
-      border: `1px solid ${C.accent}`,
-    },
-    outline: {
-      background: "transparent",
-      color: C.accent,
-      border: `1px solid color-mix(in oklch, var(--chart-1) 35%, transparent)`,
-    },
-    ghost: {
-      background: "transparent",
-      color: C.muted,
-      border: "1px solid transparent",
-    },
-  }
-  const sizes = {
-    sm: { padding: "8px 16px", fontSize: "10px" },
-    md: { padding: "11px 22px", fontSize: "11px" },
-    lg: { padding: "15px 36px", fontSize: "12px" },
-  }
-  return (
-    <button
-      style={{ ...base, ...variants[variant], ...sizes[size], ...s }}
-      onMouseEnter={(e) => {
-        if (variant === "primary")
-          e.currentTarget.style.background = `color-mix(in oklch, var(--chart-1) 85%, white)`
-        if (variant === "outline") {
-          e.currentTarget.style.borderColor = C.accent
-          e.currentTarget.style.background = `color-mix(in oklch, var(--chart-1) 6%, transparent)`
-        }
-        if (variant === "ghost") e.currentTarget.style.color = C.fg
-        e.currentTarget.style.transform = "translateY(-1px)"
-      }}
-      onMouseLeave={(e) => {
-        if (variant === "primary") e.currentTarget.style.background = C.accent
-        if (variant === "outline") {
-          e.currentTarget.style.borderColor = `color-mix(in oklch, var(--chart-1) 35%, transparent)`
-          e.currentTarget.style.background = "transparent"
-        }
-        if (variant === "ghost") e.currentTarget.style.color = C.muted
-        e.currentTarget.style.transform = "translateY(0)"
-      }}
-      {...p}
-    >
-      {children}
-    </button>
-  )
-}
-
-// ─── Animated counter ─────────────────────────────────────────────────────────
-function Counter({ target, suffix = "", duration = 1600 }) {
-  const [v, setV] = useState(0)
-  const ref = useRef(null)
-  const done = useRef(false)
-  useEffect(() => {
-    const io = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting && !done.current) {
-        done.current = true
-        const t0 = performance.now()
-        const tick = (now) => {
-          const p = Math.min((now - t0) / duration, 1)
-          setV(Math.floor((1 - Math.pow(1 - p, 3)) * target))
-          if (p < 1) requestAnimationFrame(tick)
-        }
-        requestAnimationFrame(tick)
-      }
-    })
-    if (ref.current) io.observe(ref.current)
-    return () => io.disconnect()
-  }, [target, duration])
-  return (
-    <span ref={ref}>
-      {v.toLocaleString()}
-      {suffix}
-    </span>
-  )
-}
-
-// ─── SVG Score ring ───────────────────────────────────────────────────────────
-function ScoreRing({ score, label, color, size = 64, delay = 0 }) {
-  const [displayed, setDisplayed] = useState(0)
-  const ref = useRef(null)
-  const done = useRef(false)
-  const r = size * 0.38
-  const circ = 2 * Math.PI * r
-
-  useEffect(() => {
-    const io = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting && !done.current) {
-        done.current = true
-        setTimeout(() => {
-          const t0 = performance.now()
-          const tick = (now) => {
-            const p = Math.min((now - t0) / 900, 1)
-            setDisplayed(Math.floor((1 - Math.pow(1 - p, 3)) * score))
-            if (p < 1) requestAnimationFrame(tick)
-          }
-          requestAnimationFrame(tick)
-        }, delay)
-      }
-    })
-    if (ref.current) io.observe(ref.current)
-    return () => io.disconnect()
-  }, [score, delay])
-
-  const dash = (displayed / 100) * circ
-  return (
-    <div
-      ref={ref}
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 8,
-      }}
-    >
-      <div style={{ position: "relative", width: size, height: size }}>
-        <svg
-          viewBox={`0 0 ${size} ${size}`}
-          style={{ width: size, height: size, transform: "rotate(-90deg)" }}
-        >
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={r}
-            fill="none"
-            stroke="rgba(255,255,255,0.06)"
-            strokeWidth={size * 0.07}
-          />
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={r}
-            fill="none"
-            stroke={color}
-            strokeWidth={size * 0.07}
-            strokeDasharray={circ}
-            strokeDashoffset={circ - dash}
-            strokeLinecap="round"
-            style={{ transition: "stroke-dashoffset 0.04s" }}
-          />
-        </svg>
-        <span
-          style={{
-            position: "absolute",
-            inset: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: size * 0.22,
-            fontWeight: 800,
-            color,
-          }}
-        >
-          {displayed}
-        </span>
-      </div>
-      {label && (
-        <span
-          style={{
-            fontSize: 9,
-            color: C.muted,
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-          }}
-        >
-          {label}
-        </span>
-      )}
-    </div>
-  )
-}
-
-// ─── Typewriter ───────────────────────────────────────────────────────────────
-function Typewriter({ text, delay = 0, speed = 30 }) {
-  const [out, setOut] = useState("")
-  useEffect(() => {
-    let i = 0,
-      timeout
-    const start = () => {
-      const iv = setInterval(() => {
-        if (i <= text.length) {
-          setOut(text.slice(0, i))
-          i++
-        } else clearInterval(iv)
-      }, speed)
-    }
-    timeout = setTimeout(start, delay)
-    return () => clearTimeout(timeout)
-  }, [text, delay, speed])
-  return <>{out}</>
-}
-
-function BlinkCursor() {
-  const [v, setV] = useState(true)
-  useEffect(() => {
-    const i = setInterval(() => setV((x) => !x), 530)
-    return () => clearInterval(i)
-  }, [])
-  return <span style={{ opacity: v ? 1 : 0, color: C.accent }}>█</span>
-}
-
-// ─── Grid background ──────────────────────────────────────────────────────────
-function GridBg({ style: s = {} }) {
-  return (
-    <div
-      style={{
-        position: "absolute",
-        inset: 0,
-        pointerEvents: "none",
-        backgroundImage: `linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px)`,
-        backgroundSize: "44px 44px",
-        ...s,
-      }}
-    />
-  )
-}
-
-// ─── Scanline ─────────────────────────────────────────────────────────────────
-function Scanline() {
-  return (
-    <div
-      style={{
-        position: "absolute",
-        inset: 0,
-        overflow: "hidden",
-        pointerEvents: "none",
-        opacity: 0.025,
-      }}
-    >
-      <div
-        style={{
-          position: "absolute",
-          width: "100%",
-          height: 2,
-          background: `linear-gradient(to right, transparent, var(--foreground), transparent)`,
-          animation: "scanline 6s linear infinite",
-        }}
-      />
-    </div>
-  )
-}
-
-// ─── Data ─────────────────────────────────────────────────────────────────────
-const FEATURES = [
+const productPillars = [
   {
-    n: "01",
-    icon: "⬡",
-    title: "PageSpeed Insights",
-    desc: "Realtidsdata från Googles infrastruktur. Core Web Vitals, prestanda och tekniska rekommendationer direkt i dashboarden.",
-    tag: "Alla planer",
-    accent: false,
+    title: "Prestanda utan manuellt arbete",
+    description:
+      "Schemalagda Lighthouse-körningar, historik och regressionsspårning för varje webbplats.",
+    icon: Gauge,
   },
   {
-    n: "02",
-    icon: "◈",
-    title: "Schemalagd scanning",
-    desc: "Välj ditt intervall — timme, dag eller vecka. Vidat kör i bakgrunden och samlar data utan att du behöver göra något.",
-    tag: "Alla planer",
-    accent: false,
+    title: "Insikter som går att agera på",
+    description:
+      "AI-förklaringar, prioriterade förbättringsförslag och rapporter som kan delas internt eller med kund.",
+    icon: Activity,
   },
   {
-    n: "03",
-    icon: "✦",
-    title: "AI-analys",
-    desc: "AI tolkar Lighthouse-data och ger konkreta, prioriterade åtgärdsförslag på svenska. Förstå vad siffrorna faktiskt innebär.",
-    tag: "Pro & Enterprise",
-    accent: true,
-  },
-  {
-    n: "04",
-    icon: "◎",
-    title: "Regressionsdetektering",
-    desc: "Automatiska varningar inom sekunder när poäng sjunker efter ett deploy. Vet innan dina användare märker något.",
-    tag: "Alla planer",
-    accent: false,
-  },
-  {
-    n: "05",
-    icon: "◷",
-    title: "Slack & Webhooks",
-    desc: "Meddelas direkt i Slack eller via webhook. Trigga skanningar automatiskt från Vercel, Netlify eller valfri CI/CD-pipeline.",
-    tag: "Pro & Enterprise",
-    accent: false,
-  },
-  {
-    n: "06",
-    icon: "⬚",
-    title: "White-label-rapporter",
-    desc: "Månadsrapporter som PDF levererade till inkorgen. White-label-redo — dela med kunder utan att lyfta ett finger.",
-    tag: "Enterprise",
-    accent: false,
+    title: "Byggd för operativ drift",
+    description:
+      "Webhook-flöden, notifieringar, billing-stöd och tydliga planbegränsningar redan i produkten.",
+    icon: Webhook,
   },
 ]
 
-const PLANS = [
+const featureRows = [
   {
-    name: "FREE",
-    price: "0",
-    period: "/ månad",
+    eyebrow: "Övervakning",
+    title: "Följ varje deploy som om den vore affärskritisk.",
+    description:
+      "Vidat fångar förändringar i Core Web Vitals, SEO och teknisk kvalitet innan användarna märker att något gått fel.",
+    bullets: [
+      "Dagliga, veckovisa eller deploy-triggade skanningar",
+      "Mobil- och desktopperspektiv i samma arbetsflöde",
+      "Historik som gör regressionsmönster tydliga",
+    ],
+  },
+  {
+    eyebrow: "Rapportering",
+    title: "Gör siffror begripliga för både team och kund.",
+    description:
+      "Rapporterna fokuserar på vad som förändrats, varför det spelar roll och vad som bör göras härnäst.",
+    bullets: [
+      "AI-summeringar på svenska",
+      "Tydliga prioriteringar i stället för rådata",
+      "White-label-redo för byråer och konsultteam",
+    ],
+  },
+  {
+    eyebrow: "Automatisering",
+    title: "Koppla ihop produkten med resten av din drift.",
+    description:
+      "Notiser och händelser går att skicka vidare till Slack, interna verktyg eller externa system via webhook.",
+    bullets: [
+      "Scan failure alerts och score-drop-varningar",
+      "Webhook-destinationer per konto",
+      "Billing- och planstyrning för SaaS-upplägg",
+    ],
+  },
+]
+
+const completeSaasItems = [
+  {
+    title: "Riktiga betalflöden",
+    description:
+      "Checkout, abonnemangsändringar, kvitton, dunning och självservice i billing-portalen måste fungera utan manuell hantering.",
+    icon: CreditCard,
+  },
+  {
+    title: "Organisationer och roller",
+    description:
+      "Teamkonton, inbjudningar, ägare/admin/medlem-roller och separata arbetsytor är ofta det som skiljer en bra produkt från en verklig SaaS.",
+    icon: Users,
+  },
+  {
+    title: "Onboarding som konverterar",
+    description:
+      "Guidad första upplevelse, sample-data, checklista och tydlig aktivering efter signup minskar churn direkt.",
+    icon: Rocket,
+  },
+  {
+    title: "Trust och compliance",
+    description:
+      "Audit logs, databevarande, incidentprocess, backup-strategi, rate limiting och säker hantering av webhooks behöver vara tydligt definierade.",
+    icon: Lock,
+  },
+  {
+    title: "Support och kundresa",
+    description:
+      "Inbyggd hjälp, statuskommunikation, SLA-nivåer, kontaktvägar och success-flöden för större kunder bör vara produktiserade.",
+    icon: MessagesSquare,
+  },
+  {
+    title: "Go-to-market underbyggt i produkten",
+    description:
+      "Referral-spårning, trial-regler, usage limits, uppgraderingspunkter och expansionsdrivande triggers behöver vara medvetet designade.",
+    icon: Building2,
+  },
+]
+
+const pricing = [
+  {
+    name: "Free",
+    price: "0 kr",
+    description: "För solo-test och första webbplatsen.",
     features: [
-      "1 URL",
+      "1 aktiv webbplats",
       "Manuella skanningar",
       "7 dagars historik",
-      "Grundläggande mätvärden",
+      "Grundläggande rapporter",
     ],
-    cta: "Kom igång",
-    highlight: false,
   },
   {
-    name: "PRO",
-    price: "149",
-    period: "kr / månad",
+    name: "Starter",
+    price: "149 kr",
+    description: "För mindre team som vill börja automatisera.",
     features: [
-      "10 URLs",
-      "Mobil + desktop",
-      "Daglig schemaläggning",
+      "5 aktiva webbplatser",
+      "Schemalagda skanningar",
       "90 dagars historik",
-      "AI-rekommendationer",
       "E-postaviseringar",
     ],
-    cta: "Starta 14-dagars test",
-    highlight: true,
-    badge: "POPULÄR",
+    featured: true,
   },
   {
-    name: "BUSINESS",
-    price: "399",
-    period: "kr / månad",
+    name: "Pro",
+    price: "399 kr",
+    description: "För team som arbetar aktivt med deploys och regressionsrisk.",
     features: [
-      "50 URLs",
-      "Timvis schemaläggning",
-      "12 månaders historik",
+      "25 aktiva webbplatser",
+      "Mobil + desktop",
+      "Webhook- och Slack-stöd",
       "Regressionsdetektering",
-      "Slack & webhooks",
-      "Deploy-webhooks",
     ],
-    cta: "Kom igång",
-    highlight: false,
   },
   {
-    name: "ENTERPRISE",
-    price: "999",
-    period: "kr / månad",
+    name: "Enterprise",
+    price: "999 kr",
+    description: "För byråer, större produktteam och fler intressenter.",
     features: [
-      "Obegränsade URLs",
-      "API-åtkomst",
-      "White-label-rapporter",
-      "Teammedlemmar",
-      "Obegränsad historik",
+      "Nästan obegränsade webbplatser",
+      "Lång historik",
+      "Team och white-label",
       "Prioriterad support",
     ],
-    cta: "Kontakta oss",
-    highlight: false,
   },
 ]
 
-const STEPS = [
-  [
-    "01",
-    "Koppla din URL",
-    "Lägg till valfri URL. Vi börjar skanna direkt — inga kodändringar krävs.",
-  ],
-  [
-    "02",
-    "Välj ditt schema",
-    "Dagligen, veckovis eller vid varje deploy via webhook. Du bestämmer takten.",
-  ],
-  [
-    "03",
-    "Få varningar direkt",
-    "Poängfall triggar notiser till e-post, Slack eller din webhook inom sekunder.",
-  ],
-  [
-    "04",
-    "Åtgärda med AI",
-    "AI analyserar din Lighthouse-data och berättar exakt vad du ska fixa — och varför.",
-  ],
+const faq = [
+  {
+    question: "Vad finns redan på plats i produkten?",
+    answer:
+      "Dashboard, rapporter, planstyrning, settings, webhooks, notifieringsinställningar och grunden för billing finns redan i kodbasen.",
+  },
+  {
+    question: "Vad skulle jag prioritera härnäst?",
+    answer:
+      "1) riktiga betalflöden, 2) organisationskonton, 3) onboarding/aktivering, 4) robust notifieringsleverans och 5) audit/compliance.",
+  },
+  {
+    question: "Är produkten byggd för byråer eller interna team?",
+    answer:
+      "Båda. White-label, teamfunktioner, fler arbetsytor och kundvänliga rapporter gör den särskilt stark för byråspåret.",
+  },
 ]
 
-// ─── Main component ───────────────────────────────────────────────────────────
-export default function VidatLanding() {
-  const [url, setUrl] = useState("")
-  const [scanning, setScanning] = useState(false)
-  const [scanned, setScanned] = useState(false)
-
-  const handleScan = () => {
-    if (!url.trim() || scanning) return
-    setScanned(false)
-    setScanning(true)
-    setTimeout(() => {
-      setScanning(false)
-      setScanned(true)
-    }, 2400)
-  }
-
+function SectionHeading({
+  eyebrow,
+  title,
+  description,
+}: {
+  eyebrow: string
+  title: string
+  description?: string
+}) {
   return (
-    <div
-      style={{
-        fontFamily: "'JetBrains Mono', 'Fira Code', 'Courier New', monospace",
-        background: C.bg,
-        color: C.fg,
-        minHeight: "100vh",
-        overflowX: "hidden",
-      }}
-    >
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&display=swap');
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        ::selection { background: var(--chart-1); color: #000; }
-        ::-webkit-scrollbar { width: 3px; }
-        ::-webkit-scrollbar-track { background: var(--background); }
-        ::-webkit-scrollbar-thumb { background: color-mix(in oklch, var(--muted-foreground) 40%, transparent); }
-        html { scroll-behavior: smooth; }
-
-        @keyframes fadeUp    { from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)} }
-        @keyframes scanline  { 0%{top:0%}100%{top:100%} }
-        @keyframes blink-dot { 0%,100%{opacity:1}50%{opacity:0.15} }
-        @keyframes spin      { from{transform:rotate(0deg)}to{transform:rotate(360deg)} }
-        @keyframes glowPulse {
-          0%,100%{box-shadow:0 0 0 1px var(--chart-1), 0 0 20px color-mix(in oklch, var(--chart-1) 15%, transparent)}
-          50%{box-shadow:0 0 0 1px var(--chart-1), 0 0 40px color-mix(in oklch, var(--chart-1) 28%, transparent)}
-        }
-        @keyframes shimmer   { 0%{background-position:-200% 0}100%{background-position:200% 0} }
-
-        .au1{animation:fadeUp .7s cubic-bezier(.16,1,.3,1) .05s both}
-        .au2{animation:fadeUp .7s cubic-bezier(.16,1,.3,1) .18s both}
-        .au3{animation:fadeUp .7s cubic-bezier(.16,1,.3,1) .32s both}
-        .au4{animation:fadeUp .7s cubic-bezier(.16,1,.3,1) .46s both}
-        .au5{animation:fadeUp .7s cubic-bezier(.16,1,.3,1) .60s both}
-
-        .shimmer-text {
-          background: linear-gradient(90deg,
-            var(--muted-foreground) 0%,
-            var(--foreground) 35%,
-            var(--chart-1) 50%,
-            var(--foreground) 65%,
-            var(--muted-foreground) 100%
-          );
-          background-size: 200% auto;
-          -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-          background-clip: text; animation: shimmer 5s linear infinite;
-        }
-        .feature-cell {
-          background: var(--background); padding: 36px 32px; position: relative;
-          overflow: hidden; cursor: default; transition: background 0.2s, transform 0.2s;
-        }
-        .feature-cell::before {
-          content:''; position:absolute; top:0; left:0; right:0; height:1px;
-          background: linear-gradient(90deg, transparent, var(--chart-1), transparent);
-          transform: scaleX(0); transition: transform 0.35s;
-        }
-        .feature-cell:hover { background: var(--card); transform: translateY(-2px); }
-        .feature-cell:hover::before { transform: scaleX(1); }
-        .plan-card { transition: transform 0.2s; }
-        .plan-card:hover { transform: translateY(-3px); }
-        .plan-highlight { animation: glowPulse 3s ease-in-out infinite; }
-        a { color: inherit; text-decoration: none; }
-      `}</style>
-
-      {/* ── NAV ─────────────────────────────────────────────────────────────── */}
-      <nav
-        style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 50,
-          height: 56,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "0 max(24px, calc(50% - 620px))",
-          borderBottom: `1px solid var(--border)`,
-          // background: `color-mix(in oklch, var(--background) 88%, transparent)`,
-          backdropFilter: "blur(14px)",
-        }}
-        className="bg-background"
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <svg width="18" height="18" viewBox="0 0 18 18">
-            <rect
-              x="0"
-              y="0"
-              width="7.5"
-              height="7.5"
-              fill={`var(--chart-1)`}
-            />
-            <rect
-              x="10.5"
-              y="0"
-              width="7.5"
-              height="7.5"
-              fill={`var(--chart-1)`}
-              opacity="0.35"
-            />
-            <rect
-              x="0"
-              y="10.5"
-              width="7.5"
-              height="7.5"
-              fill={`var(--chart-1)`}
-              opacity="0.35"
-            />
-            <rect
-              x="10.5"
-              y="10.5"
-              width="7.5"
-              height="7.5"
-              fill={`var(--chart-1)`}
-            />
-          </svg>
-          <span
-            style={{
-              fontWeight: 800,
-              fontSize: 15,
-              letterSpacing: "0.1em",
-              color: C.fg,
-            }}
-          >
-            VIDAT
-          </span>
-        </div>
-        <div
-          style={{
-            display: "flex",
-            gap: 36,
-            fontSize: 11,
-            letterSpacing: "0.1em",
-          }}
-        >
-          {[
-            ["FUNKTIONER", "#features"],
-            ["PRISER", "#pricing"],
-            ["DOCS", "#docs"],
-          ].map(([l, h]) => (
-            <a
-              key={l}
-              href={h}
-              style={{ color: C.muted, transition: "color 0.15s" }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = C.fg)}
-              onMouseLeave={(e) => (e.currentTarget.style.color = C.muted)}
-            >
-              {l}
-            </a>
-          ))}
-        </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <Show when="signed-out">
-            <Link href="/sign-in">
-              <Btn variant="ghost" size="sm">
-                Logga in
-              </Btn>
-            </Link>
-            <Btn size="sm">Registrera</Btn>
-          </Show>
-          <Show when="signed-in">
-            <Link href="/dashboard">
-              <Btn variant="outline" className="gap-2">
-                Översikt
-                <ArrowRight size={16} />
-              </Btn>
-            </Link>
-          </Show>
-        </div>
-      </nav>
-
-      {/* ── HERO ────────────────────────────────────────────────────────────── */}
-      <section
-        style={{
-          minHeight: "93vh",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "80px max(24px, calc(50% - 620px)) 60px",
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
-        <GridBg style={{ opacity: 0.7 }} />
-        <Scanline />
-        <div
-          style={{
-            position: "absolute",
-            top: "20%",
-            left: "50%",
-            transform: "translate(-50%,-50%)",
-            width: 700,
-            height: 700,
-            pointerEvents: "none",
-            background: `radial-gradient(circle, color-mix(in oklch, var(--chart-1) 5%, transparent) 0%, transparent 65%)`,
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            bottom: "10%",
-            right: "5%",
-            width: 300,
-            height: 300,
-            pointerEvents: "none",
-            background: `radial-gradient(circle, color-mix(in oklch, var(--chart-2) 5%, transparent) 0%, transparent 70%)`,
-          }}
-        />
-
-        <div className="au1" style={{ marginBottom: 28 }}>
-          <div
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              border: `1px solid color-mix(in oklch, var(--chart-1) 22%, transparent)`,
-              padding: "6px 14px",
-              fontSize: 10,
-              letterSpacing: "0.12em",
-              color: C.accent,
-              background: `color-mix(in oklch, var(--chart-1) 4%, transparent)`,
-            }}
-          >
-            <span
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: "50%",
-                background: C.accent,
-                flexShrink: 0,
-                animation: "blink-dot 1.5s ease infinite",
-              }}
-            />
-            LIVE — 1 247 SKANNINGAR IDAG
-          </div>
-        </div>
-
-        <h1
-          className="au2"
-          style={{
-            fontSize: "clamp(36px, 6vw, 74px)",
-            fontWeight: 800,
-            lineHeight: 1.02,
-            textAlign: "center",
-            letterSpacing: "-0.025em",
-            maxWidth: 860,
-            marginBottom: 12,
-          }}
-        >
-          <span style={{ color: C.fg }}>Vet när din sajt blir</span>
-        </h1>
-        <h1
-          className="au2"
-          style={{
-            fontSize: "clamp(36px, 6vw, 74px)",
-            fontWeight: 800,
-            lineHeight: 1.02,
-            textAlign: "center",
-            letterSpacing: "-0.025em",
-            maxWidth: 860,
-            marginBottom: 28,
-          }}
-        >
-          <span className="shimmer-text">långsam.</span>
-          <span style={{ color: C.mutedLo }}> Innan dina användare.</span>
-        </h1>
-
-        <p
-          className="au3"
-          style={{
-            fontSize: 14,
-            color: C.muted,
-            textAlign: "center",
-            maxWidth: 500,
-            lineHeight: 1.9,
-            marginBottom: 52,
-            letterSpacing: "0.02em",
-          }}
-        >
-          Automatiserade PageSpeed-granskningar, AI-drivna rekommendationer och
-          regressionsvarningar — din prestanda försämras aldrig tyst igen.
+    <div className="max-w-2xl space-y-4">
+      <p className="text-xs font-semibold uppercase tracking-[0.28em] text-chart-1">
+        {eyebrow}
+      </p>
+      <h2 className="font-serif text-4xl leading-tight tracking-tight text-foreground md:text-5xl">
+        {title}
+      </h2>
+      {description ? (
+        <p className="max-w-xl text-sm leading-7 text-muted-foreground md:text-base">
+          {description}
         </p>
-
-        {/* URL scanner */}
-        <div
-          className="au4"
-          style={{ width: "100%", maxWidth: 580, marginBottom: 14 }}
-        >
-          <div
-            style={{
-              display: "flex",
-              border: `1px solid color-mix(in oklch, var(--foreground) 10%, transparent)`,
-              background: `color-mix(in oklch, var(--foreground) 2.5%, transparent)`,
-              overflow: "hidden",
-            }}
-          >
-            <span
-              style={{
-                padding: "0 14px",
-                color: C.accent,
-                fontSize: 12,
-                display: "flex",
-                alignItems: "center",
-                borderRight: `1px solid color-mix(in oklch, var(--foreground) 8%, transparent)`,
-                letterSpacing: "0.05em",
-                flexShrink: 0,
-              }}
-            >
-              $
-            </span>
-            <input
-              type="text"
-              placeholder="https://din-hemsida.se"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleScan()}
-              style={{
-                flex: 1,
-                background: "transparent",
-                border: "none",
-                outline: "none",
-                padding: "14px 16px",
-                fontSize: 13,
-                color: C.fg,
-                fontFamily: "inherit",
-                letterSpacing: "0.02em",
-              }}
-            />
-            <button
-              onClick={handleScan}
-              style={{
-                padding: "14px 22px",
-                background: scanning
-                  ? `color-mix(in oklch, var(--chart-1) 12%, transparent)`
-                  : C.accent,
-                color: scanning ? C.accent : "#000",
-                border: "none",
-                cursor: "pointer",
-                fontSize: 11,
-                fontWeight: 800,
-                letterSpacing: "0.1em",
-                fontFamily: "inherit",
-                transition: "all 0.15s",
-                minWidth: 120,
-              }}
-            >
-              {scanning ? (
-                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <svg
-                    width="11"
-                    height="11"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    style={{ animation: "spin 0.8s linear infinite" }}
-                  >
-                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                  </svg>
-                  SCANNER
-                </span>
-              ) : (
-                "SKANNA →"
-              )}
-            </button>
-          </div>
-
-          {scanned && (
-            <div
-              style={{
-                marginTop: 1,
-                border: `1px solid color-mix(in oklch, var(--chart-1) 14%, transparent)`,
-                borderTop: "none",
-                background: `color-mix(in oklch, var(--chart-1) 2.5%, transparent)`,
-                padding: "22px 26px",
-                animation: "fadeUp 0.45s cubic-bezier(.16,1,.3,1) both",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 10,
-                  color: C.muted,
-                  marginBottom: 18,
-                  letterSpacing: "0.1em",
-                }}
-              >
-                SKANNINGSRESULTAT — {url || "example.se"}
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  gap: 28,
-                  justifyContent: "center",
-                  flexWrap: "wrap",
-                }}
-              >
-                <ScoreRing
-                  score={92}
-                  label="Prestanda"
-                  color={`var(--chart-1)`}
-                  delay={0}
-                />
-                <ScoreRing
-                  score={88}
-                  label="SEO"
-                  color={`var(--chart-2)`}
-                  delay={150}
-                />
-                <ScoreRing
-                  score={96}
-                  label="Tillgängl"
-                  color={`var(--chart-3)`}
-                  delay={300}
-                />
-                <ScoreRing
-                  score={79}
-                  label="Best pract"
-                  color={`var(--destructive)`}
-                  delay={450}
-                />
-              </div>
-              <div
-                style={{
-                  marginTop: 18,
-                  padding: "10px 14px",
-                  background: `color-mix(in oklch, var(--foreground) 3%, transparent)`,
-                  borderLeft: `2px solid var(--chart-1)`,
-                  fontSize: 11,
-                  color: C.muted,
-                  lineHeight: 1.9,
-                }}
-              >
-                <span style={{ color: C.accent }}>AI ✦ </span>3 oanvända
-                JS-paket ökar laddningstiden med ~340 ms. Optimera hero-bilden
-                (420 kb → &lt;100 kb) och aktivera lazy loading. Förväntad
-                förbättring: +12 poäng.
-                <span style={{ color: C.mutedLo }}>
-                  {" "}
-                  Aktivera Pro för full analys.
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <p
-          className="au5"
-          style={{ fontSize: 10, color: C.mutedLo, letterSpacing: "0.07em" }}
-        >
-          Gratis för alltid · Inget kreditkort · Kom igång på 30 sekunder
-        </p>
-
-        <div
-          style={{
-            position: "absolute",
-            bottom: 30,
-            left: "50%",
-            transform: "translateX(-50%)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 8,
-          }}
-        >
-          <div
-            style={{
-              width: 1,
-              height: 44,
-              background: `linear-gradient(to bottom, transparent, color-mix(in oklch, var(--foreground) 18%, transparent))`,
-            }}
-          />
-          <span
-            style={{ fontSize: 9, color: C.mutedLo, letterSpacing: "0.18em" }}
-          >
-            SCROLLA
-          </span>
-        </div>
-      </section>
-
-      {/* ── STATS BAR ───────────────────────────────────────────────────────── */}
-      <div
-        style={{
-          borderTop: `1px solid var(--border)`,
-          borderBottom: `1px solid var(--border)`,
-          padding: "30px max(24px, calc(50% - 620px))",
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: 24,
-          background: `color-mix(in oklch, var(--foreground) 0.8%, transparent)`,
-        }}
-      >
-        {[
-          ["10 000+", "Skanningar per dag"],
-          ["< 2s", "Varningsfördröjning"],
-          ["99.9%", "Drifttid"],
-          ["4 800+", "Aktiva hemsidor"],
-        ].map(([v, l], i) => (
-          <div key={i} style={{ textAlign: "center" }}>
-            <div
-              style={{
-                fontSize: "clamp(22px, 2.5vw, 34px)",
-                fontWeight: 800,
-                color: C.accent,
-                letterSpacing: "-0.02em",
-                lineHeight: 1,
-                marginBottom: 6,
-              }}
-            >
-              {v}
-            </div>
-            <div
-              style={{
-                fontSize: 10,
-                color: C.muted,
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-              }}
-            >
-              {l}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* ── TERMINAL DEMO ───────────────────────────────────────────────────── */}
-      <section
-        style={{
-          padding: "80px max(24px, calc(50% - 620px))",
-          position: "relative",
-        }}
-      >
-        <div
-          style={{
-            border: `1px solid var(--border)`,
-            background: `color-mix(in oklch, var(--background) 97%, black)`,
-            overflow: "hidden",
-            maxWidth: 860,
-            margin: "0 auto",
-          }}
-        >
-          <div
-            style={{
-              padding: "10px 16px",
-              borderBottom: `1px solid var(--border)`,
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              background: `color-mix(in oklch, var(--foreground) 2%, transparent)`,
-            }}
-          >
-            {["#FF5F57", "#FEBC2E", "#28C840"].map((c, i) => (
-              <div
-                key={i}
-                style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: "50%",
-                  background: c,
-                }}
-              />
-            ))}
-            <span
-              style={{
-                fontSize: 10,
-                color: C.muted,
-                marginLeft: 8,
-                letterSpacing: "0.06em",
-              }}
-            >
-              vidat — scan — zsh
-            </span>
-          </div>
-
-          <div
-            style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0 }}
-          >
-            <div
-              style={{
-                padding: "28px 28px",
-                fontSize: 12,
-                lineHeight: 2.1,
-                borderRight: `1px solid var(--border)`,
-              }}
-            >
-              <div>
-                <span style={{ color: C.accent }}>vidat</span>
-                <span style={{ color: C.blue }}> scan</span>
-                <span style={{ color: C.fg }}> acme.se</span>
-              </div>
-              <div style={{ color: C.muted }}>
-                <Typewriter
-                  text="→ Connecting to PageSpeed API..."
-                  delay={600}
-                />
-              </div>
-              <div style={{ color: C.muted }}>
-                <Typewriter
-                  text="→ Fetching Desktop + Mobile..."
-                  delay={1300}
-                />
-              </div>
-              <div style={{ color: C.muted }}>
-                <Typewriter text="→ Analyserar 47 resurser..." delay={2100} />
-              </div>
-              <div style={{ color: C.teal }}>
-                <Typewriter text="✓ Klar på 2.3s" delay={3000} />
-              </div>
-              <div style={{ marginTop: 16 }}>
-                {[
-                  ["Performance  ", 92, `var(--chart-1)`],
-                  ["SEO          ", 88, `var(--chart-2)`],
-                  ["Accessibility", 96, `var(--chart-3)`],
-                  ["Best Practices", 79, `var(--destructive)`],
-                ].map(([label, val, color], i) => (
-                  <div
-                    key={i}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 10,
-                      marginBottom: 4,
-                    }}
-                  >
-                    <span
-                      style={{ color: C.muted, minWidth: 138, fontSize: 11 }}
-                    >
-                      {label}
-                    </span>
-                    <span style={{ color, fontWeight: 800 }}>{val}</span>
-                    <span style={{ color: C.mutedLo, letterSpacing: -1 }}>
-                      {"█".repeat(Math.floor(val / 5))}
-                      {"░".repeat(20 - Math.floor(val / 5))}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div style={{ padding: "28px 28px" }}>
-              <div
-                style={{
-                  fontSize: 9,
-                  color: C.muted,
-                  letterSpacing: "0.14em",
-                  textTransform: "uppercase",
-                  marginBottom: 20,
-                }}
-              >
-                VISUELL ÖVERSIKT
-              </div>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: 20,
-                  marginBottom: 24,
-                }}
-              >
-                <ScoreRing
-                  score={92}
-                  label="Prestanda"
-                  color={`var(--chart-1)`}
-                  size={72}
-                  delay={3200}
-                />
-                <ScoreRing
-                  score={88}
-                  label="SEO"
-                  color={`var(--chart-2)`}
-                  size={72}
-                  delay={3400}
-                />
-                <ScoreRing
-                  score={96}
-                  label="Tillgängl"
-                  color={`var(--chart-3)`}
-                  size={72}
-                  delay={3600}
-                />
-                <ScoreRing
-                  score={79}
-                  label="Best pract"
-                  color={`var(--destructive)`}
-                  size={72}
-                  delay={3800}
-                />
-              </div>
-              <div
-                style={{
-                  padding: "14px 16px",
-                  background: `color-mix(in oklch, var(--chart-1) 4%, transparent)`,
-                  borderLeft: `2px solid var(--chart-1)`,
-                  fontSize: 11,
-                  color: C.muted,
-                  lineHeight: 1.8,
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 9,
-                    color: C.accent,
-                    letterSpacing: "0.12em",
-                    marginBottom: 6,
-                  }}
-                >
-                  AI ✦ REKOMMENDATION
-                </div>
-                <Typewriter
-                  text="Ditt LCP på 1.2s är utmärkt. Oanvänd JS lägger till 340ms på mobil — code-splitta analytics-bundeln. Förväntad förbättring: +12 poäng."
-                  delay={3500}
-                  speed={22}
-                />
-                <BlinkCursor />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── FEATURES ────────────────────────────────────────────────────────── */}
-      <section
-        id="features"
-        style={{ padding: "80px max(24px, calc(50% - 620px)) 100px" }}
-      >
-        <div style={{ marginBottom: 60 }}>
-          <div
-            style={{
-              fontSize: 10,
-              color: C.accent,
-              letterSpacing: "0.16em",
-              marginBottom: 14,
-            }}
-          >
-            // FUNKTIONER
-          </div>
-          <h2
-            style={{
-              fontSize: "clamp(28px, 4vw, 48px)",
-              fontWeight: 800,
-              letterSpacing: "-0.02em",
-              color: C.fg,
-              lineHeight: 1.1,
-              maxWidth: 480,
-            }}
-          >
-            Allt ditt prestandaarbetsflöde
-            <br />
-            <span style={{ color: C.mutedLo }}>behöver.</span>
-          </h2>
-        </div>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(290px, 1fr))",
-            gap: 1,
-            background: C.border,
-          }}
-        >
-          {FEATURES.map((f) => (
-            <div key={f.n} className="feature-cell">
-              {f.accent && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    right: 0,
-                    width: 100,
-                    height: 100,
-                    background: `radial-gradient(circle at top right, color-mix(in oklch, var(--chart-1) 7%, transparent), transparent)`,
-                    pointerEvents: "none",
-                  }}
-                />
-              )}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
-                  marginBottom: 18,
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: 10,
-                    color: C.mutedLo,
-                    letterSpacing: "0.1em",
-                  }}
-                >
-                  {f.n}
-                </span>
-                <span
-                  style={{
-                    fontSize: 18,
-                    color: f.accent ? C.accent : C.mutedLo,
-                  }}
-                >
-                  {f.icon}
-                </span>
-              </div>
-              <h3
-                style={{
-                  fontSize: 13,
-                  fontWeight: 700,
-                  color: C.fg,
-                  marginBottom: 10,
-                  letterSpacing: "0.02em",
-                }}
-              >
-                {f.title}
-              </h3>
-              <p
-                style={{
-                  fontSize: 12,
-                  color: C.muted,
-                  lineHeight: 1.85,
-                  marginBottom: 18,
-                }}
-              >
-                {f.desc}
-              </p>
-              <span
-                style={{
-                  fontSize: 9,
-                  letterSpacing: "0.12em",
-                  textTransform: "uppercase",
-                  color: f.accent ? C.accent : C.mutedLo,
-                  border: `1px solid ${f.accent ? "color-mix(in oklch, var(--chart-1) 25%, transparent)" : "var(--border)"}`,
-                  padding: "3px 9px",
-                }}
-              >
-                {f.tag}
-              </span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── HOW IT WORKS ────────────────────────────────────────────────────── */}
-      <section
-        style={{
-          padding: "80px max(24px, calc(50% - 620px))",
-          borderTop: `1px solid var(--border)`,
-          borderBottom: `1px solid var(--border)`,
-          background: `color-mix(in oklch, var(--foreground) 1%, transparent)`,
-        }}
-      >
-        <div
-          style={{
-            fontSize: 10,
-            color: C.accent,
-            letterSpacing: "0.16em",
-            marginBottom: 52,
-          }}
-        >
-          // SÅ HÄR FUNGERAR DET
-        </div>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-            gap: 1,
-            background: C.border,
-          }}
-        >
-          {STEPS.map(([n, title, desc]) => (
-            <div key={n} style={{ background: C.bg, padding: "36px 28px" }}>
-              <div
-                style={{
-                  fontSize: 52,
-                  fontWeight: 800,
-                  lineHeight: 1,
-                  letterSpacing: "-0.04em",
-                  color: `color-mix(in oklch, var(--foreground) 4%, transparent)`,
-                  marginBottom: 20,
-                  userSelect: "none",
-                }}
-              >
-                {n}
-              </div>
-              <h3
-                style={{
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: C.fg,
-                  marginBottom: 10,
-                  letterSpacing: "0.03em",
-                }}
-              >
-                {title}
-              </h3>
-              <p style={{ fontSize: 11, color: C.muted, lineHeight: 1.85 }}>
-                {desc}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── PRICING ─────────────────────────────────────────────────────────── */}
-      <section
-        id="pricing"
-        style={{ padding: "100px max(24px, calc(50% - 620px))" }}
-      >
-        <div style={{ marginBottom: 60, textAlign: "center" }}>
-          <div
-            style={{
-              fontSize: 10,
-              color: C.accent,
-              letterSpacing: "0.16em",
-              marginBottom: 14,
-            }}
-          >
-            // PRISER
-          </div>
-          <h2
-            style={{
-              fontSize: "clamp(28px, 4vw, 48px)",
-              fontWeight: 800,
-              letterSpacing: "-0.02em",
-              color: C.fg,
-              lineHeight: 1.1,
-            }}
-          >
-            Börja gratis.
-            <br />
-            <span style={{ color: C.mutedLo }}>Skala när du behöver.</span>
-          </h2>
-        </div>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: 1,
-            background: C.border,
-            maxWidth: 980,
-            margin: "0 auto",
-          }}
-        >
-          {PLANS.map((plan) => (
-            <div
-              key={plan.name}
-              className={`plan-card ${plan.highlight ? "plan-highlight" : ""}`}
-              style={{
-                background: plan.highlight ? C.surface : C.bg,
-                padding: "40px 30px",
-                position: "relative",
-                borderTop: plan.highlight
-                  ? `2px solid var(--chart-1)`
-                  : `2px solid transparent`,
-                display: "flex",
-                flexDirection: "column",
-              }}
-            >
-              {plan.badge && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: -1,
-                    right: 20,
-                    background: C.accent,
-                    color: "#000",
-                    fontSize: 9,
-                    fontWeight: 800,
-                    letterSpacing: "0.15em",
-                    padding: "3px 10px",
-                  }}
-                >
-                  {plan.badge}
-                </div>
-              )}
-              <div
-                style={{
-                  fontSize: 10,
-                  color: C.muted,
-                  letterSpacing: "0.16em",
-                  marginBottom: 20,
-                }}
-              >
-                {plan.name}
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "baseline",
-                  gap: 6,
-                  marginBottom: 8,
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: 40,
-                    fontWeight: 800,
-                    letterSpacing: "-0.03em",
-                    lineHeight: 1,
-                    color: plan.highlight ? C.accent : C.fg,
-                  }}
-                >
-                  {plan.price}
-                </span>
-                <span style={{ fontSize: 11, color: C.muted }}>
-                  {plan.period}
-                </span>
-              </div>
-              <div
-                style={{
-                  width: 32,
-                  height: 1,
-                  background: C.border,
-                  margin: "18px 0 20px",
-                }}
-              />
-              <div style={{ flex: 1, marginBottom: 28 }}>
-                {plan.features.map((f, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: 10,
-                      marginBottom: 10,
-                      fontSize: 11,
-                      color: C.muted,
-                    }}
-                  >
-                    <span
-                      style={{
-                        color: plan.highlight ? C.accent : C.mutedLo,
-                        flexShrink: 0,
-                        marginTop: 2,
-                        fontSize: 9,
-                      }}
-                    >
-                      ▸
-                    </span>
-                    {f}
-                  </div>
-                ))}
-              </div>
-              <button
-                style={{
-                  width: "100%",
-                  padding: "12px 0",
-                  background: plan.highlight ? C.accent : "transparent",
-                  color: plan.highlight ? "#000" : C.accent,
-                  border: plan.highlight
-                    ? "none"
-                    : `1px solid color-mix(in oklch, var(--chart-1) 30%, transparent)`,
-                  cursor: "pointer",
-                  fontSize: 11,
-                  fontWeight: 800,
-                  letterSpacing: "0.1em",
-                  fontFamily: "inherit",
-                  transition: "all 0.15s",
-                }}
-                onMouseEnter={(e) => {
-                  if (!plan.highlight) {
-                    e.currentTarget.style.borderColor = C.accent
-                    e.currentTarget.style.background = `color-mix(in oklch, var(--chart-1) 6%, transparent)`
-                  } else
-                    e.currentTarget.style.background = `color-mix(in oklch, var(--chart-1) 85%, white)`
-                }}
-                onMouseLeave={(e) => {
-                  if (!plan.highlight) {
-                    e.currentTarget.style.borderColor = `color-mix(in oklch, var(--chart-1) 30%, transparent)`
-                    e.currentTarget.style.background = "transparent"
-                  } else e.currentTarget.style.background = C.accent
-                }}
-              >
-                {plan.cta.toUpperCase()} →
-              </button>
-            </div>
-          ))}
-        </div>
-        <p
-          style={{
-            marginTop: 24,
-            textAlign: "center",
-            fontSize: 10,
-            color: C.mutedLo,
-            letterSpacing: "0.07em",
-          }}
-        >
-          Alla planer inkluderar 14 dagars gratis provperiod · Inget kreditkort
-          krävs
-        </p>
-      </section>
-
-      {/* ── CTA BANNER ──────────────────────────────────────────────────────── */}
-      <section
-        style={{
-          margin: "0 max(24px, calc(50% - 620px)) 80px",
-          border: `1px solid var(--border)`,
-          padding: "64px max(32px, 8%)",
-          position: "relative",
-          overflow: "hidden",
-          background: C.surface,
-        }}
-      >
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            pointerEvents: "none",
-            background: `radial-gradient(ellipse at 20% 50%, color-mix(in oklch, var(--chart-1) 5%, transparent) 0%, transparent 55%)`,
-          }}
-        />
-        <GridBg style={{ opacity: 0.4 }} />
-        <div style={{ position: "relative", maxWidth: 560 }}>
-          <h2
-            style={{
-              fontSize: "clamp(22px, 3.5vw, 40px)",
-              fontWeight: 800,
-              letterSpacing: "-0.02em",
-              color: C.fg,
-              lineHeight: 1.15,
-              marginBottom: 16,
-            }}
-          >
-            Sluta få reda på prestandaproblem
-            <br />
-            <span style={{ color: C.accent }}>från dina användare.</span>
-          </h2>
-          <p
-            style={{
-              fontSize: 12,
-              color: C.muted,
-              marginBottom: 36,
-              lineHeight: 1.85,
-            }}
-          >
-            Gå med de utvecklare som får varningar inom sekunder — inte dagar.
-          </p>
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <Btn size="lg">Skapa gratis konto →</Btn>
-            <Btn variant="outline" size="lg">
-              Se demo
-            </Btn>
-          </div>
-        </div>
-      </section>
-
-      {/* ── FOOTER ──────────────────────────────────────────────────────────── */}
-      <footer
-        style={{
-          borderTop: `1px solid var(--border)`,
-          padding: "28px max(24px, calc(50% - 620px))",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: 16,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <svg width="14" height="14" viewBox="0 0 18 18">
-            <rect x="0" y="0" width="7.5" height="7.5" fill="var(--chart-1)" />
-            <rect
-              x="10.5"
-              y="0"
-              width="7.5"
-              height="7.5"
-              fill="var(--chart-1)"
-              opacity="0.35"
-            />
-            <rect
-              x="0"
-              y="10.5"
-              width="7.5"
-              height="7.5"
-              fill="var(--chart-1)"
-              opacity="0.35"
-            />
-            <rect
-              x="10.5"
-              y="10.5"
-              width="7.5"
-              height="7.5"
-              fill="var(--chart-1)"
-            />
-          </svg>
-          <span
-            style={{
-              fontSize: 11,
-              fontWeight: 800,
-              color: C.muted,
-              letterSpacing: "0.12em",
-            }}
-          >
-            VIDAT
-          </span>
-        </div>
-        <span
-          style={{ fontSize: 10, color: C.mutedLo, letterSpacing: "0.06em" }}
-        >
-          © 2026 VIDAT · BYGGD MED NEXT.JS + GO
-        </span>
-        <div style={{ display: "flex", gap: 24, fontSize: 10, color: C.muted }}>
-          {["Integritetspolicy", "Villkor", "Kontakt", "Docs"].map((l) => (
-            <a
-              key={l}
-              href="#"
-              style={{ transition: "color 0.15s" }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = C.fg)}
-              onMouseLeave={(e) => (e.currentTarget.style.color = C.muted)}
-            >
-              {l}
-            </a>
-          ))}
-        </div>
-      </footer>
+      ) : null}
     </div>
+  )
+}
+
+export default function HomePage() {
+  return (
+    <main className="min-h-screen bg-background text-foreground">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[34rem] bg-[radial-gradient(circle_at_top_left,_rgba(185,92,48,0.16),_transparent_42%),radial-gradient(circle_at_top_right,_rgba(41,37,36,0.14),_transparent_36%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,transparent_0,transparent_calc(100%-1px),rgba(120,113,108,0.12)_calc(100%-1px)),linear-gradient(to_bottom,transparent_0,transparent_calc(100%-1px),rgba(120,113,108,0.12)_calc(100%-1px))] bg-[size:80px_80px] [mask-image:linear-gradient(to_bottom,rgba(0,0,0,0.28),transparent_90%)]" />
+
+      <div className="relative mx-auto flex max-w-7xl flex-col px-4 pb-12 pt-4 sm:px-6 sm:pb-16 sm:pt-6 lg:px-10">
+        <header className="rounded-[2rem] border border-border/80 bg-background/85 px-4 py-4 backdrop-blur sm:px-5 sm:py-3 md:rounded-full">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <Link href="/" className="flex min-w-0 items-center gap-3">
+            <div className="grid h-9 w-9 grid-cols-2 gap-1 rounded-md bg-card p-1 shadow-sm">
+              <span className="rounded-sm bg-chart-1" />
+              <span className="rounded-sm bg-chart-2/25" />
+              <span className="rounded-sm bg-chart-2/25" />
+              <span className="rounded-sm bg-chart-1" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.24em]">
+                Vidat
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Performance monitoring for teams
+              </p>
+            </div>
+            </Link>
+
+            <nav className="hidden items-center gap-5 text-sm text-muted-foreground lg:flex">
+              <a href="#features" className="transition-colors hover:text-foreground">
+                Funktioner
+              </a>
+              <a href="#complete-saas" className="transition-colors hover:text-foreground">
+                Komplett SaaS
+              </a>
+              <a href="#pricing" className="transition-colors hover:text-foreground">
+                Priser
+              </a>
+              <Link href="/docs" className="transition-colors hover:text-foreground">
+                Docs
+              </Link>
+            </nav>
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between md:justify-end">
+              <nav className="flex flex-wrap gap-2 text-xs text-muted-foreground lg:hidden">
+                <a
+                  href="#features"
+                  className="rounded-full border border-border/80 px-3 py-1.5 transition-colors hover:text-foreground"
+                >
+                  Funktioner
+                </a>
+                <a
+                  href="#complete-saas"
+                  className="rounded-full border border-border/80 px-3 py-1.5 transition-colors hover:text-foreground"
+                >
+                  SaaS
+                </a>
+                <a
+                  href="#pricing"
+                  className="rounded-full border border-border/80 px-3 py-1.5 transition-colors hover:text-foreground"
+                >
+                  Priser
+                </a>
+                <Link
+                  href="/docs"
+                  className="rounded-full border border-border/80 px-3 py-1.5 transition-colors hover:text-foreground"
+                >
+                  Docs
+                </Link>
+              </nav>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <Link
+                  href="/sign-in"
+                  className="text-sm text-muted-foreground transition-colors hover:text-foreground md:inline-flex"
+                >
+                  Logga in
+                </Link>
+                <Link
+                  href="/sign-in"
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-chart-1 px-4 py-2 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5"
+                >
+                  Starta gratis
+                  <ChevronRight className="h-4 w-4" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <section className="grid gap-10 pb-16 pt-12 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:pt-24">
+          <div className="max-w-3xl space-y-8">
+            <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-chart-1/20 bg-chart-1/8 px-4 py-2 text-[11px] uppercase tracking-[0.18em] text-chart-1 sm:text-xs sm:tracking-[0.22em]">
+              <BellRing className="h-3.5 w-3.5" />
+              Upptäck regressionsproblem innan kunden gör det
+            </div>
+
+            <div className="space-y-6">
+              <h1 className="font-serif text-4xl leading-none tracking-tight text-foreground sm:text-5xl md:text-6xl lg:text-7xl">
+                Gör prestanda till en produkt, inte en eftertanke.
+              </h1>
+              <p className="max-w-2xl text-base leading-8 text-muted-foreground md:text-lg">
+                Vidat hjälper team att övervaka Lighthouse, förstå förändringar
+                över tid och agera direkt när en release försämrar upplevelsen.
+                Tjänsten har redan kärnan för en modern SaaS, men några avgörande
+                lager återstår för att den ska bli kommersiellt komplett.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <Link
+                href="/sign-in"
+                className="inline-flex items-center gap-2 rounded-full bg-foreground px-6 py-3 text-sm font-semibold text-background transition-transform hover:-translate-y-0.5"
+              >
+                Skapa konto
+                <ChevronRight className="h-4 w-4" />
+              </Link>
+              <Link
+                href="/dashboard/settings"
+                className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3 text-sm font-semibold transition-colors hover:bg-muted/70"
+              >
+                Se SaaS-inställningar
+              </Link>
+            </div>
+
+            <div className="grid gap-4 border-t border-border/80 pt-8 sm:grid-cols-3">
+              <div>
+                <p className="text-2xl font-semibold tracking-tight sm:text-3xl">24/7</p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Monitorering av sajter, rapporter och score-förändringar.
+                </p>
+              </div>
+              <div>
+                <p className="text-2xl font-semibold tracking-tight sm:text-3xl">4</p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Planer från gratisnivå till enterprise-stöd.
+                </p>
+              </div>
+              <div>
+                <p className="text-2xl font-semibold tracking-tight sm:text-3xl">1 plats</p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  För dashboard, rapporter, webhooks och account controls.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="relative">
+            <div className="absolute inset-0 translate-x-2 translate-y-2 rounded-[2rem] bg-chart-1/12 blur-3xl sm:translate-x-4 sm:translate-y-4" />
+            <div className="relative overflow-hidden rounded-[2rem] border border-border/80 bg-card/90 p-4 shadow-xl sm:p-5">
+              <div className="flex flex-col gap-3 border-b border-border/80 pb-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
+                    Live Overview
+                  </p>
+                  <h3 className="mt-2 text-2xl font-semibold tracking-tight">
+                    Deploy health
+                  </h3>
+                </div>
+                <span className="rounded-full bg-chart-1/15 px-3 py-1 text-xs font-semibold text-chart-1">
+                  Pro workspace
+                </span>
+              </div>
+
+              <div className="grid gap-4 py-5 sm:grid-cols-3">
+                <MetricCard label="Performance" value="92" tone="good" />
+                <MetricCard label="SEO" value="96" tone="good" />
+                <MetricCard label="Best practice" value="78" tone="warn" />
+              </div>
+
+              <div className="space-y-3">
+                <div className="rounded-2xl border border-border/80 bg-background/80 p-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p className="text-sm font-semibold">Regression upptäckt</p>
+                      <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                        LCP har försämrats med 380 ms efter senaste deploy på
+                        mobil. Analytics-bundeln har vuxit markant.
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-destructive/10 px-3 py-1 text-xs font-semibold text-destructive">
+                      Alert
+                    </span>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-border/80 bg-background/80 p-4">
+                  <p className="text-xs uppercase tracking-[0.22em] text-chart-1">
+                    AI rekommendation
+                  </p>
+                  <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                    Bryt ut tredjepartsskript från kritisk rendering, fördröj
+                    tag manager på mobil och kontrollera senaste deploy för nya
+                    bildblock ovanför folden.
+                  </p>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-border/80 bg-background/80 p-4">
+                    <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
+                      Integrations
+                    </p>
+                    <p className="mt-2 text-sm font-medium">
+                      Slack, webhooks, e-post
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-border/80 bg-background/80 p-4">
+                    <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
+                      Billing status
+                    </p>
+                    <p className="mt-2 text-sm font-medium">
+                      Portal + upgrade paths redo
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="grid gap-4 border-y border-border/80 py-10 md:grid-cols-3">
+          {productPillars.map((pillar) => {
+            const Icon = pillar.icon
+            return (
+              <article
+                key={pillar.title}
+                className="rounded-[1.75rem] border border-border/80 bg-card/70 p-6"
+              >
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-chart-1/12 text-chart-1">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <h3 className="mt-5 text-xl font-semibold tracking-tight">
+                  {pillar.title}
+                </h3>
+                <p className="mt-3 text-sm leading-7 text-muted-foreground">
+                  {pillar.description}
+                </p>
+              </article>
+            )
+          })}
+        </section>
+
+        <section
+          id="features"
+          className="grid gap-10 py-20 lg:grid-cols-[0.85fr_1.15fr]"
+        >
+          <SectionHeading
+            eyebrow="Funktioner"
+            title="Landningssidan ska sälja ett arbetsflöde, inte bara features."
+            description="Det här upplägget gör tydligare vad produkten faktiskt löser: övervakning, rapportering och driftkoppling i samma verktyg."
+          />
+
+          <div className="space-y-4">
+            {featureRows.map((row) => (
+              <article
+                key={row.title}
+                className="rounded-[1.75rem] border border-border/80 bg-card/85 p-6 md:p-8"
+              >
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-chart-1">
+                  {row.eyebrow}
+                </p>
+                <h3 className="mt-4 text-2xl font-semibold tracking-tight">
+                  {row.title}
+                </h3>
+                <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
+                  {row.description}
+                </p>
+                <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                  {row.bullets.map((bullet) => (
+                    <div
+                      key={bullet}
+                      className="rounded-2xl border border-border/80 bg-background/80 p-4 text-sm leading-6 text-muted-foreground"
+                    >
+                      {bullet}
+                    </div>
+                  ))}
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section
+          id="complete-saas"
+          className="rounded-[2rem] border border-border/80 bg-card/75 px-4 py-12 sm:px-6 sm:py-16 md:px-10"
+        >
+          <SectionHeading
+            eyebrow="Komplett SaaS"
+            title="Det här bör du lägga till för att tjänsten ska kännas färdig på riktigt."
+            description="Produkten har en stark kärna, men en kommersiell SaaS behöver även de delar som användaren bara märker när de saknas."
+          />
+
+          <div className="mt-10 grid gap-4 lg:grid-cols-3">
+            {completeSaasItems.map((item) => {
+              const Icon = item.icon
+              return (
+                <article
+                  key={item.title}
+                  className="rounded-[1.75rem] border border-border/80 bg-background/85 p-6"
+                >
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-foreground text-background">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <h3 className="mt-5 text-lg font-semibold tracking-tight">
+                    {item.title}
+                  </h3>
+                  <p className="mt-3 text-sm leading-7 text-muted-foreground">
+                    {item.description}
+                  </p>
+                </article>
+              )
+            })}
+          </div>
+        </section>
+
+        <section className="grid gap-10 py-20 lg:grid-cols-[0.9fr_1.1fr]">
+          <SectionHeading
+            eyebrow="Trust Layer"
+            title="Många SaaS-produkter tappar affären här."
+            description="Säkerhet, support och transparens bör synas redan på startsidan om du vill att större kunder ska ta produkten på allvar."
+          />
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            <TrustCard
+              icon={<ShieldCheck className="h-5 w-5" />}
+              title="Säker drift"
+              description="Webhook-secrets, rollback-rutiner, felhantering och kontrollerad retention."
+            />
+            <TrustCard
+              icon={<FileText className="h-5 w-5" />}
+              title="Tydliga policies"
+              description="Privacy, terms, billingflöden och planregler som går att förstå innan köp."
+            />
+            <TrustCard
+              icon={<BellRing className="h-5 w-5" />}
+              title="Aktiv kommunikation"
+              description="Status, supportvägar och notiser som gör att kunden känner sig trygg efter signup."
+            />
+          </div>
+        </section>
+
+        <section id="pricing" className="py-6">
+          <SectionHeading
+            eyebrow="Priser"
+            title="Prisstrukturen finns redan. Nu säljer den också bättre."
+            description="Planerna nedan är justerade för att spegla det som finns i kodbasens entitlements och ge tydligare uppgraderingslogik."
+          />
+
+          <div className="mt-10 grid gap-4 lg:grid-cols-4">
+            {pricing.map((plan) => (
+              <article
+                key={plan.name}
+                className={`rounded-[1.9rem] border p-6 ${
+                  plan.featured
+                    ? "border-chart-1 bg-foreground text-background shadow-xl"
+                    : "border-border/80 bg-card/80"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p
+                      className={`text-xs font-semibold uppercase tracking-[0.26em] ${
+                        plan.featured ? "text-chart-1" : "text-muted-foreground"
+                      }`}
+                    >
+                      {plan.name}
+                    </p>
+                    <p className="mt-4 text-4xl font-semibold tracking-tight">
+                      {plan.price}
+                    </p>
+                    <p
+                      className={`mt-3 text-sm leading-6 ${
+                        plan.featured ? "text-background/75" : "text-muted-foreground"
+                      }`}
+                    >
+                      {plan.description}
+                    </p>
+                  </div>
+                  {plan.featured ? (
+                    <span className="rounded-full bg-chart-1 px-3 py-1 text-xs font-semibold text-white">
+                      Rekommenderad
+                    </span>
+                  ) : null}
+                </div>
+
+                <div className="mt-8 space-y-3">
+                  {plan.features.map((feature) => (
+                    <div
+                      key={feature}
+                      className={`rounded-2xl px-4 py-3 text-sm ${
+                        plan.featured
+                          ? "bg-white/8 text-background"
+                          : "bg-background/80 text-muted-foreground"
+                      }`}
+                    >
+                      {feature}
+                    </div>
+                  ))}
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="grid gap-10 py-20 lg:grid-cols-[0.9fr_1.1fr]">
+          <SectionHeading
+            eyebrow="FAQ"
+            title="Korta svar på det viktigaste du behöver besluta nu."
+          />
+
+          <div className="space-y-4">
+            {faq.map((item) => (
+              <article
+                key={item.question}
+                className="rounded-[1.75rem] border border-border/80 bg-card/80 p-6"
+              >
+                <h3 className="text-lg font-semibold tracking-tight">
+                  {item.question}
+                </h3>
+                <p className="mt-3 text-sm leading-7 text-muted-foreground">
+                  {item.answer}
+                </p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="overflow-hidden rounded-[2rem] border border-border/80 bg-foreground px-4 py-12 text-background sm:px-6 sm:py-14 md:px-10">
+          <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
+            <div className="max-w-2xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-chart-1">
+                Nästa steg
+              </p>
+              <h2 className="mt-4 font-serif text-3xl leading-tight tracking-tight sm:text-4xl md:text-5xl">
+                Vill du, kan jag ta nästa steg och bygga de saknade SaaS-delarna
+                också.
+              </h2>
+              <p className="mt-4 text-sm leading-7 text-background/72 md:text-base">
+                Rimlig ordning i den här kodbasen är billing checkout, team och
+                roller, onboardingflöde samt verklig notifieringsleverans.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <Link
+                href="/dashboard/settings"
+                className="inline-flex items-center gap-2 rounded-full bg-chart-1 px-5 py-3 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5"
+              >
+                Öppna settings
+                <ChevronRight className="h-4 w-4" />
+              </Link>
+              <Link
+                href="/contact"
+                className="inline-flex items-center gap-2 rounded-full border border-white/15 px-5 py-3 text-sm font-semibold text-background transition-colors hover:bg-white/8"
+              >
+                Kontakta oss
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <footer className="flex flex-col gap-5 border-t border-border/80 py-8 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="font-semibold uppercase tracking-[0.24em] text-foreground">
+              Vidat
+            </p>
+            <p className="mt-1">
+              Byggd för team som vill upptäcka prestandaproblem tidigt.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-5">
+            <Link href="/privacy" className="transition-colors hover:text-foreground">
+              Privacy
+            </Link>
+            <Link href="/terms" className="transition-colors hover:text-foreground">
+              Terms
+            </Link>
+            <Link href="/docs" className="transition-colors hover:text-foreground">
+              Docs
+            </Link>
+            <Link href="/contact" className="transition-colors hover:text-foreground">
+              Contact
+            </Link>
+          </div>
+        </footer>
+      </div>
+    </main>
+  )
+}
+
+function MetricCard({
+  label,
+  value,
+  tone,
+}: {
+  label: string
+  value: string
+  tone: "good" | "warn"
+}) {
+  return (
+    <div className="rounded-2xl border border-border/80 bg-background/80 p-4">
+      <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+        {label}
+      </p>
+      <p
+        className={`mt-3 text-3xl font-semibold tracking-tight ${
+          tone === "good" ? "text-chart-1" : "text-destructive"
+        }`}
+      >
+        {value}
+      </p>
+    </div>
+  )
+}
+
+function TrustCard({
+  icon,
+  title,
+  description,
+}: {
+  icon: ReactNode
+  title: string
+  description: string
+}) {
+  return (
+    <article className="rounded-[1.75rem] border border-border/80 bg-card/80 p-6">
+      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-chart-1/12 text-chart-1">
+        {icon}
+      </div>
+      <h3 className="mt-5 text-lg font-semibold tracking-tight">{title}</h3>
+      <p className="mt-3 text-sm leading-7 text-muted-foreground">
+        {description}
+      </p>
+    </article>
   )
 }

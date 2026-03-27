@@ -35,11 +35,14 @@ import {
 } from "@/components/ui/select"
 import { ErrUpgradePlan } from "@/lib/errors"
 import { ORPCError } from "@orpc/server"
+import { t } from "@/lib/i18n"
 
 export default function AddWebsite() {
   const { mutateAsync } = useMutation({
-    mutationFn: async ({ url, interval }: { url: string; interval: any }) =>
-      await client.createWebsite({ url, interval }),
+    mutationFn: async (values: {
+      url: string
+      interval: (typeof intervals)[number]
+    }) => await client.createWebsite(values),
   })
 
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -54,21 +57,26 @@ export default function AddWebsite() {
     },
     onSubmit: async ({ value, formApi }) => {
       try {
-        await mutateAsync(value)
+        await mutateAsync({
+          url: value.url,
+          interval: value.interval as (typeof intervals)[number],
+        })
 
         getQueryClient().invalidateQueries({ queryKey: ["websites"] })
-        toast.success("Hemsidan har lagts till")
+        getQueryClient().invalidateQueries({ queryKey: ["dashboardOverview"] })
+        getQueryClient().invalidateQueries({ queryKey: ["accountSummary"] })
+        toast.success(t("addWebsite.success"))
         formApi.reset()
         setIsFormOpen(false)
       } catch (err) {
         const error = err as ORPCError<string, unknown>
 
         if (error.code === ErrUpgradePlan) {
-          toast.error("Uppgradera plan för att lägga till fler webbsidor.")
+          toast.error(t("addWebsite.upgradeRequired"))
           return
         }
 
-        toast.error("Något gick fel. Försök igen.")
+        toast.error(t("common.somethingWentWrongTryAgain"))
       }
     },
   })
@@ -77,16 +85,14 @@ export default function AddWebsite() {
     <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
       <DialogTrigger asChild>
         <Button>
-          <Plus /> Lägg till hemsida
+          <Plus /> {t("addWebsite.cta")}
         </Button>
       </DialogTrigger>
 
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Lägg till en hemsida</DialogTitle>
-          <DialogDescription>
-            Ange webbadressen till den hemsida du vill övervaka.
-          </DialogDescription>
+          <DialogTitle>{t("addWebsite.title")}</DialogTitle>
+          <DialogDescription>{t("addWebsite.description")}</DialogDescription>
         </DialogHeader>
 
         <form
@@ -98,15 +104,16 @@ export default function AddWebsite() {
           className="space-y-4"
         >
           <FieldGroup>
-            <form.Field
-              name="url"
-              children={(field) => {
+            <form.Field name="url">
+              {(field) => {
                 const isInvalid =
                   field.state.meta.isTouched && !field.state.meta.isValid
 
                 return (
                   <Field data-invalid={isInvalid}>
-                    <FieldLabel htmlFor={field.name}>Webbadress</FieldLabel>
+                    <FieldLabel htmlFor={field.name}>
+                      {t("addWebsite.urlLabel")}
+                    </FieldLabel>
 
                     <Input
                       id={field.name}
@@ -116,7 +123,7 @@ export default function AddWebsite() {
                       onChange={(e) => field.handleChange(e.target.value)}
                       type="url"
                       aria-invalid={isInvalid}
-                      placeholder="https://exempel.se"
+                      placeholder={t("addWebsite.urlPlaceholder")}
                       autoComplete="off"
                     />
 
@@ -126,24 +133,27 @@ export default function AddWebsite() {
                   </Field>
                 )
               }}
-            />
+            </form.Field>
 
-            <form.Field
-              name="interval"
-              children={(field) => {
+            <form.Field name="interval">
+              {(field) => {
                 const isInvalid =
                   field.state.meta.isTouched && !field.state.meta.isValid
 
                 return (
                   <Field data-invalid={isInvalid}>
-                    <FieldLabel htmlFor={field.name}>Intervall</FieldLabel>
+                    <FieldLabel htmlFor={field.name}>
+                      {t("addWebsite.intervalLabel")}
+                    </FieldLabel>
 
                     <Select
                       value={field.state.value}
-                      onValueChange={(value) => field.handleChange(value)}
+                      onValueChange={(value) =>
+                        field.handleChange(value as (typeof intervals)[number])
+                      }
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Intervall för kontroll" />
+                        <SelectValue placeholder={t("addWebsite.intervalPlaceholder")} />
                       </SelectTrigger>
 
                       <SelectContent>
@@ -163,13 +173,13 @@ export default function AddWebsite() {
                   </Field>
                 )
               }}
-            />
+            </form.Field>
           </FieldGroup>
 
           <div className="flex justify-end">
             <Button disabled={form.state.isSubmitting}>
               {form.state.isSubmitting && <Spinner />}
-              Lägg till hemsida
+              {t("addWebsite.submit")}
             </Button>
           </div>
         </form>

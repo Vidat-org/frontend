@@ -2,12 +2,12 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
 import { Report } from "@/migrations/schema"
 import Link from "next/link"
+import { t } from "@/lib/i18n"
 
 type Props = {
   report: Report
@@ -18,7 +18,7 @@ export default function ReportCard({ report }: Props) {
     <Link href={`/dashboard/reports/${report.id}`}>
       <Card>
         <CardHeader>
-          <CardDescription>Rapport från:</CardDescription>
+          <CardDescription>{t("reportCard.reportFrom")}</CardDescription>
           <CardTitle>
             {new Date(report.createdAt || "").toLocaleDateString()}
           </CardTitle>

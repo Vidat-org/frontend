@@ -1,3 +1,5 @@
+export const runtime = "nodejs"
+
 import { db } from "@/db/drizzle"
 import { websites } from "@/migrations/schema"
 import { and, count, desc, eq } from "drizzle-orm"
@@ -7,15 +9,43 @@ import z from "zod"
 import { planToWebsiteCount } from "@/lib/utils"
 import { ORPCError } from "@orpc/server"
 import { ErrUpgradePlan } from "@/lib/errors"
+import { appendAuditLog, markOnboardingStep } from "@/lib/saas"
+import {
+  cachedQuery,
+  invalidateCacheTags,
+  websiteTag,
+  workspaceTag,
+} from "@/lib/cache"
 
 export const listWebsites = protectedProcedure.handler(async ({ context }) => {
-  const websitesQuery = await db.query.websites.findMany({
-    where: eq(websites.userId, context.userId),
-    orderBy: desc(websites.createdAt),
-  })
+  const websitesQuery = await cachedQuery(
+    {
+      key: `websites:list:${context.workspaceId}`,
+      ttlSeconds: 60,
+      tags: [workspaceTag(context.workspaceId)],
+    },
+    () =>
+      db.query.websites.findMany({
+        where: eq(websites.workspaceId, context.workspaceId),
+        orderBy: desc(websites.createdAt),
+      })
+  )
 
   return websitesQuery
 })
+
+async function invalidateWebsiteQueries(
+  workspaceId: string,
+  websiteId?: string
+) {
+  const tags = [workspaceTag(workspaceId)]
+
+  if (websiteId) {
+    tags.push(websiteTag(websiteId))
+  }
+
+  await invalidateCacheTags(tags)
+}
 
 export const createWebsite = protectedProcedure
   .input(createWebsiteSchema)
@@ -23,33 +53,69 @@ export const createWebsite = protectedProcedure
     const websiteCount = await db
       .select({ count: count() })
       .from(websites)
-      .where(eq(websites.userId, context.userId))
+      .where(
+        and(
+          eq(websites.workspaceId, context.workspaceId),
+          eq(websites.isEnabled, true)
+        )
+      )
 
     const planCount = planToWebsiteCount(context.plan)
 
-    if (websiteCount[0].count === planCount) {
+    if (websiteCount[0].count >= planCount) {
       throw new ORPCError(ErrUpgradePlan)
     }
 
     const interval = intervalToSeconds[input.interval]
 
-    await db.insert(websites).values({
-      userId: context.userId,
-      url: input.url,
-      intervalSeconds: interval,
-      name: "",
+    const inserted = await db
+      .insert(websites)
+      .values({
+        userId: context.userId,
+        workspaceId: context.workspaceId,
+        url: input.url,
+        intervalSeconds: interval,
+        name: "",
+      })
+      .returning({ id: websites.id })
+
+    await markOnboardingStep(context.workspaceId, {
+      hasAddedWebsite: true,
     })
+
+    await appendAuditLog({
+      workspaceId: context.workspaceId,
+      actorUserId: context.userId,
+      targetType: "website",
+      action: "website.created",
+      summary: `Webbplatsen ${input.url} lades till`,
+      metadata: {
+        intervalSeconds: interval,
+      },
+    })
+
+    await invalidateWebsiteQueries(context.workspaceId, inserted[0]?.id)
+
+    return inserted[0] ?? null
   })
 
 export const getWebsite = protectedProcedure
   .input(z.object({ id: z.string() }))
   .handler(async ({ input, context }) => {
-    const website = await db.query.websites.findFirst({
-      where: and(
-        eq(websites.userId, context.userId),
-        eq(websites.id, input.id)
-      ),
-    })
+    const website = await cachedQuery(
+      {
+        key: `websites:get:${context.workspaceId}:${input.id}`,
+        ttlSeconds: 60,
+        tags: [workspaceTag(context.workspaceId), websiteTag(input.id)],
+      },
+      () =>
+        db.query.websites.findFirst({
+          where: and(
+            eq(websites.workspaceId, context.workspaceId),
+            eq(websites.id, input.id)
+          ),
+        })
+    )
 
     return website
   })
@@ -61,8 +127,13 @@ export const updateNextCheck = protectedProcedure
       .update(websites)
       .set({ nextCheckAt: input.date.toISOString() })
       .where(
-        and(eq(websites.userId, context.userId), eq(websites.id, input.website))
+        and(
+          eq(websites.workspaceId, context.workspaceId),
+          eq(websites.id, input.website)
+        )
       )
+
+    await invalidateWebsiteQueries(context.workspaceId, input.website)
   })
 
 export const updateWebsiteDeviceType = protectedProcedure
@@ -74,6 +145,11 @@ export const updateWebsiteDeviceType = protectedProcedure
       .update(websites)
       .set({ deviceType: input.device })
       .where(
-        and(eq(websites.userId, context.userId), eq(websites.id, input.website))
+        and(
+          eq(websites.workspaceId, context.workspaceId),
+          eq(websites.id, input.website)
+        )
       )
+
+    await invalidateWebsiteQueries(context.workspaceId, input.website)
   })

@@ -1,11 +1,15 @@
 import { db } from "@/db/drizzle"
-import { planToWebsiteCount } from "@/lib/utils"
-import { users, websites } from "@/migrations/schema"
-import { asc, desc, eq } from "drizzle-orm"
+import { invalidateCacheTags, userTag, workspaceTag } from "@/lib/cache"
+import { updateWorkspaceBillingSubscription } from "@/lib/saas"
+import { normalizePlanSlug, planToWebsiteCount } from "@/lib/plans"
+import { users, websites, workspaceMembers } from "@/migrations/schema"
+import { desc, eq } from "drizzle-orm"
 
 export async function POST(request: Request) {
   const body = await request.json()
-  const newPlan = body.data.items[body.data.items.length - 1].plan.slug
+  const newPlan = normalizePlanSlug(
+    body.data.items[body.data.items.length - 1]?.plan?.slug
+  )
   const clerkUserId = body.data.payer.user_id
 
   console.log("[plan-change] Webhook received", { clerkUserId, newPlan })
@@ -32,6 +36,23 @@ export async function POST(request: Request) {
     .update(users)
     .set({ plan: newPlan })
     .where(eq(users.clerkUserId, clerkUserId))
+
+  const membership = await db.query.workspaceMembers.findFirst({
+    where: eq(workspaceMembers.userId, user.id),
+  })
+
+  if (membership) {
+    await updateWorkspaceBillingSubscription({
+      workspaceId: membership.workspaceId,
+      planSlug: newPlan,
+      status: newPlan === "free_user" ? "trialing" : "active",
+    })
+
+    await invalidateCacheTags([
+      workspaceTag(membership.workspaceId),
+      userTag(user.id),
+    ])
+  }
 
   console.log("[plan-change] Plan updated", { userId: user.id, newPlan })
 
@@ -70,10 +91,24 @@ export async function POST(request: Request) {
       disabled: toDisable.length,
     })
   } else {
+    if (userWebsites.length > 0) {
+      await db
+        .update(websites)
+        .set({ isEnabled: true })
+        .where(eq(websites.userId, user.id))
+    }
+
     console.log("[plan-change] No websites to disable", {
       count: userWebsites.length,
       limit,
     })
+  }
+
+  if (membership) {
+    await invalidateCacheTags([
+      workspaceTag(membership.workspaceId),
+      userTag(user.id),
+    ])
   }
 
   console.log("[plan-change] Webhook handled successfully", {

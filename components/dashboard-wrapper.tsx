@@ -10,10 +10,11 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { parseAsStringEnum, useQueryState } from "nuqs"
 import { Monitor, Smartphone } from "lucide-react"
 import CoreWebVitals from "./core-web-vitals"
+import { t } from "@/lib/i18n"
 
 export default function WebsiteDetail({
   websiteId,
@@ -32,7 +33,7 @@ export default function WebsiteDetail({
     <>
       <Card className="col-span-4 p-6">
         <CardHeader className="flex justify-between">
-          <CardTitle className="mb-4">Prestanda över tid</CardTitle>
+          <CardTitle className="mb-4">{t("dashboardWrapper.performanceOverTime")}</CardTitle>
           <Select
             value={device}
             onValueChange={(v) => setDevice(v as "mobile" | "desktop")}
@@ -43,12 +44,12 @@ export default function WebsiteDetail({
             <SelectContent>
               <SelectItem value="mobile">
                 <span className="flex items-center gap-2">
-                  <Smartphone className="h-4 w-4" /> Mobil
+                  <Smartphone className="h-4 w-4" /> {t("common.mobile")}
                 </span>
               </SelectItem>
               <SelectItem value="desktop">
                 <span className="flex items-center gap-2">
-                  <Monitor className="h-4 w-4" /> Dator
+                  <Monitor className="h-4 w-4" /> {t("common.desktop")}
                 </span>
               </SelectItem>
             </SelectContent>

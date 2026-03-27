@@ -16,6 +16,7 @@ import { toast } from "sonner"
 import { Spinner } from "./ui/spinner"
 import { getQueryClient } from "@/lib/query-client"
 import { parseAsIsoDateTime, parseAsStringEnum, useQueryState } from "nuqs"
+import { t } from "@/lib/i18n"
 
 export default function NewCheck({
   websiteId,
@@ -24,7 +25,7 @@ export default function NewCheck({
   websiteId: string
   defaultDeviceType: "mobile" | "desktop"
 }) {
-  const [urlDevice, setUrlDevice] = useQueryState(
+  const [urlDevice] = useQueryState(
     "device",
     parseAsStringEnum(["mobile", "desktop"]).withDefault("mobile")
   )
@@ -35,14 +36,12 @@ export default function NewCheck({
     parseAsIsoDateTime
   )
 
-  // Poll for new scan
   const { data: latestScan } = useQuery({
     queryKey: ["latestScan", websiteId],
     queryFn: async () => await client.getLatestScan({ website: websiteId }),
     refetchInterval: pollingSince ? 3000 : false,
   })
 
-  // Stop polling when a fresh scan arrives
   useEffect(() => {
     if (
       pollingSince &&
@@ -53,12 +52,9 @@ export default function NewCheck({
       getQueryClient().invalidateQueries({
         queryKey: ["scans", websiteId, urlDevice],
       })
-      // getQueryClient().invalidateQueries({
-      //   queryKey: ["scan", latestScan.id],
-      // })
-      toast.success("Skanning klar!")
+      toast.success(t("newCheck.scanDone"))
     }
-  }, [latestScan, pollingSince])
+  }, [latestScan, pollingSince, setPollingSince, urlDevice, websiteId])
 
   const { mutateAsync, isPending } = useMutation({
     mutationFn: async (date: Date) =>
@@ -71,13 +67,13 @@ export default function NewCheck({
   const isScanning = isPending || pollingSince !== null
 
   const { mutateAsync: updateDeviceType } = useMutation({
-    mutationFn: async (device: "mobile" | "desktop") =>
-      await client.updateWebsiteDeviceType({ website: websiteId, device }),
-    onSuccess: (_, device) => {
+    mutationFn: async (nextDevice: "mobile" | "desktop") =>
+      await client.updateWebsiteDeviceType({ website: websiteId, device: nextDevice }),
+    onSuccess: (_, nextDevice) => {
       toast.success(
-        device === "mobile"
-          ? "Skanning sker nu som mobil"
-          : "Skanning sker nu som dator"
+        nextDevice === "mobile"
+          ? t("newCheck.deviceMobileActive")
+          : t("newCheck.deviceDesktopActive")
       )
     },
   })
@@ -87,10 +83,10 @@ export default function NewCheck({
       <div className="flex items-center gap-3">
         <Select
           value={device}
-          onValueChange={async (v) => {
-            const newDevice = v as "mobile" | "desktop"
-            setDevice(newDevice)
-            await updateDeviceType(newDevice)
+          onValueChange={async (value) => {
+            const nextDevice = value as "mobile" | "desktop"
+            setDevice(nextDevice)
+            await updateDeviceType(nextDevice)
           }}
         >
           <SelectTrigger className="w-36">
@@ -99,12 +95,12 @@ export default function NewCheck({
           <SelectContent>
             <SelectItem value="mobile">
               <span className="flex items-center gap-2">
-                <Smartphone className="h-4 w-4" /> Mobil
+                <Smartphone className="h-4 w-4" /> {t("common.mobile")}
               </span>
             </SelectItem>
             <SelectItem value="desktop">
               <span className="flex items-center gap-2">
-                <Monitor className="h-4 w-4" /> Dator
+                <Monitor className="h-4 w-4" /> {t("common.desktop")}
               </span>
             </SelectItem>
           </SelectContent>
@@ -114,14 +110,12 @@ export default function NewCheck({
           disabled={isPending || isScanning}
           onClick={() => mutateAsync(new Date())}
         >
-          {isPending || (isScanning && <Spinner />)}
-          {isPending || isScanning ? "Skannar" : "Ny skanning"}
+          {(isPending || isScanning) && <Spinner />}
+          {isPending || isScanning ? t("newCheck.scanning") : t("newCheck.newScan")}
         </Button>
       </div>
       <p className="text-xs text-muted-foreground">
-        {device === "mobile"
-          ? "Mobil är standard — Google indexerar primärt din sida som mobilanvändare."
-          : "Datorskanning mäter prestanda för besökare på större skärmar."}
+        {device === "mobile" ? t("newCheck.mobileHint") : t("newCheck.desktopHint")}
       </p>
     </div>
   )

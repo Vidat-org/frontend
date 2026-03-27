@@ -1,22 +1,13 @@
-import { Button } from "@/components/ui/button"
 import { client } from "@/lib/orpc"
-import { useQuery } from "@tanstack/react-query"
-import {
-  ArrowLeft,
-  Calendar,
-  Monitor,
-  Smartphone,
-  TrendingDown,
-  TrendingUp,
-} from "lucide-react"
+import Link from "next/link"
+import { ArrowLeft, Calendar, TrendingDown, TrendingUp } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Activity, Globe, ShieldCheck, Zap, Clock } from "lucide-react"
-import { cn, formatDate } from "@/lib/utils"
-import ScanChart from "@/components/scan-chart"
-import IssuesList from "@/components/issues-list"
+import { Globe, Zap, Clock } from "lucide-react"
+import { formatDate } from "@/lib/utils"
 import WebsiteDetail from "@/components/dashboard-wrapper"
 import NewCheck from "@/components/new-check"
 import { Badge } from "@/components/ui/badge"
+import { t } from "@/lib/i18n"
 
 export default async function Page({
   params,
@@ -25,7 +16,6 @@ export default async function Page({
 }) {
   const { id } = await params
   const website = await client.getWebsite({ id })
-  // const latestScan = await client.getLatestScan({ website: id })
   const scans = await client.listWebsiteScans({
     website: id,
     device: "mobile",
@@ -42,30 +32,17 @@ export default async function Page({
 
   return (
     <div className="mx-auto max-w-7xl space-y-8">
-      {/* Sidhuvud */}
       <div className="flex items-center justify-between">
         <div className="min-w-0 space-y-1">
-          <a
+          <Link
             href="/dashboard"
             className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary"
           >
-            <ArrowLeft className="h-4 w-4" /> Tillbaka till översikten
-          </a>
+            <ArrowLeft className="h-4 w-4" /> {t("websitePage.backToOverview")}
+          </Link>
 
           <div className="flex items-center gap-2">
-            <h1 className="text-4xl font-extrabold tracking-tight">
-              {website?.name}
-            </h1>
-            {/*{website && (
-              <Badge variant="outline" className="capitalize">
-                {website.deviceType === "mobile" ? (
-                  <Smartphone className="h-3 w-3" />
-                ) : (
-                  <Monitor className="h-3 w-3" />
-                )}
-                {website.deviceType}
-              </Badge>
-            )}*/}
+            <h1 className="text-4xl font-extrabold tracking-tight">{website?.name}</h1>
           </div>
 
           <a href={website?.url} target="_blank" rel="noopener noreferrer">
@@ -83,45 +60,37 @@ export default async function Page({
         )}
       </div>
 
-      {/* Statistik */}
       <div className="grid gap-4 md:grid-cols-4">
         <MetricCard
-          title="SEO-poäng"
+          title={t("websitePage.seoScore")}
           value={website?.lastSeoScore ?? "-"}
           delta={getDelta(latest?.seoScore, previous?.seoScore)}
           icon={<Globe className="h-4 w-4" />}
         />
         <MetricCard
-          title="Prestanda"
+          title={t("websitePage.performance")}
           value={website?.lastPerformanceScore ?? "-"}
           delta={getDelta(latest?.performanceScore, previous?.performanceScore)}
           icon={<Zap className="h-4 w-4" />}
         />
         <MetricCard
-          title="Senaste skanning"
+          title={t("websitePage.latestScan")}
           value={
             website?.lastCheckedAt
               ? formatDate(new Date(website.lastCheckedAt))
-              : "Aldrig"
+              : t("common.never")
           }
           icon={<Clock className="h-4 w-4" />}
         />
         <MetricCard
-          title="Nästa skanning"
-          value={
-            website?.nextCheckAt
-              ? formatDate(new Date(website.nextCheckAt))
-              : "-"
-          }
+          title={t("websitePage.nextScan")}
+          value={website?.nextCheckAt ? formatDate(new Date(website.nextCheckAt)) : "-"}
           icon={<Calendar className="h-4 w-4" />}
         />
       </div>
 
       {website && latest && (
-        <WebsiteDetail
-          latestScanId={latest?.id || ""}
-          websiteId={website?.id || ""}
-        />
+        <WebsiteDetail latestScanId={latest?.id || ""} websiteId={website?.id || ""} />
       )}
     </div>
   )
@@ -130,7 +99,6 @@ export default async function Page({
 function DeltaBadge({ delta }: { delta: number }) {
   const positive = delta > 0
   const neutral = delta === 0
-
   const variant = neutral ? "secondary" : positive ? "success" : "destructive"
 
   return (

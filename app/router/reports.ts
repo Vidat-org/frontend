@@ -1,19 +1,29 @@
 import { db } from "@/db/drizzle"
 import { protectedProcedure } from "../orpc"
 import { reports, websites } from "@/migrations/schema"
-import { count, eq } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 import z from "zod"
+import { appendAuditLog, markOnboardingStep } from "@/lib/saas"
+import { cachedQuery, reportTag, workspaceTag } from "@/lib/cache"
 
 export const listReports = protectedProcedure.handler(async ({ context }) => {
-  const rows = await db
-    .select({
-      websiteUrl: websites.url,
-      websiteName: websites.name,
-      report: reports,
-    })
-    .from(websites)
-    .leftJoin(reports, eq(reports.websiteId, websites.id))
-    .where(eq(websites.userId, context.userId))
+  const rows = await cachedQuery(
+    {
+      key: `reports:list:${context.workspaceId}`,
+      ttlSeconds: 90,
+      tags: [workspaceTag(context.workspaceId)],
+    },
+    () =>
+      db
+        .select({
+          websiteUrl: websites.url,
+          websiteName: websites.name,
+          report: reports,
+        })
+        .from(websites)
+        .leftJoin(reports, eq(reports.websiteId, websites.id))
+        .where(eq(websites.workspaceId, context.workspaceId))
+  )
 
   const grouped = Object.values(
     rows.reduce(
@@ -53,10 +63,38 @@ export const getReportById = protectedProcedure
       id: z.string(),
     })
   )
-  .handler(async ({ input }) => {
-    const report = await db.query.reports.findFirst({
-      where: eq(reports.id, input.id),
-    })
+  .handler(async ({ input, context }) => {
+    const report = await cachedQuery(
+      {
+        key: `reports:get:${context.workspaceId}:${input.id}`,
+        ttlSeconds: 180,
+        tags: [workspaceTag(context.workspaceId), reportTag(input.id)],
+      },
+      () =>
+        db
+          .select({ report: reports })
+          .from(reports)
+          .innerJoin(websites, eq(websites.id, reports.websiteId))
+          .where(
+            and(eq(reports.id, input.id), eq(websites.workspaceId, context.workspaceId))
+          )
+          .limit(1)
+    )
 
-    return report
+    if (report[0]?.report) {
+      await markOnboardingStep(context.workspaceId, {
+        hasViewedReport: true,
+      })
+
+      await appendAuditLog({
+        workspaceId: context.workspaceId,
+        actorUserId: context.userId,
+        targetType: "report",
+        targetId: input.id,
+        action: "report.viewed",
+        summary: "En rapport öppnades",
+      })
+    }
+
+    return report[0]?.report ?? null
   })

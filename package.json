@@ -25,6 +25,7 @@
     "date-fns": "^4.1.0",
     "dns": "^0.2.2",
     "drizzle-orm": "^0.45.1",
+    "ioredis": "^5.10.1",
     "js-cookie": "^3.0.5",
     "lucide-react": "^0.577.0",
     "next": "16.1.6",
