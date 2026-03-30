@@ -3,7 +3,7 @@ import { Inter, Playfair_Display, JetBrains_Mono } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ClerkProvider } from "@clerk/nextjs"
-import { svSE } from "@clerk/localizations"
+import { svSE, enGB } from "@clerk/localizations"
 import Providers from "./providers"
 import { Toaster } from "@/components/ui/sonner"
 import { shadcn } from "@clerk/themes"
@@ -17,6 +17,8 @@ import {
 } from "next-i18next/server"
 import i18nConfig from "@/i18n.config"
 import { getCurrentWorkspaceLocale } from "@/lib/workspace-locale"
+import { useTranslation } from "react-i18next"
+import { DEFAULT_LOCALE } from "@/lib/i18n"
 
 initServerI18next(i18nConfig)
 
@@ -44,10 +46,12 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const locale = await getCurrentWorkspaceLocale().catch(() => "sv")
-  const { i18n } = await getT("common", { lng: "sv" })
+  const locale = await getCurrentWorkspaceLocale().catch((e) => {
+    console.log("locale fallback:", e)
+    return DEFAULT_LOCALE
+  })
+  const { i18n } = await getT("common", { lng: locale })
   const resources = getResources(i18n, ["common"])
-
   return (
     <html
       lang={locale}
@@ -63,7 +67,7 @@ export default async function RootLayout({
         className={`${fontSans.variable} ${fontSerif.variable} ${fontMono.variable} antialiased`}
       >
         <ClerkProvider
-          localization={svSE}
+          localization={locale === "sv" ? svSE : enGB}
           appearance={{
             baseTheme: shadcn,
           }}

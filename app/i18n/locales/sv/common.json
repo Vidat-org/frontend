@@ -195,6 +195,7 @@
   "dashboard.missing": "Saknas",
   "dashboard.unknownTime": "okänd tid",
   "settingsCenter.settingsSaved": "Inställningarna sparades",
+  "settingsCenter.saveSettings": "Spara inställningar",
   "settingsCenter.saveSettingsFailed": "Kunde inte spara inställningarna",
   "settingsCenter.webhookAdded": "Webhook tillagd",
   "settingsCenter.webhookDeleted": "Webhook borttagen",

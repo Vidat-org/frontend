@@ -671,7 +671,7 @@ export default function SettingsCenter({
                   onClick={() => saveSettings.mutate()}
                   disabled={saveSettings.isPending}
                 >
-                  Spara inställningar
+                  {t("settingsCenter.saveSettings")}
                 </Button>
               </CardFooter>
             </Card>

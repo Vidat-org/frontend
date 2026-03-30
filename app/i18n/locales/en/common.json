@@ -195,6 +195,8 @@
   "dashboard.missing": "Missing",
   "dashboard.unknownTime": "unknown time",
   "settingsCenter.settingsSaved": "Settings saved",
+
+  "settingsCenter.saveSettings": "Save settings",
   "settingsCenter.saveSettingsFailed": "Could not save settings",
   "settingsCenter.webhookAdded": "Webhook added",
   "settingsCenter.webhookDeleted": "Webhook removed",
