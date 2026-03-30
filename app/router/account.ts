@@ -1,6 +1,7 @@
 import z from "zod"
 import { protectedProcedure } from "../orpc"
 import { db } from "@/db/drizzle"
+import type { Locale } from "@/lib/i18n"
 import {
   apiKeys,
   auditLogs,
@@ -38,6 +39,7 @@ import {
   userTag,
   workspaceTag,
 } from "@/lib/cache"
+import { assertRateLimit } from "@/lib/rate-limit"
 import {
   generateApiKeySecret,
   getApiKeyPrefix,
@@ -53,6 +55,10 @@ const notificationSettingsSchema = z.object({
   notifyOnScoreDrop: z.boolean(),
   scoreDropThreshold: z.number().int().min(1).max(100),
   slackWebhookUrl: z.union([z.literal(""), z.url()]),
+})
+
+const workspaceLocaleSchema = z.object({
+  preferredLocale: z.enum(["sv", "en"]),
 })
 
 const webhookSchema = z.object({
@@ -262,6 +268,7 @@ async function buildAccountSummary(context: {
       id: context.workspaceId,
       name: workspace?.name ?? context.workspaceName,
       role: context.workspaceRole,
+      preferredLocale: (workspace?.preferredLocale ?? "sv") as Locale,
       memberCount: members[0]?.count ?? 0,
       pendingInviteCount: invites[0]?.count ?? 0,
     },
@@ -317,6 +324,21 @@ function requireWorkspaceOwner(role: string) {
   if (role !== "owner") {
     throw new Error("FORBIDDEN")
   }
+}
+
+function requireEnterprisePlan(plan: string) {
+  if (normalizePlanSlug(plan) !== "enterprise") {
+    throw new Error("PLAN_REQUIRES_ENTERPRISE")
+  }
+}
+
+function createInviteToken() {
+  const bytes = new Uint8Array(18)
+  crypto.getRandomValues(bytes)
+
+  return `invite_${Array.from(bytes, (byte) =>
+    byte.toString(16).padStart(2, "0")
+  ).join("")}`
 }
 
 function getAccountCacheTags(context: { workspaceId: string; userId: string }) {
@@ -746,6 +768,37 @@ export const updateNotificationSettings = protectedProcedure
     return updated[0]
   })
 
+export const updateWorkspaceLocale = protectedProcedure
+  .input(workspaceLocaleSchema)
+  .handler(async ({ context, input }) => {
+    requireWorkspaceAdmin(context.workspaceRole)
+
+    const updated = await db
+      .update(workspaces)
+      .set({
+        preferredLocale: input.preferredLocale,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(workspaces.id, context.workspaceId))
+      .returning()
+
+    await appendAuditLog({
+      workspaceId: context.workspaceId,
+      actorUserId: context.userId,
+      targetType: "workspace",
+      targetId: context.workspaceId,
+      action: "workspace.locale_updated",
+      summary: `Workspace-språk uppdaterades till ${input.preferredLocale}`,
+      metadata: {
+        preferredLocale: input.preferredLocale,
+      },
+    })
+
+    await invalidateCacheTags([workspaceTag(context.workspaceId), userTag(context.userId)])
+
+    return updated[0] ?? null
+  })
+
 export const listWebhookDestinations = protectedProcedure.handler(
   async ({ context }) => {
     return cachedQuery(
@@ -766,6 +819,12 @@ export const listWebhookDestinations = protectedProcedure.handler(
 export const createWebhookDestination = protectedProcedure
   .input(webhookSchema)
   .handler(async ({ context, input }) => {
+    await assertRateLimit({
+      key: `ratelimit:account:webhooks:${context.workspaceId}:${context.userId}`,
+      windowMs: 60_000,
+      limit: 10,
+    })
+
     const inserted = await db
       .insert(webhookDestinations)
       .values({
@@ -913,6 +972,11 @@ export const createWorkspaceInvite = protectedProcedure
   .input(inviteSchema)
   .handler(async ({ context, input }) => {
     requireWorkspaceAdmin(context.workspaceRole)
+    await assertRateLimit({
+      key: `ratelimit:account:invites:${context.workspaceId}:${context.userId}`,
+      windowMs: 60_000,
+      limit: 10,
+    })
 
     const normalizedEmail = normalizeEmail(input.email)
     const currentUser = await db.query.users.findFirst({
@@ -953,7 +1017,7 @@ export const createWorkspaceInvite = protectedProcedure
       throw new Error("INVITE_ALREADY_PENDING")
     }
 
-    const token = `invite_${Math.random().toString(36).slice(2, 12)}`
+    const token = createInviteToken()
     const expiresAt = new Date(
       Date.now() + 1000 * 60 * 60 * 24 * 7
     ).toISOString()
@@ -1242,6 +1306,8 @@ export const updateOnboardingStep = protectedProcedure
   })
 
 export const listApiKeys = protectedProcedure.handler(async ({ context }) => {
+  requireEnterprisePlan(context.plan)
+
   return cachedQuery(
     {
       key: `account:api-keys:${context.workspaceId}`,
@@ -1260,6 +1326,12 @@ export const createApiKey = protectedProcedure
   .input(apiKeySchema)
   .handler(async ({ context, input }) => {
     requireWorkspaceAdmin(context.workspaceRole)
+    requireEnterprisePlan(context.plan)
+    await assertRateLimit({
+      key: `ratelimit:account:api-keys:${context.workspaceId}:${context.userId}`,
+      windowMs: 60_000,
+      limit: 5,
+    })
 
     const secret = generateApiKeySecret()
     const keyHash = await hashApiKey(secret)
@@ -1295,6 +1367,7 @@ export const revokeApiKey = protectedProcedure
   .input(z.object({ id: z.string() }))
   .handler(async ({ context, input }) => {
     requireWorkspaceAdmin(context.workspaceRole)
+    requireEnterprisePlan(context.plan)
 
     const updated = await db
       .update(apiKeys)
@@ -1341,6 +1414,12 @@ export const listSupportRequests = protectedProcedure.handler(
 export const createSupportRequest = protectedProcedure
   .input(supportRequestSchema)
   .handler(async ({ context, input }) => {
+    await assertRateLimit({
+      key: `ratelimit:account:support:${context.workspaceId}:${context.userId}`,
+      windowMs: 60_000,
+      limit: 3,
+    })
+
     const inserted = await db
       .insert(supportRequests)
       .values({

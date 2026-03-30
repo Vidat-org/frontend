@@ -1,22 +1,8 @@
 import Link from "next/link"
-import {
-  BadgeDollarSign,
-  Bell,
-  History,
-  KeyRound,
-  LifeBuoy,
-  Users,
-  Webhook,
-} from "lucide-react"
-import { t } from "@/lib/i18n"
+import { Bell, History, KeyRound, LifeBuoy, Users, Webhook } from "lucide-react"
+import { getT } from "next-i18next/server"
 
 const items = [
-  {
-    href: "/dashboard/settings/billing",
-    title: "settingsPage.billingTitle",
-    description: "settingsPage.billingDescription",
-    icon: BadgeDollarSign,
-  },
   {
     href: "/dashboard/settings/notifications",
     title: "settingsPage.notificationsTitle",
@@ -55,7 +41,9 @@ const items = [
   },
 ] as const
 
-export default function Page() {
+export default async function Page() {
+  const { t } = await getT("common")
+
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       {items.map((item) => {
@@ -69,7 +57,9 @@ export default function Page() {
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-chart-1/10 text-chart-1">
               <Icon className="h-5 w-5" />
             </div>
-            <h2 className="mt-4 text-xl font-semibold tracking-tight">{t(item.title)}</h2>
+            <h2 className="mt-4 text-xl font-semibold tracking-tight">
+              {t(item.title)}
+            </h2>
             <p className="mt-2 text-sm leading-7 text-muted-foreground">
               {t(item.description)}
             </p>

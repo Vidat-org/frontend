@@ -1,12 +1,24 @@
-import React from "react"
-import DashboardSidebar from "./dashboard-sidebar"
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
+import { auth } from "@clerk/nextjs/server"
+import { redirect } from "next/navigation"
+import React from "react"
+import DashboardSidebar from "./dashboard-sidebar"
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+export default async function Layout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  const { isAuthenticated } = await auth()
+
+  if (!isAuthenticated) {
+    redirect("/sign-in")
+  }
+
   return (
     <SidebarProvider>
       <DashboardSidebar />

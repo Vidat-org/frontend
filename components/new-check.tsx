@@ -16,7 +16,7 @@ import { toast } from "sonner"
 import { Spinner } from "./ui/spinner"
 import { getQueryClient } from "@/lib/query-client"
 import { parseAsIsoDateTime, parseAsStringEnum, useQueryState } from "nuqs"
-import { t } from "@/lib/i18n"
+import { useT } from "next-i18next/client"
 
 export default function NewCheck({
   websiteId,
@@ -25,6 +25,7 @@ export default function NewCheck({
   websiteId: string
   defaultDeviceType: "mobile" | "desktop"
 }) {
+  const { t } = useT("common")
   const [urlDevice] = useQueryState(
     "device",
     parseAsStringEnum(["mobile", "desktop"]).withDefault("mobile")
@@ -54,7 +55,7 @@ export default function NewCheck({
       })
       toast.success(t("newCheck.scanDone"))
     }
-  }, [latestScan, pollingSince, setPollingSince, urlDevice, websiteId])
+  }, [latestScan, pollingSince, setPollingSince, t, urlDevice, websiteId])
 
   const { mutateAsync, isPending } = useMutation({
     mutationFn: async (date: Date) =>
@@ -68,7 +69,10 @@ export default function NewCheck({
 
   const { mutateAsync: updateDeviceType } = useMutation({
     mutationFn: async (nextDevice: "mobile" | "desktop") =>
-      await client.updateWebsiteDeviceType({ website: websiteId, device: nextDevice }),
+      await client.updateWebsiteDeviceType({
+        website: websiteId,
+        device: nextDevice,
+      }),
     onSuccess: (_, nextDevice) => {
       toast.success(
         nextDevice === "mobile"
@@ -79,8 +83,8 @@ export default function NewCheck({
   })
 
   return (
-    <div className="flex flex-col gap-2 w-full">
-      <div className="flex flex-col justify-end sm:flex-row items-stretch sm:items-center gap-3 w-full">
+    <div className="flex w-full flex-col gap-2">
+      <div className="flex w-full flex-col items-stretch justify-end gap-3 sm:flex-row sm:items-center">
         <Select
           value={device}
           onValueChange={async (value) => {
@@ -112,11 +116,15 @@ export default function NewCheck({
           className="w-full sm:w-auto"
         >
           {(isPending || isScanning) && <Spinner />}
-          {isPending || isScanning ? t("newCheck.scanning") : t("newCheck.newScan")}
+          {isPending || isScanning
+            ? t("newCheck.scanning")
+            : t("newCheck.newScan")}
         </Button>
       </div>
-      <p className="text-xs text-muted-foreground text-center sm:text-left">
-        {device === "mobile" ? t("newCheck.mobileHint") : t("newCheck.desktopHint")}
+      <p className="text-center text-xs text-muted-foreground sm:text-left">
+        {device === "mobile"
+          ? t("newCheck.mobileHint")
+          : t("newCheck.desktopHint")}
       </p>
     </div>
   )

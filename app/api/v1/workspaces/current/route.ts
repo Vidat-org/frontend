@@ -45,6 +45,7 @@ export async function GET(request: Request) {
       id: workspace.id,
       name: workspace.name,
       slug: workspace.slug,
+      preferredLocale: workspace.preferredLocale,
       plan: plan.slug,
       planLabel: plan.label,
     },

@@ -2,24 +2,44 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BadgeDollarSign, Bell, History, KeyRound, LifeBuoy, Users, Webhook } from "lucide-react"
+import { Bell, History, KeyRound, LifeBuoy, Users, Webhook } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { t } from "@/lib/i18n"
+import { useT } from "next-i18next/client"
 
 const items = [
-  { href: "/dashboard/settings", label: "settingsNav.overview", match: "/dashboard/settings" },
-  { href: "/dashboard/settings/billing", label: "settingsNav.billing", icon: BadgeDollarSign },
-  { href: "/dashboard/settings/notifications", label: "settingsNav.notifications", icon: Bell },
+  {
+    href: "/dashboard/settings",
+    label: "settingsNav.overview",
+    match: "/dashboard/settings",
+  },
+  {
+    href: "/dashboard/settings/notifications",
+    label: "settingsNav.notifications",
+    icon: Bell,
+  },
+
   { href: "/dashboard/settings/team", label: "settingsNav.team", icon: Users },
-  { href: "/dashboard/settings/integrations", label: "settingsNav.integrations", icon: Webhook },
+  {
+    href: "/dashboard/settings/integrations",
+    label: "settingsNav.integrations",
+    icon: Webhook,
+  },
   { href: "/dashboard/settings/api", label: "settingsNav.api", icon: KeyRound },
-  { href: "/dashboard/settings/support", label: "settingsNav.support", icon: LifeBuoy },
-  { href: "/dashboard/settings/logs", label: "settingsNav.logs", icon: History },
+  {
+    href: "/dashboard/settings/support",
+    label: "settingsNav.support",
+    icon: LifeBuoy,
+  },
+  {
+    href: "/dashboard/settings/logs",
+    label: "settingsNav.logs",
+    icon: History,
+  },
 ] as const
 
 export default function SettingsNav() {
   const pathname = usePathname()
-
+  const { t } = useT("common")
   return (
     <div className="flex flex-wrap gap-2">
       {items.map((item) => {

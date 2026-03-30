@@ -1,5 +1,6 @@
 "use client"
 
+import { ThemeSwitcher } from "@/components/theme-switch"
 import {
   Sidebar,
   SidebarContent,
@@ -15,7 +16,7 @@ import {
 } from "@/components/ui/sidebar"
 import { UserButton } from "@clerk/nextjs"
 import {
-  BadgeDollarSign,
+  Bell,
   FileChartColumn,
   History,
   KeyRound,
@@ -27,10 +28,9 @@ import {
   Webhook,
   Zap,
 } from "lucide-react"
+import { useT } from "next-i18next/client"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { t } from "@/lib/i18n"
-import { ThemeSwitcher } from "@/components/theme-switch"
 
 type NavItem = {
   title: string
@@ -38,24 +38,49 @@ type NavItem = {
   icon: LucideIcon
 }
 
-const productNav: NavItem[] = [
-  { title: t("sidebar.mySites"), url: "/dashboard", icon: PanelsTopLeft },
-  { title: t("sidebar.reports"), url: "/dashboard/reports", icon: FileChartColumn },
-]
-
-const settingsNav: NavItem[] = [
-  { title: t("sidebar.settings"), url: "/dashboard/settings", icon: Settings },
-  { title: t("sidebar.billing"), url: "/dashboard/settings/billing", icon: BadgeDollarSign },
-  { title: t("sidebar.team"), url: "/dashboard/settings/team", icon: Users },
-  { title: t("sidebar.integrations"), url: "/dashboard/settings/integrations", icon: Webhook },
-  { title: t("sidebar.api"), url: "/dashboard/settings/api", icon: KeyRound },
-  { title: t("sidebar.support"), url: "/dashboard/settings/support", icon: LifeBuoy },
-  { title: t("sidebar.logs"), url: "/dashboard/settings/logs", icon: History },
-]
-
 export default function DashboardSidebar() {
   const pathname = usePathname()
   const { state } = useSidebar()
+  const { t } = useT("common")
+
+  const productNav: NavItem[] = [
+    { title: t("sidebar.mySites"), url: "/dashboard", icon: PanelsTopLeft },
+    {
+      title: t("sidebar.reports"),
+      url: "/dashboard/reports",
+      icon: FileChartColumn,
+    },
+  ]
+  const settingsNav: NavItem[] = [
+    {
+      title: t("sidebar.settings"),
+      url: "/dashboard/settings",
+      icon: Settings,
+    },
+    { title: t("sidebar.team"), url: "/dashboard/settings/team", icon: Users },
+    {
+      title: t("sidebar.notifications"),
+      url: "/dashboard/settings/notifications",
+      icon: Bell,
+    },
+    {
+      title: t("sidebar.integrations"),
+      url: "/dashboard/settings/integrations",
+      icon: Webhook,
+    },
+
+    { title: t("sidebar.api"), url: "/dashboard/settings/api", icon: KeyRound },
+    {
+      title: t("sidebar.support"),
+      url: "/dashboard/settings/support",
+      icon: LifeBuoy,
+    },
+    {
+      title: t("sidebar.logs"),
+      url: "/dashboard/settings/logs",
+      icon: History,
+    },
+  ]
 
   return (
     <Sidebar variant="sidebar" collapsible="icon">
@@ -68,22 +93,33 @@ export default function DashboardSidebar() {
                   <Zap className="size-4" />
                 </div>
                 {state === "expanded" && (
-                  <span className="text-base font-bold tracking-tight">VIDAT</span>
+                  <span className="text-base font-bold tracking-tight">
+                    VIDAT
+                  </span>
                 )}
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
-
         </SidebarMenu>
       </SidebarHeader>
 
       <SidebarContent>
-        <NavSection title={t("sidebar.product")} items={productNav} pathname={pathname} />
-        <NavSection title={t("sidebar.settingsSection")} items={settingsNav} pathname={pathname} />
+        <NavSection
+          title={t("sidebar.product")}
+          items={productNav}
+          pathname={pathname}
+        />
+        <NavSection
+          title={t("sidebar.settingsSection")}
+          items={settingsNav}
+          pathname={pathname}
+        />
       </SidebarContent>
 
       <SidebarFooter>
-        <div className={`flex items-center justify-between gap-2 ${state === 'collapsed' && 'flex-col flex-col-reverse'}`}>
+        <div
+          className={`flex items-center justify-between gap-2 ${state === "collapsed" && "flex-col flex-col-reverse"}`}
+        >
           <UserButton
             appearance={{
               elements: {},
@@ -119,7 +155,11 @@ function NavSection({
 
             return (
               <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActive}
+                  tooltip={item.title}
+                >
                   <Link href={item.url}>
                     <item.icon />
                     <span>{item.title}</span>

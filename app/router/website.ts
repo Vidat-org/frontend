@@ -1,5 +1,3 @@
-export const runtime = "nodejs"
-
 import { db } from "@/db/drizzle"
 import { websites } from "@/migrations/schema"
 import { and, count, desc, eq } from "drizzle-orm"
@@ -16,6 +14,7 @@ import {
   websiteTag,
   workspaceTag,
 } from "@/lib/cache"
+import { assertRateLimit } from "@/lib/rate-limit"
 
 export const listWebsites = protectedProcedure.handler(async ({ context }) => {
   const websitesQuery = await cachedQuery(
@@ -50,6 +49,12 @@ async function invalidateWebsiteQueries(
 export const createWebsite = protectedProcedure
   .input(createWebsiteSchema)
   .handler(async ({ context, input }) => {
+    await assertRateLimit({
+      key: `ratelimit:websites:create:${context.workspaceId}:${context.userId}`,
+      windowMs: 60_000,
+      limit: 10,
+    })
+
     const websiteCount = await db
       .select({ count: count() })
       .from(websites)
@@ -123,6 +128,12 @@ export const getWebsite = protectedProcedure
 export const updateNextCheck = protectedProcedure
   .input(z.object({ website: z.string(), date: z.date() }))
   .handler(async ({ context, input }) => {
+    await assertRateLimit({
+      key: `ratelimit:websites:scan:${context.workspaceId}:${context.userId}`,
+      windowMs: 60_000,
+      limit: 20,
+    })
+
     await db
       .update(websites)
       .set({ nextCheckAt: input.date.toISOString() })

@@ -5,7 +5,6 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { Slot } from "radix-ui"
 
 import { useIsMobile } from "@/hooks/use-mobile"
-import { t } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -24,6 +23,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { PanelLeftIcon } from "lucide-react"
+import { useT } from "next-i18next/client"
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
@@ -163,7 +163,7 @@ function Sidebar({
   collapsible?: "offcanvas" | "icon" | "none"
 }) {
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
-
+  const { t } = useT("common")
   if (collapsible === "none") {
     return (
       <div
@@ -197,7 +197,9 @@ function Sidebar({
         >
           <SheetHeader className="sr-only">
             <SheetTitle>{t("sidebar.mobile.title")}</SheetTitle>
-            <SheetDescription>{t("sidebar.mobile.description")}</SheetDescription>
+            <SheetDescription>
+              {t("sidebar.mobile.description")}
+            </SheetDescription>
           </SheetHeader>
           <div className="flex h-full w-full flex-col">{children}</div>
         </SheetContent>
@@ -257,7 +259,7 @@ function SidebarTrigger({
   ...props
 }: React.ComponentProps<typeof Button>) {
   const { toggleSidebar } = useSidebar()
-
+  const { t } = useT("common")
   return (
     <Button
       data-sidebar="trigger"
@@ -279,7 +281,7 @@ function SidebarTrigger({
 
 function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
   const { toggleSidebar } = useSidebar()
-
+  const { t } = useT("common")
   return (
     <button
       data-sidebar="rail"

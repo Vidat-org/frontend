@@ -1,13 +1,14 @@
 "use client"
 
-import Link from "next/link"
 import { useState, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query"
+import { useChangeLanguage, useT } from "next-i18next/client"
+import type { TFunction } from "i18next"
 import { toast } from "sonner"
 import { client } from "@/lib/orpc"
 import { getQueryClient } from "@/lib/query-client"
-import { t } from "@/lib/i18n"
+import { type Locale } from "@/lib/i18n"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -19,6 +20,13 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import {
   Field,
@@ -29,8 +37,6 @@ import {
 import {
   Bell,
   CheckCircle2,
-  CreditCard,
-  ExternalLink,
   History,
   KeyRound,
   LifeBuoy,
@@ -42,26 +48,11 @@ import {
   X,
 } from "lucide-react"
 
-const webhookEvents = ["scan.failed", "score.regression", "report.ready"] as const
-const billingStatuses = [
-  "trialing",
-  "active",
-  "past_due",
-  "canceled",
-  "incomplete",
+const webhookEvents = [
+  "scan.failed",
+  "score.regression",
+  "report.ready",
 ] as const
-const dunningStatuses = ["clear", "at_risk", "in_dunning", "write_off"] as const
-
-type BillingFormState = {
-  provider: string
-  planSlug: string
-  status: string
-  amountSek: number
-  dunningStatus: string
-  checkoutUrl: string
-  portalUrl: string
-  lastInvoiceUrl: string
-}
 
 type SupportFormState = {
   subject: string
@@ -72,7 +63,6 @@ type SupportFormState = {
 
 export type SettingsSection =
   | "all"
-  | "billing"
   | "notifications"
   | "team"
   | "integrations"
@@ -86,6 +76,9 @@ export default function SettingsCenter({
   section?: SettingsSection
 }) {
   const router = useRouter()
+  const changeLanguage = useChangeLanguage()
+  const { t } = useT("common")
+
   const accountQuery = useQuery({
     queryKey: ["accountSummary"],
     queryFn: async () => client.getAccountSummary(),
@@ -120,6 +113,7 @@ export default function SettingsCenter({
   const apiKeysQuery = useQuery({
     queryKey: ["apiKeys"],
     queryFn: async () => client.listApiKeys(),
+    enabled: accountQuery.data?.capabilities.apiAccess ?? false,
   })
   const supportQuery = useQuery({
     queryKey: ["supportRequests"],
@@ -143,6 +137,7 @@ export default function SettingsCenter({
     notifyOnScoreDrop: undefined as boolean | undefined,
     scoreDropThreshold: undefined as number | undefined,
     slackWebhookUrl: undefined as string | undefined,
+    preferredLocale: undefined as Locale | undefined,
   })
   const [webhookForm, setWebhookForm] = useState({
     label: "",
@@ -154,7 +149,6 @@ export default function SettingsCenter({
     email: "",
     role: "member" as "admin" | "member",
   })
-  const [billingForm, setBillingForm] = useState<BillingFormState | null>(null)
   const [apiKeyLabel, setApiKeyLabel] = useState("")
   const [latestApiKey, setLatestApiKey] = useState<string | null>(null)
   const [supportForm, setSupportForm] = useState<SupportFormState>({
@@ -164,9 +158,13 @@ export default function SettingsCenter({
     message: "",
   })
 
+  const account = accountQuery.data
+  const isAdmin =
+    account?.workspace.role === "owner" || account?.workspace.role === "admin"
+
   const saveSettings = useMutation({
-    mutationFn: async () =>
-      client.updateNotificationSettings({
+    mutationFn: async () => {
+      await client.updateNotificationSettings({
         emailAlerts: resolvedSettings.emailAlerts,
         weeklyDigest: resolvedSettings.weeklyDigest,
         productUpdates: resolvedSettings.productUpdates,
@@ -175,8 +173,28 @@ export default function SettingsCenter({
         notifyOnScoreDrop: resolvedSettings.notifyOnScoreDrop,
         scoreDropThreshold: Number(resolvedSettings.scoreDropThreshold),
         slackWebhookUrl: resolvedSettings.slackWebhookUrl,
-      }),
+      })
+
+      if (
+        isAdmin &&
+        account &&
+        resolvedSettings.preferredLocale !== account.workspace.preferredLocale
+      ) {
+        await client.updateWorkspaceLocale({
+          preferredLocale: resolvedSettings.preferredLocale,
+        })
+      }
+    },
     onSuccess: () => {
+      if (
+        account &&
+        resolvedSettings.preferredLocale !== account.workspace.preferredLocale
+      ) {
+        // setLocale(resolvedSettings.preferredLocale)
+
+        void changeLanguage(resolvedSettings.preferredLocale)
+        router.refresh()
+      }
       invalidateAccountViews()
       toast.success(t("settingsCenter.settingsSaved"))
     },
@@ -245,7 +263,8 @@ export default function SettingsCenter({
   })
 
   const revokeInvite = useMutation({
-    mutationFn: async (inviteId: string) => client.revokeWorkspaceInvite({ inviteId }),
+    mutationFn: async (inviteId: string) =>
+      client.revokeWorkspaceInvite({ inviteId }),
     onSuccess: () => {
       invalidateAccountViews()
       toast.success(t("settingsCenter.inviteRevoked"))
@@ -253,7 +272,8 @@ export default function SettingsCenter({
   })
 
   const switchWorkspace = useMutation({
-    mutationFn: async (workspaceId: string) => client.switchActiveWorkspace({ workspaceId }),
+    mutationFn: async (workspaceId: string) =>
+      client.switchActiveWorkspace({ workspaceId }),
     onSuccess: () => {
       invalidateAccountViews()
       router.push("/dashboard")
@@ -262,7 +282,8 @@ export default function SettingsCenter({
     },
   })
   const acceptInvite = useMutation({
-    mutationFn: async (inviteId: string) => client.acceptWorkspaceInvite({ inviteId }),
+    mutationFn: async (inviteId: string) =>
+      client.acceptWorkspaceInvite({ inviteId }),
     onSuccess: () => {
       invalidateAccountViews()
       router.push("/dashboard")
@@ -271,74 +292,46 @@ export default function SettingsCenter({
     },
   })
   const declineInvite = useMutation({
-    mutationFn: async (inviteId: string) => client.declineWorkspaceInvite({ inviteId }),
+    mutationFn: async (inviteId: string) =>
+      client.declineWorkspaceInvite({ inviteId }),
     onSuccess: () => {
       invalidateAccountViews()
       toast.success(t("settingsCenter.inviteDeclined"))
     },
   })
   const updateMemberRole = useMutation({
-    mutationFn: async (payload: { memberId: string; role: "admin" | "member" }) =>
-      client.updateWorkspaceMemberRole(payload),
+    mutationFn: async (payload: {
+      memberId: string
+      role: "admin" | "member"
+    }) => client.updateWorkspaceMemberRole(payload),
     onSuccess: () => {
       invalidateAccountViews()
       toast.success(t("settingsCenter.memberRoleUpdated"))
     },
   })
   const removeMember = useMutation({
-    mutationFn: async (memberId: string) => client.removeWorkspaceMember({ memberId }),
+    mutationFn: async (memberId: string) =>
+      client.removeWorkspaceMember({ memberId }),
     onSuccess: () => {
       invalidateAccountViews()
       toast.success(t("settingsCenter.memberRemoved"))
     },
   })
 
-  const saveBilling = useMutation({
-    mutationFn: async () =>
-      client.updateBillingState({
-        provider: resolvedBilling.provider,
-        providerCustomerId: null,
-        providerSubscriptionId: null,
-        planSlug: resolvedBilling.planSlug as
-          | "free_user"
-          | "starter"
-          | "pro"
-          | "enterprise",
-        status: resolvedBilling.status as
-          | "trialing"
-          | "active"
-          | "past_due"
-          | "canceled"
-          | "incomplete",
-        amountSek: Number(resolvedBilling.amountSek),
-        dunningStatus: resolvedBilling.dunningStatus as
-          | "clear"
-          | "at_risk"
-          | "in_dunning"
-          | "write_off",
-        currentPeriodEndsAt: null,
-        trialEndsAt: null,
-        cancelAtPeriodEnd: false,
-        checkoutUrl: resolvedBilling.checkoutUrl,
-        portalUrl: resolvedBilling.portalUrl,
-        lastInvoiceUrl: resolvedBilling.lastInvoiceUrl,
-      }),
-    onSuccess: () => {
-      invalidateAccountViews()
-      toast.success(t("settingsCenter.billingUpdated"))
-    },
-  })
-
   const updateOnboarding = useMutation({
     mutationFn: async (step: {
       key:
-      | "hasAddedWebsite"
-      | "hasRunFirstScan"
-      | "hasViewedReport"
-      | "hasConfiguredAlerts"
-      | "hasConnectedIntegration"
+        | "hasAddedWebsite"
+        | "hasRunFirstScan"
+        | "hasViewedReport"
+        | "hasConfiguredAlerts"
+        | "hasConnectedIntegration"
       completed: boolean
-    }) => client.updateOnboardingStep({ step: step.key, completed: step.completed }),
+    }) =>
+      client.updateOnboardingStep({
+        step: step.key,
+        completed: step.completed,
+      }),
     onSuccess: () => invalidateAccountViews(),
   })
   const createApiKey = useMutation({
@@ -377,9 +370,12 @@ export default function SettingsCenter({
     },
   })
 
-  const account = accountQuery.data
   if (!account || accountQuery.isLoading) {
-    return <div className="text-sm text-muted-foreground">{t("settingsCenter.loading")}</div>
+    return (
+      <div className="text-sm text-muted-foreground">
+        {t("settingsCenter.loading")}
+      </div>
+    )
   }
 
   const workspace = workspaceQuery.data
@@ -391,7 +387,6 @@ export default function SettingsCenter({
   const supportRequests = supportQuery.data ?? []
   const userWorkspaces = userWorkspacesQuery.data ?? []
   const pendingInvites = pendingInvitesQuery.data ?? []
-  const isAdmin = account.workspace.role === "owner" || account.workspace.role === "admin"
   const isOwner = account.workspace.role === "owner"
   const showSection = (...sections: SettingsSection[]) =>
     section === "all" || sections.includes(section)
@@ -399,7 +394,8 @@ export default function SettingsCenter({
   const resolvedSettings = {
     emailAlerts: settingsForm.emailAlerts ?? account.settings.emailAlerts,
     weeklyDigest: settingsForm.weeklyDigest ?? account.settings.weeklyDigest,
-    productUpdates: settingsForm.productUpdates ?? account.settings.productUpdates,
+    productUpdates:
+      settingsForm.productUpdates ?? account.settings.productUpdates,
     billingEmails: settingsForm.billingEmails ?? account.settings.billingEmails,
     notifyOnScanFailure:
       settingsForm.notifyOnScanFailure ?? account.settings.notifyOnScanFailure,
@@ -409,30 +405,20 @@ export default function SettingsCenter({
       settingsForm.scoreDropThreshold ?? account.settings.scoreDropThreshold,
     slackWebhookUrl:
       settingsForm.slackWebhookUrl ?? account.settings.slackWebhookUrl ?? "",
+    preferredLocale:
+      settingsForm.preferredLocale ?? account.workspace.preferredLocale ?? "sv",
   }
-
-  const resolvedBilling =
-    billingForm ??
-    ({
-      provider: account.billing.provider ?? "manual",
-      planSlug: account.rawPlan,
-      status: account.billing.status,
-      amountSek: account.billing.amountSek,
-      dunningStatus: account.billing.dunningStatus,
-      checkoutUrl:
-        account.billing.checkout[
-        account.billing.recommendedUpgrade as keyof typeof account.billing.checkout
-        ] ?? "",
-      portalUrl: account.billing.manageUrl ?? "",
-      lastInvoiceUrl: account.billing.lastInvoiceUrl ?? "",
-    } satisfies BillingFormState)
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-sm text-muted-foreground">{t("settingsCenter.accountEyebrow")}</p>
-          <h1 className="text-3xl font-bold tracking-tight">{t("settingsCenter.title")}</h1>
+          <p className="text-sm text-muted-foreground">
+            {t("settingsCenter.accountEyebrow")}
+          </p>
+          <h1 className="text-3xl font-bold tracking-tight">
+            {t("settingsCenter.title")}
+          </h1>
           <p className="text-sm text-muted-foreground">
             {t("settingsCenter.subtitle")}
           </p>
@@ -457,7 +443,9 @@ export default function SettingsCenter({
           <StatCard
             title={t("settingsCenter.notifications")}
             value={String(account.notifications.sent)}
-            description={t("settingsCenter.failedCount", { count: account.notifications.failed })}
+            description={t("settingsCenter.failedCount", {
+              count: account.notifications.failed,
+            })}
           />
           <StatCard
             title={t("settingsCenter.stats.billing")}
@@ -467,158 +455,8 @@ export default function SettingsCenter({
         </div>
       ) : null}
 
-      {showSection("billing") ? (
+      {showSection("all") ? (
         <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-4 w-4" />
-                {t("settingsCenter.billingTitle")}
-              </CardTitle>
-              <CardDescription>
-                {t("settingsCenter.billingDescription")}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-3 md:grid-cols-2">
-                <Field>
-                  <FieldLabel>{t("settingsCenter.provider")}</FieldLabel>
-                  <Input
-                    value={resolvedBilling.provider}
-                    onChange={(e) =>
-                      setBillingForm((prev) => ({
-                        ...(prev ?? resolvedBilling),
-                        provider: e.target.value,
-                      }))
-                    }
-                  />
-                </Field>
-                <Field>
-                  <FieldLabel>{t("settingsCenter.monthlyAmount")}</FieldLabel>
-                  <Input
-                    type="number"
-                    value={resolvedBilling.amountSek}
-                    onChange={(e) =>
-                      setBillingForm((prev) => ({
-                        ...(prev ?? resolvedBilling),
-                        amountSek: Number(e.target.value),
-                      }))
-                    }
-                  />
-                </Field>
-              </div>
-              <Field>
-                <FieldLabel>{t("settingsCenter.plan")}</FieldLabel>
-                <div className="flex flex-wrap gap-2">
-                  {(["free_user", "starter", "pro", "enterprise"] as const).map((plan) => (
-                    <Button
-                      key={plan}
-                      type="button"
-                      size="sm"
-                      variant={resolvedBilling.planSlug === plan ? "default" : "outline"}
-                      onClick={() =>
-                        setBillingForm((prev) => ({
-                          ...(prev ?? resolvedBilling),
-                          planSlug: plan,
-                        }))
-                      }
-                    >
-                      {plan}
-                    </Button>
-                  ))}
-                </div>
-              </Field>
-              <Field>
-                <FieldLabel>{t("settingsCenter.billingStatus")}</FieldLabel>
-                <div className="flex flex-wrap gap-2">
-                  {billingStatuses.map((status) => (
-                    <Button
-                      key={status}
-                      type="button"
-                      size="sm"
-                      variant={resolvedBilling.status === status ? "default" : "outline"}
-                      onClick={() =>
-                        setBillingForm((prev) => ({
-                          ...(prev ?? resolvedBilling),
-                          status,
-                        }))
-                      }
-                    >
-                      {status}
-                    </Button>
-                  ))}
-                </div>
-              </Field>
-              <Field>
-                <FieldLabel>{t("settingsCenter.dunningStatus")}</FieldLabel>
-                <div className="flex flex-wrap gap-2">
-                  {dunningStatuses.map((status) => (
-                    <Button
-                      key={status}
-                      type="button"
-                      size="sm"
-                      variant={
-                        resolvedBilling.dunningStatus === status ? "default" : "outline"
-                      }
-                      onClick={() =>
-                        setBillingForm((prev) => ({
-                          ...(prev ?? resolvedBilling),
-                          dunningStatus: status,
-                        }))
-                      }
-                    >
-                      {status}
-                    </Button>
-                  ))}
-                </div>
-              </Field>
-              <div className="grid gap-3 md:grid-cols-2">
-                <Field>
-                  <FieldLabel>{t("settingsCenter.portalUrl")}</FieldLabel>
-                  <Input
-                    value={resolvedBilling.portalUrl}
-                    onChange={(e) =>
-                      setBillingForm((prev) => ({
-                        ...(prev ?? resolvedBilling),
-                        portalUrl: e.target.value,
-                      }))
-                    }
-                  />
-                </Field>
-                <Field>
-                  <FieldLabel>{t("settingsCenter.checkoutUrl")}</FieldLabel>
-                  <Input
-                    value={resolvedBilling.checkoutUrl}
-                    onChange={(e) =>
-                      setBillingForm((prev) => ({
-                        ...(prev ?? resolvedBilling),
-                        checkoutUrl: e.target.value,
-                      }))
-                    }
-                  />
-                </Field>
-              </div>
-            </CardContent>
-            <CardFooter className="flex items-center justify-between gap-3">
-              <div className="text-xs text-muted-foreground">
-                {account.billing.manageUrl ? (
-                  <Link
-                    href={account.billing.manageUrl}
-                    target="_blank"
-                    className="inline-flex items-center gap-1 underline underline-offset-4"
-                  >
-                    {t("settingsCenter.openBillingPortal")}{" "}
-                    <ExternalLink className="h-3 w-3" />
-                  </Link>
-                ) : (
-                  t("settingsCenter.noBillingPortalConfigured")
-                )}
-              </div>
-              <Button disabled={!isAdmin || saveBilling.isPending} onClick={() => saveBilling.mutate()}>
-                {t("settingsCenter.saveBilling")}
-              </Button>
-            </CardFooter>
-          </Card>
-
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -632,21 +470,30 @@ export default function SettingsCenter({
             <CardContent className="space-y-3">
               <OnboardingRow
                 label={t("settingsCenter.onboarding.firstWebsiteAdded")}
-                checked={onboarding?.hasAddedWebsite ?? account.onboarding.hasAddedWebsite}
+                checked={
+                  onboarding?.hasAddedWebsite ??
+                  account.onboarding.hasAddedWebsite
+                }
                 onToggle={(completed) =>
                   updateOnboarding.mutate({ key: "hasAddedWebsite", completed })
                 }
               />
               <OnboardingRow
                 label={t("settingsCenter.onboarding.firstScanRun")}
-                checked={onboarding?.hasRunFirstScan ?? account.onboarding.hasRunFirstScan}
+                checked={
+                  onboarding?.hasRunFirstScan ??
+                  account.onboarding.hasRunFirstScan
+                }
                 onToggle={(completed) =>
                   updateOnboarding.mutate({ key: "hasRunFirstScan", completed })
                 }
               />
               <OnboardingRow
                 label={t("settingsCenter.onboarding.reportOpened")}
-                checked={onboarding?.hasViewedReport ?? account.onboarding.hasViewedReport}
+                checked={
+                  onboarding?.hasViewedReport ??
+                  account.onboarding.hasViewedReport
+                }
                 onToggle={(completed) =>
                   updateOnboarding.mutate({ key: "hasViewedReport", completed })
                 }
@@ -658,7 +505,10 @@ export default function SettingsCenter({
                   account.onboarding.hasConfiguredAlerts
                 }
                 onToggle={(completed) =>
-                  updateOnboarding.mutate({ key: "hasConfiguredAlerts", completed })
+                  updateOnboarding.mutate({
+                    key: "hasConfiguredAlerts",
+                    completed,
+                  })
                 }
               />
               <OnboardingRow
@@ -668,11 +518,16 @@ export default function SettingsCenter({
                   account.onboarding.hasConnectedIntegration
                 }
                 onToggle={(completed) =>
-                  updateOnboarding.mutate({ key: "hasConnectedIntegration", completed })
+                  updateOnboarding.mutate({
+                    key: "hasConnectedIntegration",
+                    completed,
+                  })
                 }
               />
               <div className="rounded-xl border p-4">
-                <p className="text-sm font-medium">{t("settingsApi.restApiTitle")}</p>
+                <p className="text-sm font-medium">
+                  {t("settingsApi.restApiTitle")}
+                </p>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {t("settingsCenter.restApiHint")}
                 </p>
@@ -704,7 +559,9 @@ export default function SettingsCenter({
                 <FieldGroup>
                   <ToggleRow
                     label={t("settingsCenter.notifications.emailLabel")}
-                    description={t("settingsCenter.notifications.emailDescription")}
+                    description={t(
+                      "settingsCenter.notifications.emailDescription"
+                    )}
                     checked={resolvedSettings.emailAlerts}
                     onToggle={() =>
                       setSettingsForm((prev) => ({
@@ -715,18 +572,23 @@ export default function SettingsCenter({
                   />
                   <ToggleRow
                     label={t("settingsCenter.notifications.scanFailureLabel")}
-                    description={t("settingsCenter.notifications.scanFailureDescription")}
+                    description={t(
+                      "settingsCenter.notifications.scanFailureDescription"
+                    )}
                     checked={resolvedSettings.notifyOnScanFailure}
                     onToggle={() =>
                       setSettingsForm((prev) => ({
                         ...prev,
-                        notifyOnScanFailure: !resolvedSettings.notifyOnScanFailure,
+                        notifyOnScanFailure:
+                          !resolvedSettings.notifyOnScanFailure,
                       }))
                     }
                   />
                   <ToggleRow
                     label={t("settingsCenter.notifications.scoreDropLabel")}
-                    description={t("settingsCenter.notifications.scoreDropDescription")}
+                    description={t(
+                      "settingsCenter.notifications.scoreDropDescription"
+                    )}
                     checked={resolvedSettings.notifyOnScoreDrop}
                     onToggle={() =>
                       setSettingsForm((prev) => ({
@@ -736,7 +598,9 @@ export default function SettingsCenter({
                     }
                   />
                   <Field>
-                    <FieldLabel>{t("settingsCenter.notifications.scoreDropThreshold")}</FieldLabel>
+                    <FieldLabel>
+                      {t("settingsCenter.notifications.scoreDropThreshold")}
+                    </FieldLabel>
                     <Input
                       type="number"
                       min={1}
@@ -751,6 +615,40 @@ export default function SettingsCenter({
                     />
                     <FieldDescription>
                       Antal poäng som måste tappas innan regression skickas.
+                    </FieldDescription>
+                  </Field>
+                  <Field>
+                    <FieldLabel>
+                      {t("settingsCenter.notifications.languageLabel")}
+                    </FieldLabel>
+                    <Select
+                      value={resolvedSettings.preferredLocale}
+                      onValueChange={(value) =>
+                        setSettingsForm((prev) => ({
+                          ...prev,
+                          preferredLocale: value as Locale,
+                        }))
+                      }
+                      disabled={!isAdmin}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue
+                          placeholder={t(
+                            "settingsCenter.notifications.languagePlaceholder"
+                          )}
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="sv">
+                          {t("settingsCenter.notifications.languageOptionSv")}
+                        </SelectItem>
+                        <SelectItem value="en">
+                          {t("settingsCenter.notifications.languageOptionEn")}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FieldDescription>
+                      {t("settingsCenter.notifications.languageDescription")}
                     </FieldDescription>
                   </Field>
                   <Field>
@@ -769,7 +667,10 @@ export default function SettingsCenter({
                 </FieldGroup>
               </CardContent>
               <CardFooter className="justify-end">
-                <Button onClick={() => saveSettings.mutate()} disabled={saveSettings.isPending}>
+                <Button
+                  onClick={() => saveSettings.mutate()}
+                  disabled={saveSettings.isPending}
+                >
                   Spara inställningar
                 </Button>
               </CardFooter>
@@ -789,7 +690,9 @@ export default function SettingsCenter({
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium">{t("settingsCenter.team.yourWorkspaces")}</p>
+                  <p className="text-sm font-medium">
+                    {t("settingsCenter.team.yourWorkspaces")}
+                  </p>
                   {userWorkspaces.map((entry) => (
                     <div
                       key={entry.workspaceId}
@@ -802,13 +705,17 @@ export default function SettingsCenter({
                         </p>
                       </div>
                       {entry.isActive ? (
-                        <Badge variant="success">{t("settingsCenter.team.active")}</Badge>
+                        <Badge variant="success">
+                          {t("settingsCenter.team.active")}
+                        </Badge>
                       ) : (
                         <Button
                           size="sm"
                           variant="outline"
                           disabled={switchWorkspace.isPending}
-                          onClick={() => switchWorkspace.mutate(entry.workspaceId)}
+                          onClick={() =>
+                            switchWorkspace.mutate(entry.workspaceId)
+                          }
                         >
                           {t("settingsCenter.team.switchWorkspace")}
                         </Button>
@@ -818,17 +725,22 @@ export default function SettingsCenter({
                 </div>
                 {pendingInvites.length > 0 ? (
                   <div className="space-y-2 rounded-xl border border-chart-1/20 bg-chart-1/5 p-4">
-                    <p className="text-sm font-medium">{t("settingsCenter.team.pendingInvites")}</p>
+                    <p className="text-sm font-medium">
+                      {t("settingsCenter.team.pendingInvites")}
+                    </p>
                     {pendingInvites.map((invite) => (
                       <div
                         key={invite.id}
                         className="flex items-center justify-between gap-3 rounded-lg border bg-background p-3"
                       >
                         <div>
-                          <p className="text-sm font-medium">{invite.workspaceName}</p>
+                          <p className="text-sm font-medium">
+                            {invite.workspaceName}
+                          </p>
                           <p className="text-xs text-muted-foreground">
-                            {invite.role} · {t("settingsCenter.team.validUntil")}{" "}
-                            {formatStamp(invite.expiresAt)}
+                            {invite.role} ·{" "}
+                            {t("settingsCenter.team.validUntil")}{" "}
+                            {formatStamp(invite.expiresAt, t)}
                           </p>
                         </div>
                         <div className="flex gap-2">
@@ -860,7 +772,9 @@ export default function SettingsCenter({
                           <p className="text-sm font-medium">
                             {member.email || member.clerkUserId}
                           </p>
-                          <p className="text-xs text-muted-foreground">{member.role}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {member.role}
+                          </p>
                         </div>
                         <div className="flex items-center gap-2">
                           {member.role !== "owner" && isOwner ? (
@@ -872,7 +786,10 @@ export default function SettingsCenter({
                               onClick={() =>
                                 updateMemberRole.mutate({
                                   memberId: member.id,
-                                  role: member.role === "admin" ? "member" : "admin",
+                                  role:
+                                    member.role === "admin"
+                                      ? "member"
+                                      : "admin",
                                 })
                               }
                             >
@@ -906,7 +823,10 @@ export default function SettingsCenter({
                         placeholder={t("settingsCenter.team.emailPlaceholder")}
                         value={inviteForm.email}
                         onChange={(e) =>
-                          setInviteForm((prev) => ({ ...prev, email: e.target.value }))
+                          setInviteForm((prev) => ({
+                            ...prev,
+                            email: e.target.value,
+                          }))
                         }
                       />
                     </Field>
@@ -918,7 +838,9 @@ export default function SettingsCenter({
                             key={role}
                             type="button"
                             size="sm"
-                            variant={inviteForm.role === role ? "default" : "outline"}
+                            variant={
+                              inviteForm.role === role ? "default" : "outline"
+                            }
                             onClick={() =>
                               setInviteForm((prev) => ({ ...prev, role }))
                             }
@@ -930,7 +852,9 @@ export default function SettingsCenter({
                     </Field>
                     <Button
                       variant="outline"
-                      disabled={!isAdmin || !inviteForm.email || createInvite.isPending}
+                      disabled={
+                        !isAdmin || !inviteForm.email || createInvite.isPending
+                      }
                       onClick={() => createInvite.mutate()}
                     >
                       <MailPlus className="h-4 w-4" />
@@ -989,7 +913,10 @@ export default function SettingsCenter({
                   placeholder={t("settingsCenter.integrations.namePlaceholder")}
                   value={webhookForm.label}
                   onChange={(e) =>
-                    setWebhookForm((prev) => ({ ...prev, label: e.target.value }))
+                    setWebhookForm((prev) => ({
+                      ...prev,
+                      label: e.target.value,
+                    }))
                   }
                 />
               </Field>
@@ -1019,7 +946,9 @@ export default function SettingsCenter({
                         setWebhookForm((prev) => ({
                           ...prev,
                           eventTypes: checked
-                            ? prev.eventTypes.filter((item) => item !== eventType)
+                            ? prev.eventTypes.filter(
+                                (item) => item !== eventType
+                              )
                             : [...prev.eventTypes, eventType],
                         }))
                       }
@@ -1054,13 +983,17 @@ export default function SettingsCenter({
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <p className="font-medium">{webhook.label}</p>
-                        <Badge variant={webhook.isEnabled ? "success" : "outline"}>
+                        <Badge
+                          variant={webhook.isEnabled ? "success" : "outline"}
+                        >
                           {webhook.isEnabled
                             ? t("settingsCenter.integrations.active")
                             : t("settingsCenter.integrations.paused")}
                         </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground">{webhook.url}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {webhook.url}
+                      </p>
                       <div className="flex flex-wrap gap-2">
                         {eventTypes.map((eventType) => (
                           <Badge key={eventType} variant="outline">
@@ -1118,10 +1051,19 @@ export default function SettingsCenter({
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {!account.capabilities.apiAccess ? (
+                  <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+                    API access is available on the Enterprise plan only.
+                  </div>
+                ) : null}
                 {latestApiKey ? (
                   <div className="rounded-lg border border-chart-1/30 bg-chart-1/5 p-3">
-                    <p className="text-sm font-medium">{t("settingsCenter.apiKeys.shownOnce")}</p>
-                    <p className="mt-1 break-all font-mono text-xs">{latestApiKey}</p>
+                    <p className="text-sm font-medium">
+                      {t("settingsCenter.apiKeys.shownOnce")}
+                    </p>
+                    <p className="mt-1 font-mono text-xs break-all">
+                      {latestApiKey}
+                    </p>
                   </div>
                 ) : null}
                 <div className="flex gap-3">
@@ -1129,9 +1071,15 @@ export default function SettingsCenter({
                     placeholder={t("settingsCenter.apiKeys.labelPlaceholder")}
                     value={apiKeyLabel}
                     onChange={(e) => setApiKeyLabel(e.target.value)}
+                    disabled={!account.capabilities.apiAccess}
                   />
                   <Button
-                    disabled={!isAdmin || !apiKeyLabel || createApiKey.isPending}
+                    disabled={
+                      !account.capabilities.apiAccess ||
+                      !isAdmin ||
+                      !apiKeyLabel ||
+                      createApiKey.isPending
+                    }
                     onClick={() => createApiKey.mutate()}
                   >
                     {t("settingsCenter.apiKeys.create")}
@@ -1139,7 +1087,9 @@ export default function SettingsCenter({
                 </div>
                 <div className="space-y-2">
                   {apiKeys.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">{t("settingsCenter.apiKeys.empty")}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {t("settingsCenter.apiKeys.empty")}
+                    </p>
                   ) : (
                     apiKeys.map((key) => (
                       <div
@@ -1188,16 +1138,25 @@ export default function SettingsCenter({
                     placeholder={t("settingsCenter.support.subjectPlaceholder")}
                     value={supportForm.subject}
                     onChange={(e) =>
-                      setSupportForm((prev) => ({ ...prev, subject: e.target.value }))
+                      setSupportForm((prev) => ({
+                        ...prev,
+                        subject: e.target.value,
+                      }))
                     }
                   />
                   <div className="flex flex-wrap gap-2">
-                    {(["support", "billing", "security", "success"] as const).map((category) => (
+                    {(
+                      ["support", "billing", "security", "success"] as const
+                    ).map((category) => (
                       <Button
                         key={category}
                         type="button"
                         size="sm"
-                        variant={supportForm.category === category ? "default" : "outline"}
+                        variant={
+                          supportForm.category === category
+                            ? "default"
+                            : "outline"
+                        }
                         onClick={() =>
                           setSupportForm((prev) => ({ ...prev, category }))
                         }
@@ -1207,25 +1166,34 @@ export default function SettingsCenter({
                     ))}
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {(["low", "normal", "high", "urgent"] as const).map((priority) => (
-                      <Button
-                        key={priority}
-                        type="button"
-                        size="sm"
-                        variant={supportForm.priority === priority ? "default" : "outline"}
-                        onClick={() =>
-                          setSupportForm((prev) => ({ ...prev, priority }))
-                        }
-                      >
-                        {priority}
-                      </Button>
-                    ))}
+                    {(["low", "normal", "high", "urgent"] as const).map(
+                      (priority) => (
+                        <Button
+                          key={priority}
+                          type="button"
+                          size="sm"
+                          variant={
+                            supportForm.priority === priority
+                              ? "default"
+                              : "outline"
+                          }
+                          onClick={() =>
+                            setSupportForm((prev) => ({ ...prev, priority }))
+                          }
+                        >
+                          {priority}
+                        </Button>
+                      )
+                    )}
                   </div>
                   <Textarea
                     placeholder={t("settingsCenter.support.messagePlaceholder")}
                     value={supportForm.message}
                     onChange={(e) =>
-                      setSupportForm((prev) => ({ ...prev, message: e.target.value }))
+                      setSupportForm((prev) => ({
+                        ...prev,
+                        message: e.target.value,
+                      }))
                     }
                   />
                   <Button
@@ -1241,15 +1209,20 @@ export default function SettingsCenter({
                 </div>
                 <div className="space-y-2">
                   {supportRequests.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">{t("settingsCenter.support.empty")}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {t("settingsCenter.support.empty")}
+                    </p>
                   ) : (
                     supportRequests.map((request) => (
                       <div key={request.id} className="rounded-lg border p-3">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                           <div>
-                            <p className="text-sm font-medium">{request.subject}</p>
+                            <p className="text-sm font-medium">
+                              {request.subject}
+                            </p>
                             <p className="text-xs text-muted-foreground">
-                              {request.category} · {request.priority} · {request.status}
+                              {request.category} · {request.priority} ·{" "}
+                              {request.status}
                             </p>
                           </div>
                           <Badge variant="outline">{request.status}</Badge>
@@ -1274,7 +1247,7 @@ export default function SettingsCenter({
               items={auditLogs.map((item) => ({
                 id: item.id,
                 title: item.summary,
-                meta: `${item.action} · ${formatStamp(item.createdAt)}`,
+                meta: `${item.action} · ${formatStamp(item.createdAt, t)}`,
                 tone: "neutral" as const,
               }))}
             />
@@ -1298,8 +1271,11 @@ export default function SettingsCenter({
             items={deliveries.map((item) => ({
               id: item.id,
               title: `${item.channel} → ${item.destination}`,
-              meta: `${item.eventType} · ${item.status} · ${formatStamp(item.createdAt)}`,
-              tone: item.status === "failed" ? ("danger" as const) : ("success" as const),
+              meta: `${item.eventType} · ${item.status} · ${formatStamp(item.createdAt, t)}`,
+              tone:
+                item.status === "failed"
+                  ? ("danger" as const)
+                  : ("success" as const),
             }))}
           />
         </div>
@@ -1323,12 +1299,9 @@ function invalidateAccountViews() {
   qc.invalidateQueries({ queryKey: ["pendingInvites"] })
 }
 
-function formatStamp(value: string | null | undefined) {
+function formatStamp(value: string | null | undefined, t: TFunction) {
   if (!value) return t("dashboard.unknownTime")
-  return new Date(value).toLocaleString("sv-SE", {
-    dateStyle: "short",
-    timeStyle: "short",
-  })
+  return new Date(value).toLocaleString()
 }
 
 function StatCard({
@@ -1370,7 +1343,11 @@ function ToggleRow({
         <p className="text-sm font-medium">{label}</p>
         <p className="text-sm text-muted-foreground">{description}</p>
       </div>
-      <Button type="button" variant={checked ? "default" : "outline"} onClick={onToggle}>
+      <Button
+        type="button"
+        variant={checked ? "default" : "outline"}
+        onClick={onToggle}
+      >
         {checked ? "På" : "Av"}
       </Button>
     </div>
@@ -1434,12 +1411,13 @@ function LogCard({
             <div key={item.id} className="rounded-lg border p-3">
               <p className="text-sm font-medium">{item.title}</p>
               <p
-                className={`text-xs ${item.tone === "danger"
+                className={`text-xs ${
+                  item.tone === "danger"
                     ? "text-destructive"
                     : item.tone === "success"
                       ? "text-chart-1"
                       : "text-muted-foreground"
-                  }`}
+                }`}
               >
                 {item.meta}
               </p>
@@ -1450,5 +1428,3 @@ function LogCard({
     </Card>
   )
 }
-
-

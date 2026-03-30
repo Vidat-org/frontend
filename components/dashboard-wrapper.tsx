@@ -14,7 +14,7 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { parseAsStringEnum, useQueryState } from "nuqs"
 import { Monitor, Smartphone } from "lucide-react"
 import CoreWebVitals from "./core-web-vitals"
-import { t } from "@/lib/i18n"
+import { useT } from "next-i18next/client"
 
 export default function WebsiteDetail({
   websiteId,
@@ -23,6 +23,7 @@ export default function WebsiteDetail({
   websiteId: string
   latestScanId: string
 }) {
+  const { t } = useT("common")
   const [selectedScanId, setSelectedScanId] = useState(latestScanId)
   const [device, setDevice] = useQueryState(
     "device",
@@ -33,7 +34,9 @@ export default function WebsiteDetail({
     <>
       <Card className="col-span-4 p-6">
         <CardHeader className="flex justify-between">
-          <CardTitle className="mb-4">{t("dashboardWrapper.performanceOverTime")}</CardTitle>
+          <CardTitle className="mb-4">
+            {t("dashboardWrapper.performanceOverTime")}
+          </CardTitle>
           <Select
             value={device}
             onValueChange={(v) => setDevice(v as "mobile" | "desktop")}

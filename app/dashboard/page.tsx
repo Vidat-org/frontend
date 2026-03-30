@@ -1,23 +1,6 @@
 "use client"
 
-import Link from "next/link"
-import type { ReactNode } from "react"
-import { useQuery } from "@tanstack/react-query"
-import {
-  Activity,
-  AlertTriangle,
-  FileChartColumn,
-  Globe,
-  Link as LinkIcon,
-  Rocket,
-  ShieldCheck,
-  Siren,
-  Users,
-  Zap,
-} from "lucide-react"
 import AddWebsite from "@/components/add-website"
-import WebsiteCard, { WebsiteCardSkeleton } from "@/components/website-card"
-import { client } from "@/lib/orpc"
 import { Badge } from "@/components/ui/badge"
 import {
   Card,
@@ -34,9 +17,30 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty"
-import { t } from "@/lib/i18n"
+import WebsiteCard, { WebsiteCardSkeleton } from "@/components/website-card"
+import { client } from "@/lib/orpc"
+import { useQuery } from "@tanstack/react-query"
+import {
+  Activity,
+  AlertTriangle,
+  FileChartColumn,
+  Globe,
+  Link as LinkIcon,
+  Rocket,
+  ShieldCheck,
+  Siren,
+  Users,
+  Zap,
+} from "lucide-react"
+import Link from "next/link"
+import type { ReactNode } from "react"
+import type { TFunction } from "i18next"
+
+import { useT } from "next-i18next/client"
 
 export default function Page() {
+  const { t } = useT("common")
+
   const { data, isLoading } = useQuery({
     queryKey: ["dashboardOverview"],
     queryFn: async () => await client.getDashboardOverview(),
@@ -129,16 +133,21 @@ export default function Page() {
           <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <CardTitle>{t("dashboard.overviewTitle")}</CardTitle>
-              <CardDescription>{t("dashboard.overviewDescription")}</CardDescription>
+              <CardDescription>
+                {t("dashboard.overviewDescription")}
+              </CardDescription>
             </div>
             <AddWebsite />
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                <span className="text-muted-foreground">{t("dashboard.planUsage")}</span>
+                <span className="text-muted-foreground">
+                  {t("dashboard.planUsage")}
+                </span>
                 <span className="font-medium">
-                  {summary?.usage.activeWebsites ?? 0} / {summary?.usage.websiteLimit ?? 0}
+                  {summary?.usage.activeWebsites ?? 0} /{" "}
+                  {summary?.usage.websiteLimit ?? 0}
                 </span>
               </div>
               <div className="h-2 overflow-hidden rounded-full bg-muted">
@@ -148,9 +157,9 @@ export default function Page() {
                     width: `${Math.min(
                       100,
                       Math.round(
-                        (((summary?.usage.activeWebsites ?? 0) /
+                        ((summary?.usage.activeWebsites ?? 0) /
                           Math.max(summary?.usage.websiteLimit ?? 1, 1)) *
-                          100)
+                          100
                       )
                     )}%`,
                   }}
@@ -192,21 +201,29 @@ export default function Page() {
         <Card>
           <CardHeader>
             <CardTitle>{t("dashboard.latestActivity")}</CardTitle>
-            <CardDescription>{t("dashboard.latestActivityDescription")}</CardDescription>
+            <CardDescription>
+              {t("dashboard.latestActivityDescription")}
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {(data?.recentScans ?? []).slice(0, 3).map((scan) => (
               <div key={scan.scanId} className="rounded-lg border p-3">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <p className="text-sm font-medium">{scan.websiteName || scan.websiteUrl}</p>
+                    <p className="text-sm font-medium">
+                      {scan.websiteName || scan.websiteUrl}
+                    </p>
                     <p className="text-xs text-muted-foreground">
                       {scan.status === "failed"
                         ? scan.errorMessage || t("dashboard.scanFailed")
                         : `Perf ${scan.performanceScore ?? 0} · SEO ${scan.seoScore ?? 0}`}
                     </p>
                   </div>
-                  <Badge variant={scan.status === "failed" ? "destructive" : "outline"}>
+                  <Badge
+                    variant={
+                      scan.status === "failed" ? "destructive" : "outline"
+                    }
+                  >
                     {scan.status}
                   </Badge>
                 </div>
@@ -236,9 +253,15 @@ export default function Page() {
                     <p className="text-sm font-medium">
                       {entry.channel} → {entry.destination}
                     </p>
-                    <p className="text-xs text-muted-foreground">{entry.eventType}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {entry.eventType}
+                    </p>
                   </div>
-                  <Badge variant={entry.status === "failed" ? "destructive" : "outline"}>
+                  <Badge
+                    variant={
+                      entry.status === "failed" ? "destructive" : "outline"
+                    }
+                  >
                     {entry.status}
                   </Badge>
                 </div>
@@ -253,7 +276,8 @@ export default function Page() {
           <CardHeader>
             <CardTitle>{t("dashboard.onboardingAndTeam")}</CardTitle>
             <CardDescription>
-              {summary?.workspace.name} · {t("dashboard.role")} {summary?.workspace.role}
+              {summary?.workspace.name} · {t("dashboard.role")}{" "}
+              {summary?.workspace.role}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -277,7 +301,10 @@ export default function Page() {
               label={t("dashboard.integrationConnected")}
               checked={summary?.onboarding.hasConnectedIntegration ?? false}
             />
-            <Link href="/dashboard/settings" className="text-sm underline underline-offset-4">
+            <Link
+              href="/dashboard/settings"
+              className="text-sm underline underline-offset-4"
+            >
               {t("dashboard.openSettingsToManageWorkspace")}
             </Link>
           </CardContent>
@@ -286,14 +313,16 @@ export default function Page() {
         <Card>
           <CardHeader>
             <CardTitle>{t("dashboard.operationsLog")}</CardTitle>
-            <CardDescription>{t("dashboard.operationsLogDescription")}</CardDescription>
+            <CardDescription>
+              {t("dashboard.operationsLogDescription")}
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {(data?.recentAuditLogs ?? []).map((entry) => (
               <div key={entry.id} className="rounded-lg border p-3">
                 <p className="text-sm font-medium">{entry.summary}</p>
                 <p className="text-xs text-muted-foreground">
-                  {entry.action} · {formatStamp(entry.createdAt)}
+                  {entry.action} · {formatStamp(entry.createdAt, t)}
                 </p>
               </div>
             ))}
@@ -318,7 +347,9 @@ export default function Page() {
                 <LinkIcon />
               </EmptyMedia>
               <EmptyTitle>{t("dashboard.noWebsitesYet")}</EmptyTitle>
-              <EmptyDescription>{t("dashboard.addFirstWebsiteDescription")}</EmptyDescription>
+              <EmptyDescription>
+                {t("dashboard.addFirstWebsiteDescription")}
+              </EmptyDescription>
             </EmptyHeader>
             <EmptyContent>
               <AddWebsite />
@@ -389,7 +420,10 @@ function AlertList({
           <p className="text-sm text-muted-foreground">{emptyText}</p>
         ) : (
           items.slice(0, 3).map((item) => (
-            <div key={`${item.label}-${item.detail}`} className="rounded-lg bg-muted/40 p-3">
+            <div
+              key={`${item.label}-${item.detail}`}
+              className="rounded-lg bg-muted/40 p-3"
+            >
               <p className="text-sm font-medium">{item.label}</p>
               <p className="text-xs text-muted-foreground">{item.detail}</p>
             </div>
@@ -401,6 +435,7 @@ function AlertList({
 }
 
 function ChecklistRow({ label, checked }: { label: string; checked: boolean }) {
+  const { t } = useT("common")
   return (
     <div className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between">
       <p className="text-sm font-medium">{label}</p>
@@ -411,10 +446,7 @@ function ChecklistRow({ label, checked }: { label: string; checked: boolean }) {
   )
 }
 
-function formatStamp(value: string | null | undefined) {
+function formatStamp(value: string | null | undefined, t: TFunction) {
   if (!value) return t("dashboard.unknownTime")
-  return new Date(value).toLocaleString("sv-SE", {
-    dateStyle: "short",
-    timeStyle: "short",
-  })
+  return new Date(value).toLocaleString()
 }

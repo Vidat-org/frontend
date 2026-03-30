@@ -1,6 +1,6 @@
 import "server-only"
 import { db } from "@/db/drizzle"
-import { apiKeys, workspaces } from "@/migrations/schema"
+import { apiKeys, billingSubscriptions, workspaces } from "@/migrations/schema"
 import { and, eq, isNull } from "drizzle-orm"
 
 export function generateApiKeySecret() {
@@ -33,9 +33,14 @@ export async function authenticateApiKey(rawKey: string) {
       keyPrefix: apiKeys.keyPrefix,
       label: apiKeys.label,
       workspaceName: workspaces.name,
+      planSlug: billingSubscriptions.planSlug,
     })
     .from(apiKeys)
     .innerJoin(workspaces, eq(workspaces.id, apiKeys.workspaceId))
+    .leftJoin(
+      billingSubscriptions,
+      eq(billingSubscriptions.workspaceId, apiKeys.workspaceId)
+    )
     .where(and(eq(apiKeys.keyHash, keyHash), isNull(apiKeys.revokedAt)))
     .limit(1)
 

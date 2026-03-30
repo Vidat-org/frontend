@@ -1,4 +1,3 @@
-export const runtime = "nodejs"
 import {
   acceptWorkspaceInvite,
   createApiKey,
@@ -8,7 +7,6 @@ import {
   declineWorkspaceInvite,
   deleteWebhookDestination,
   getAccountSummary,
-  getBillingSummary,
   getDashboardOverview,
   getNotificationSettings,
   getOnboardingState,
@@ -25,8 +23,8 @@ import {
   listWebhookDestinations,
   switchActiveWorkspace,
   updateWorkspaceMemberRole,
-  updateBillingState,
   updateNotificationSettings,
+  updateWorkspaceLocale,
   updateOnboardingStep,
   updateWebhookDestination,
 } from "./account"
@@ -51,6 +49,7 @@ export const router = {
   getDashboardOverview: getDashboardOverview,
   getNotificationSettings: getNotificationSettings,
   updateNotificationSettings: updateNotificationSettings,
+  updateWorkspaceLocale: updateWorkspaceLocale,
   listWebhookDestinations: listWebhookDestinations,
   createWebhookDestination: createWebhookDestination,
   updateWebhookDestination: updateWebhookDestination,
@@ -60,8 +59,6 @@ export const router = {
   revokeWorkspaceInvite: revokeWorkspaceInvite,
   updateWorkspaceMemberRole: updateWorkspaceMemberRole,
   removeWorkspaceMember: removeWorkspaceMember,
-  getBillingSummary: getBillingSummary,
-  updateBillingState: updateBillingState,
   listAuditLogs: listAuditLogs,
   listNotificationDeliveries: listNotificationDeliveries,
   getOnboardingState: getOnboardingState,

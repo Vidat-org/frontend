@@ -1,47 +1,65 @@
-import { t } from "@/lib/i18n"
+import { getT } from "next-i18next/server"
+import { getSystemHealth } from "@/lib/health"
 
-const systems = [
-  {
-    name: "status.systemScanning",
-    status: "status.operational",
-    detail: "status.detailScanning",
-  },
-  {
-    name: "status.systemReports",
-    status: "status.operational",
-    detail: "status.detailReports",
-  },
-  {
-    name: "status.systemBilling",
-    status: "status.operational",
-    detail: "status.detailBilling",
-  },
-  {
-    name: "status.systemNotifications",
-    status: "status.operational",
-    detail: "status.detailNotifications",
-  },
-]
+const systemLabels = {
+  scanning: "status.systemScanning",
+  reports: "status.systemReports",
+  billing: "status.systemBilling",
+  notifications: "status.systemNotifications",
+} as const
 
-export default function StatusPage() {
+function getStatusAppearance(status: "operational" | "degraded" | "outage") {
+  if (status === "operational") {
+    return "bg-chart-1/10 text-chart-1"
+  }
+
+  if (status === "degraded") {
+    return "bg-amber-500/10 text-amber-700 dark:text-amber-300"
+  }
+
+  return "bg-destructive/10 text-destructive"
+}
+
+export default async function StatusPage() {
+  const { t } = await getT("common")
+  const health = await getSystemHealth()
+
   return (
     <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-8 px-6 py-16">
       <section className="space-y-4">
-        <p className="text-sm uppercase tracking-[0.22em] text-chart-1">{t("status.eyebrow")}</p>
-        <h1 className="font-serif text-5xl tracking-tight">{t("status.title")}</h1>
-        <p className="max-w-2xl text-sm leading-7 text-muted-foreground md:text-base">{t("status.intro")}</p>
+        <p className="text-sm tracking-[0.22em] text-chart-1 uppercase">
+          {t("status.eyebrow")}
+        </p>
+        <h1 className="font-serif text-5xl tracking-tight">
+          {t("status.title")}
+        </h1>
+        <p className="max-w-2xl text-sm leading-7 text-muted-foreground md:text-base">
+          {t("status.intro")}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          {t("status.checkedAt")}: {new Date(health.checkedAt).toLocaleString()}
+        </p>
       </section>
 
       <section className="grid gap-4">
-        {systems.map((system) => (
-          <article key={system.name} className="rounded-[1.75rem] border bg-card p-6">
+        {health.components.map((system) => (
+          <article
+            key={system.key}
+            className="rounded-[1.75rem] border bg-card p-6"
+          >
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-xl font-semibold tracking-tight">{t(system.name)}</h2>
-              <span className="rounded-full bg-chart-1/10 px-3 py-1 text-xs font-semibold text-chart-1">
-                {t(system.status)}
+              <h2 className="text-xl font-semibold tracking-tight">
+                {t(systemLabels[system.key])}
+              </h2>
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-semibold ${getStatusAppearance(system.status)}`}
+              >
+                {t(`status.${system.status}`)}
               </span>
             </div>
-            <p className="mt-3 text-sm leading-7 text-muted-foreground">{t(system.detail)}</p>
+            <p className="mt-3 text-sm leading-7 text-muted-foreground">
+              {system.detail}
+            </p>
           </article>
         ))}
       </section>

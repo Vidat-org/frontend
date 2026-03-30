@@ -35,14 +35,15 @@ import {
 } from "@/components/ui/select"
 import { ErrUpgradePlan } from "@/lib/errors"
 import { ORPCError } from "@orpc/server"
-import { t } from "@/lib/i18n"
+import { useT } from "next-i18next/client"
 
 export default function AddWebsite() {
+  const { t } = useT("common")
   const { mutateAsync } = useMutation({
     mutationFn: async (values: {
       url: string
-      interval: (typeof intervals)[number],
-      name: string,
+      interval: (typeof intervals)[number]
+      name: string
     }) => await client.createWebsite(values),
   })
 
@@ -186,7 +187,9 @@ export default function AddWebsite() {
                       }
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder={t("addWebsite.intervalPlaceholder")} />
+                        <SelectValue
+                          placeholder={t("addWebsite.intervalPlaceholder")}
+                        />
                       </SelectTrigger>
 
                       <SelectContent>

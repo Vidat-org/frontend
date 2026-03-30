@@ -1,11 +1,14 @@
-import { t } from "@/lib/i18n"
+import { getT } from "next-i18next/server"
 
-export default function Page() {
+export default async function Page() {
+  const { t } = await getT("common")
   return (
     <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 px-6 py-16">
       <div className="space-y-3">
         <p className="text-sm text-muted-foreground">{t("privacy.eyebrow")}</p>
-        <h1 className="text-4xl font-bold tracking-tight">{t("privacy.title")}</h1>
+        <h1 className="text-4xl font-bold tracking-tight">
+          {t("privacy.title")}
+        </h1>
         <p className="text-muted-foreground">{t("privacy.intro")}</p>
       </div>
 

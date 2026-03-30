@@ -1,4 +1,4 @@
-import { UserAvatar, UserButton, Show, SignInButton } from "@clerk/nextjs"
+import { UserButton, Show, SignInButton } from "@clerk/nextjs"
 import Link from "next/link"
 
 export default function Navbar() {

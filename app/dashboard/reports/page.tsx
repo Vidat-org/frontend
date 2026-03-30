@@ -1,5 +1,4 @@
 import ReportCard from "@/components/report-card"
-import { client } from "@/lib/orpc"
 import {
   Empty,
   EmptyDescription,
@@ -7,10 +6,13 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty"
+import { client } from "@/lib/orpc"
 import { FileChartColumn } from "lucide-react"
-import { t } from "@/lib/i18n"
+
+import { getT } from "next-i18next/server"
 
 export default async function Page() {
+  const { t } = await getT("common")
   const query = await client.listReports()
 
   return (

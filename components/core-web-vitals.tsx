@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query"
 import { client } from "@/lib/orpc"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
-import { t } from "@/lib/i18n"
+import { useT } from "next-i18next/client"
+import type { TFunction } from "i18next"
 
 type Metric = {
   label: string
@@ -29,45 +30,16 @@ function getStatus(
   return "poor"
 }
 
-const statusConfig = {
-  good: {
-    label: t("vitals.statusGood"),
-    bar: "bg-emerald-500",
-    text: "text-emerald-800 dark:text-emerald-400",
-    bg: "bg-emerald-100/50 dark:bg-emerald-950/40",
-    border: "border-emerald-200 dark:border-emerald-800",
-  },
-  "needs-improvement": {
-    label: t("vitals.statusNeedsImprovement"),
-    bar: "bg-amber-500",
-    text: "text-amber-900 dark:text-amber-400",
-    bg: "bg-amber-100/50 dark:bg-amber-950/40",
-    border: "border-amber-200 dark:border-amber-800",
-  },
-  poor: {
-    label: t("vitals.statusPoor"),
-    bar: "bg-destructive",
-    text: "text-destructive dark:text-red-400",
-    bg: "bg-destructive/15 dark:bg-destructive/25",
-    border: "border-destructive/30 dark:border-destructive/50",
-  },
-  unknown: {
-    label: "-",
-    bar: "bg-muted",
-    text: "text-muted-foreground",
-    bg: "bg-muted/30",
-    border: "border-border",
-  },
-}
-
 function MetricBar({
   value,
   thresholds,
   higherIsBetter = false,
+  statusConfig,
 }: {
   value: number | null
   thresholds: [number, number]
   higherIsBetter?: boolean
+  statusConfig: ReturnType<typeof getStatusConfig>
 }) {
   if (value === null) return <div className="h-1.5 rounded-full bg-muted" />
 
@@ -91,14 +63,20 @@ function MetricBar({
   )
 }
 
-function MetricTile({ metric }: { metric: Metric }) {
+function MetricTile({
+  metric,
+  statusConfig,
+}: {
+  metric: Metric
+  statusConfig: ReturnType<typeof getStatusConfig>
+}) {
   const status = getStatus(
     metric.value,
     metric.thresholds,
     metric.higherIsBetter
   )
   const cfg = statusConfig[status]
-
+  const { t } = useT("common")
   const display =
     metric.value !== null
       ? metric.unit === "s"
@@ -125,6 +103,7 @@ function MetricTile({ metric }: { metric: Metric }) {
         value={metric.value}
         thresholds={metric.thresholds}
         higherIsBetter={metric.higherIsBetter}
+        statusConfig={statusConfig}
       />
       <div className="flex justify-between text-[10px] text-muted-foreground">
         <span>
@@ -150,6 +129,9 @@ export default function CoreWebVitals({ scanId }: { scanId: string }) {
     queryFn: () => client.getScan({ scan: scanId }),
     enabled: !!scanId,
   })
+
+  const { t } = useT("common")
+  const statusConfig = getStatusConfig(t)
 
   const metrics: Metric[] = [
     {
@@ -215,11 +197,44 @@ export default function CoreWebVitals({ scanId }: { scanId: string }) {
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {metrics.map((m) => (
-              <MetricTile key={m.label} metric={m} />
+              <MetricTile key={m.label} metric={m} statusConfig={statusConfig} />
             ))}
           </div>
         )}
       </CardContent>
     </Card>
   )
+}
+
+function getStatusConfig(t: TFunction) {
+  return {
+    good: {
+      label: t("vitals.statusGood"),
+      bar: "bg-emerald-500",
+      text: "text-emerald-800 dark:text-emerald-400",
+      bg: "bg-emerald-100/50 dark:bg-emerald-950/40",
+      border: "border-emerald-200 dark:border-emerald-800",
+    },
+    "needs-improvement": {
+      label: t("vitals.statusNeedsImprovement"),
+      bar: "bg-amber-500",
+      text: "text-amber-900 dark:text-amber-400",
+      bg: "bg-amber-100/50 dark:bg-amber-950/40",
+      border: "border-amber-200 dark:border-amber-800",
+    },
+    poor: {
+      label: t("vitals.statusPoor"),
+      bar: "bg-destructive",
+      text: "text-destructive dark:text-red-400",
+      bg: "bg-destructive/15 dark:bg-destructive/25",
+      border: "border-destructive/30 dark:border-destructive/50",
+    },
+    unknown: {
+      label: "-",
+      bar: "bg-muted",
+      text: "text-muted-foreground",
+      bg: "bg-muted/30",
+      border: "border-border",
+    },
+  }
 }

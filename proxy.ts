@@ -1,6 +1,17 @@
-import { clerkMiddleware } from "@clerk/nextjs/server"
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server"
+import { createProxy } from "next-i18next/proxy"
+import i18nConfig from "@/i18n.config"
 
-export default clerkMiddleware()
+const isProtectedRoute = createRouteMatcher(["/dashboard(.*)"])
+const i18nProxy = createProxy(i18nConfig)
+
+export default clerkMiddleware(async (auth, req) => {
+  if (isProtectedRoute(req)) {
+    await auth.protect()
+  }
+
+  return i18nProxy(req)
+})
 
 export const config = {
   matcher: [

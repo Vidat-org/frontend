@@ -45,6 +45,7 @@ export const workspaces = pgTable("workspaces", {
   slug: text().notNull(),
   ownerUserId: text("owner_user_id").notNull(),
   billingEmail: text("billing_email"),
+  preferredLocale: text("preferred_locale").default("sv").notNull(),
   createdAt: timestamp("created_at", {
     withTimezone: true,
     mode: "string",
@@ -490,6 +491,7 @@ export const userSettings = pgTable(
     notifyOnScoreDrop: boolean("notify_on_score_drop").default(true).notNull(),
     scoreDropThreshold: integer("score_drop_threshold").default(10).notNull(),
     slackWebhookUrl: text("slack_webhook_url"),
+    preferredLocale: text("preferred_locale").default("sv").notNull(),
     updatedAt: timestamp("updated_at", {
       withTimezone: true,
       mode: "string",

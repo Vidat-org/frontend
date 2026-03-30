@@ -10,36 +10,11 @@ import {
   ChartLegend,
   ChartLegendContent,
 } from "@/components/ui/chart"
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-} from "recharts"
+import { LineChart, Line, XAxis, YAxis, CartesianGrid } from "recharts"
 import { format } from "date-fns"
 import { Skeleton } from "./ui/skeleton"
 import { parseAsStringEnum, useQueryState } from "nuqs"
-import { t } from "@/lib/i18n"
-
-const chartConfig = {
-  performanceScore: {
-    label: t("scanChart.performance"),
-    color: "oklch(var(--chart-1))",
-  },
-  seoScore: {
-    label: "SEO",
-    color: "oklch(var(--chart-2))",
-  },
-  accessibilityScore: {
-    label: t("scanChart.accessibility"),
-    color: "oklch(var(--chart-3))",
-  },
-  bestPracticesScore: {
-    label: t("scanChart.bestPractices"),
-    color: "oklch(var(--chart-4))",
-  },
-} satisfies ChartConfig
+import { useT } from "next-i18next/client"
 
 export default function ScanChart({
   websiteId,
@@ -48,10 +23,30 @@ export default function ScanChart({
   websiteId: string
   onScanClick?: (scanId: string) => void
 }) {
+  const { t } = useT("common")
   const [device] = useQueryState(
     "device",
     parseAsStringEnum(["mobile", "desktop"]).withDefault("mobile")
   )
+  const chartConfig = {
+    performanceScore: {
+      label: t("scanChart.performance"),
+      color: "oklch(var(--chart-1))",
+    },
+    seoScore: {
+      label: "SEO",
+      color: "oklch(var(--chart-2))",
+    },
+    accessibilityScore: {
+      label: t("scanChart.accessibility"),
+      color: "oklch(var(--chart-3))",
+    },
+    bestPracticesScore: {
+      label: t("scanChart.bestPractices"),
+      color: "oklch(var(--chart-4))",
+    },
+  } satisfies ChartConfig
+
   const { data: scans, isLoading } = useQuery({
     queryKey: ["scans", websiteId, device],
     queryFn: () => client.listWebsiteScans({ website: websiteId, device }),

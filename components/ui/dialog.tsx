@@ -3,10 +3,10 @@
 import * as React from "react"
 import { Dialog as DialogPrimitive } from "radix-ui"
 
-import { t } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { XIcon } from "lucide-react"
+import { useT } from "next-i18next/client"
 
 function Dialog({
   ...props
@@ -56,6 +56,7 @@ function DialogContent({
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
 }) {
+  const { t } = useT("common")
   return (
     <DialogPortal>
       <DialogOverlay />
@@ -75,8 +76,7 @@ function DialogContent({
               className="absolute top-2 right-2"
               size="icon-sm"
             >
-              <XIcon
-              />
+              <XIcon />
               <span className="sr-only">{t("common.close")}</span>
             </Button>
           </DialogPrimitive.Close>
@@ -104,6 +104,7 @@ function DialogFooter({
 }: React.ComponentProps<"div"> & {
   showCloseButton?: boolean
 }) {
+  const { t } = useT("common")
   return (
     <div
       data-slot="dialog-footer"

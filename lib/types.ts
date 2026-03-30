@@ -1,4 +1,4 @@
-type Website = {
+export type Website = {
   id: string
   url: string
   name?: string | null

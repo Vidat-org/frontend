@@ -14,37 +14,7 @@ import {
   Tag,
 } from "lucide-react"
 import { auditLabels } from "@/lib/messages"
-import { t } from "@/lib/i18n"
-
-const severityConfig: Record<
-  string,
-  {
-    label: string
-    variant: "destructive" | "secondary" | "outline"
-    icon: React.ReactNode
-  }
-> = {
-  critical: {
-    label: t("issues.severityCritical"),
-    variant: "destructive",
-    icon: <AlertCircle className="h-3.5 w-3.5" />,
-  },
-  high: {
-    label: t("issues.severityHigh"),
-    variant: "destructive",
-    icon: <AlertTriangle className="h-3.5 w-3.5" />,
-  },
-  warning: {
-    label: t("issues.severityMedium"),
-    variant: "secondary",
-    icon: <AlertTriangle className="h-3.5 w-3.5" />,
-  },
-  info: {
-    label: t("issues.severityLow"),
-    variant: "outline",
-    icon: <Info className="h-3.5 w-3.5" />,
-  },
-}
+import { useT } from "next-i18next/client"
 
 const categoryIcon: Record<string, React.ReactNode> = {
   seo: <Globe className="h-4 w-4 text-muted-foreground" />,
@@ -53,6 +23,37 @@ const categoryIcon: Record<string, React.ReactNode> = {
 }
 
 export default function IssuesList({ scanId }: { scanId: string }) {
+  const { t } = useT("common")
+  const severityConfig: Record<
+    string,
+    {
+      label: string
+      variant: "destructive" | "secondary" | "outline"
+      icon: React.ReactNode
+    }
+  > = {
+    critical: {
+      label: t("issues.severityCritical"),
+      variant: "destructive",
+      icon: <AlertCircle className="h-3.5 w-3.5" />,
+    },
+    high: {
+      label: t("issues.severityHigh"),
+      variant: "destructive",
+      icon: <AlertTriangle className="h-3.5 w-3.5" />,
+    },
+    warning: {
+      label: t("issues.severityMedium"),
+      variant: "secondary",
+      icon: <AlertTriangle className="h-3.5 w-3.5" />,
+    },
+    info: {
+      label: t("issues.severityLow"),
+      variant: "outline",
+      icon: <Info className="h-3.5 w-3.5" />,
+    },
+  }
+
   const { data: issues, isLoading } = useQuery({
     queryKey: ["issues", scanId],
     queryFn: async () => await client.listScanIssues({ scanId }),
@@ -98,7 +99,9 @@ export default function IssuesList({ scanId }: { scanId: string }) {
               const severity =
                 (severityKey ? severityConfig[severityKey] : undefined) ??
                 severityConfig.info
-              const catIcon = (categoryKey ? categoryIcon[categoryKey] : undefined) ?? (
+              const catIcon = (categoryKey
+                ? categoryIcon[categoryKey]
+                : undefined) ?? (
                 <Tag className="h-4 w-4 text-muted-foreground" />
               )
               return (

@@ -7,13 +7,15 @@ import { formatDate } from "@/lib/utils"
 import WebsiteDetail from "@/components/dashboard-wrapper"
 import NewCheck from "@/components/new-check"
 import { Badge } from "@/components/ui/badge"
-import { t } from "@/lib/i18n"
+
+import { getT } from "next-i18next/server"
 
 export default async function Page({
   params,
 }: {
   params: Promise<{ id: string }>
 }) {
+  const { t } = await getT("common")
   const { id } = await params
   const website = await client.getWebsite({ id })
   const scans = await client.listWebsiteScans({
@@ -36,17 +38,17 @@ export default async function Page({
         {/* Back button */}
         <Link
           href="/dashboard"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary mb-4"
+          className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary"
         >
           <ArrowLeft className="h-4 w-4" /> {t("websitePage.backToOverview")}
         </Link>
 
         {/* Header content */}
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+        <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
           {/* Left side - Website info */}
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight truncate">
+              <h1 className="truncate text-2xl font-extrabold tracking-tight sm:text-3xl md:text-4xl">
                 {website?.name}
               </h1>
             </div>
@@ -57,14 +59,14 @@ export default async function Page({
               rel="noopener noreferrer"
               className="inline-block max-w-full"
             >
-              <p className="truncate text-muted-foreground underline hover:text-primary text-sm sm:text-base">
+              <p className="truncate text-sm text-muted-foreground underline hover:text-primary sm:text-base">
                 {website?.url}
               </p>
             </a>
           </div>
 
           {/* Right side - Scan component with fixed min-width */}
-          <div className="sm:min-w-[280px] sm:flex-shrink-0 w-full sm:w-auto">
+          <div className="w-full sm:w-auto sm:min-w-[280px] sm:flex-shrink-0">
             {website && (
               <NewCheck
                 websiteId={website.id}
@@ -92,20 +94,27 @@ export default async function Page({
           title={t("websitePage.latestScan")}
           value={
             website?.lastCheckedAt
-              ? formatDate(new Date(website.lastCheckedAt))
+              ? formatDate(new Date(website.lastCheckedAt), "sv")
               : t("common.never")
           }
           icon={<Clock className="h-4 w-4" />}
         />
         <MetricCard
           title={t("websitePage.nextScan")}
-          value={website?.nextCheckAt ? formatDate(new Date(website.nextCheckAt)) : "-"}
+          value={
+            website?.nextCheckAt
+              ? formatDate(new Date(website.nextCheckAt), "sv")
+              : "-"
+          }
           icon={<Calendar className="h-4 w-4" />}
         />
       </div>
 
       {website && latest && (
-        <WebsiteDetail latestScanId={latest?.id || ""} websiteId={website?.id || ""} />
+        <WebsiteDetail
+          latestScanId={latest?.id || ""}
+          websiteId={website?.id || ""}
+        />
       )}
     </div>
   )

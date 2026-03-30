@@ -4,7 +4,8 @@ import { formatDate } from "@/lib/utils"
 import { Skeleton } from "./ui/skeleton"
 import Link from "next/link"
 import { useEffect, useRef } from "react"
-import { t } from "@/lib/i18n"
+import { useT } from "next-i18next/client"
+import type { TFunction } from "i18next"
 
 type Props = {
   website: Website
@@ -16,7 +17,7 @@ function scoreColor(score: number) {
   return { stroke: "#ef4444", text: "#ef4444" }
 }
 
-function scoreLabel(score: number) {
+function scoreLabel(score: number, t: TFunction) {
   if (score >= 90) {
     return {
       label: t("websiteCard.scoreGood"),
@@ -111,17 +112,21 @@ function RingCanvas({ score, size = 100 }: { score: number; size?: number }) {
 }
 
 export default function WebsiteCard({ website }: Props) {
+  const { t } = useT("common")
   const perf = website.lastPerformanceScore ?? 0
   const seo = website.lastSeoScore ?? 0
   const avgScore = Math.round((perf + seo) / 2)
-  const { label, bg, color, border } = scoreLabel(avgScore)
+  const { label, bg, color, border } = scoreLabel(avgScore, t)
   const dotColor =
     avgScore >= 90 ? "#22c55e" : avgScore >= 70 ? "#f59e0b" : "#ef4444"
   const stripeLeft = scoreColor(perf).stroke
   const stripeRight = scoreColor(seo).stroke
 
   const lastChecked = website.lastCheckedAt
-    ? formatDate(new Date(website.lastCheckedAt))
+    ? formatDate(
+        new Date(website.lastCheckedAt)
+        // i18n.resolvedLanguage as "sv" | "en"
+      )
     : t("common.never")
 
   const intervalHours = website.intervalSeconds / 60 / 60
@@ -150,7 +155,9 @@ export default function WebsiteCard({ website }: Props) {
               }`,
             }}
           />
-          <span className="truncate text-[13px] font-medium">{website.url}</span>
+          <span className="truncate text-[13px] font-medium">
+            {website.url}
+          </span>
           {!website.isEnabled && (
             <span className="rounded border border-dashed px-2 py-0.5 text-[10px] text-muted-foreground">
               {t("websiteCard.pausedByPlan")}
@@ -176,7 +183,10 @@ export default function WebsiteCard({ website }: Props) {
 
         <div className="mt-4 flex flex-col gap-2 border-t pt-3 sm:flex-row sm:items-center sm:justify-between">
           <span className="text-[10px] text-muted-foreground">
-            {t("websiteCard.lastCheckedEvery", { date: lastChecked, hours: intervalHours })}
+            {t("websiteCard.lastCheckedEvery", {
+              date: lastChecked,
+              hours: intervalHours,
+            })}
           </span>
           <span
             className="rounded px-2 py-0.5 text-[10px] font-medium"

@@ -6,14 +6,16 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Report } from "@/migrations/schema"
+
+import { getT } from "next-i18next/server"
 import Link from "next/link"
-import { t } from "@/lib/i18n"
 
 type Props = {
   report: Report
 }
 
-export default function ReportCard({ report }: Props) {
+export default async function ReportCard({ report }: Props) {
+  const { t } = await getT("common")
   return (
     <Link href={`/dashboard/reports/${report.id}`}>
       <Card>

@@ -1,8 +1,11 @@
 import { cn } from "@/lib/utils"
-import { t } from "@/lib/i18n"
+
 import { Loader2Icon } from "lucide-react"
+import { useT } from "next-i18next/client"
 
 function Spinner({ className, ...props }: React.ComponentProps<"svg">) {
+  const { t } = useT("common")
+
   return (
     <Loader2Icon
       role="status"
