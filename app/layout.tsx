@@ -17,7 +17,6 @@ import {
 } from "next-i18next/server"
 import i18nConfig from "@/i18n.config"
 import { getCurrentWorkspaceLocale } from "@/lib/workspace-locale"
-import { useTranslation } from "react-i18next"
 import { DEFAULT_LOCALE } from "@/lib/i18n"
 
 initServerI18next(i18nConfig)

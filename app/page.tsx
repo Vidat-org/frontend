@@ -361,7 +361,7 @@ export default async function HomePage() {
               {[
                 { val: "24/7", label: t("home.metrics.m1") },
                 { val: "4", label: t("home.metrics.m2") },
-                { val: "1 plats", label: t("home.metrics.m3") },
+                { val: t("home.metrics.value3"), label: t("home.metrics.m3") },
               ].map((m, i) => (
                 <div
                   key={i}
@@ -397,9 +397,21 @@ export default async function HomePage() {
               </div>
 
               <div className="xsm:grid-cols-3 grid grid-cols-1 gap-3 py-5">
-                <MetricCard label="Performance" value="92" tone="good" />
-                <MetricCard label="SEO" value="96" tone="good" />
-                <MetricCard label="Best practice" value="78" tone="warn" />
+                <MetricCard
+                  label={t("home.demo.metrics.performance")}
+                  value="92"
+                  tone="good"
+                />
+                <MetricCard
+                  label={t("home.demo.metrics.seo")}
+                  value="96"
+                  tone="good"
+                />
+                <MetricCard
+                  label={t("home.demo.metrics.bestPractices")}
+                  value="78"
+                  tone="warn"
+                />
               </div>
 
               <div className="space-y-3">

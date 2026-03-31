@@ -3,12 +3,27 @@
 import { useState, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query"
-import { useChangeLanguage, useT } from "next-i18next/client"
+import { useChangeLanguage } from "next-i18next/client"
 import type { TFunction } from "i18next"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { client } from "@/lib/orpc"
 import { getQueryClient } from "@/lib/query-client"
 import { type Locale } from "@/lib/i18n"
+import { formatDate } from "@/lib/utils"
+import {
+  getBillingStatusLabel,
+  getDeliveryChannelLabel,
+  getDeliveryStatusLabel,
+  getDunningStatusLabel,
+  getEventTypeLabel,
+  getInviteStatusLabel,
+  getPlanLabel,
+  getRequestStatusLabel,
+  getRoleLabel,
+  getSupportCategoryLabel,
+  getSupportPriorityLabel,
+} from "@/lib/messages"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -77,7 +92,8 @@ export default function SettingsCenter({
 }) {
   const router = useRouter()
   const changeLanguage = useChangeLanguage()
-  const { t } = useT("common")
+  const { t, i18n } = useTranslation("common")
+  const locale = (i18n.resolvedLanguage === "en" ? "en" : "sv") as Locale
 
   const accountQuery = useQuery({
     queryKey: ["accountSummary"],
@@ -137,8 +153,10 @@ export default function SettingsCenter({
     notifyOnScoreDrop: undefined as boolean | undefined,
     scoreDropThreshold: undefined as number | undefined,
     slackWebhookUrl: undefined as string | undefined,
-    preferredLocale: undefined as Locale | undefined,
   })
+  const [workspaceLocale, setWorkspaceLocale] = useState<Locale | undefined>(
+    undefined
+  )
   const [webhookForm, setWebhookForm] = useState({
     label: "",
     url: "",
@@ -174,31 +192,29 @@ export default function SettingsCenter({
         scoreDropThreshold: Number(resolvedSettings.scoreDropThreshold),
         slackWebhookUrl: resolvedSettings.slackWebhookUrl,
       })
-
-      if (
-        isAdmin &&
-        account &&
-        resolvedSettings.preferredLocale !== account.workspace.preferredLocale
-      ) {
-        await client.updateWorkspaceLocale({
-          preferredLocale: resolvedSettings.preferredLocale,
-        })
-      }
     },
     onSuccess: () => {
-      if (
-        account &&
-        resolvedSettings.preferredLocale !== account.workspace.preferredLocale
-      ) {
-        // setLocale(resolvedSettings.preferredLocale)
-
-        void changeLanguage(resolvedSettings.preferredLocale)
-        router.refresh()
-      }
       invalidateAccountViews()
       toast.success(t("settingsCenter.settingsSaved"))
     },
     onError: () => toast.error(t("settingsCenter.saveSettingsFailed")),
+  })
+
+  const resolvedWorkspaceLocale =
+    workspaceLocale ?? account?.workspace.preferredLocale ?? "sv"
+
+  const saveWorkspaceLanguage = useMutation({
+    mutationFn: async () =>
+      client.updateWorkspaceLocale({
+        preferredLocale: resolvedWorkspaceLocale,
+      }),
+    onSuccess: () => {
+      void changeLanguage(resolvedWorkspaceLocale)
+      invalidateAccountViews()
+      router.refresh()
+      toast.success(t("settingsCenter.team.languageSaved"))
+    },
+    onError: () => toast.error(t("common.somethingWentWrongTryAgain")),
   })
 
   const createWebhook = useMutation({
@@ -405,8 +421,6 @@ export default function SettingsCenter({
       settingsForm.scoreDropThreshold ?? account.settings.scoreDropThreshold,
     slackWebhookUrl:
       settingsForm.slackWebhookUrl ?? account.settings.slackWebhookUrl ?? "",
-    preferredLocale:
-      settingsForm.preferredLocale ?? account.workspace.preferredLocale ?? "sv",
   }
 
   return (
@@ -425,7 +439,7 @@ export default function SettingsCenter({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="outline">{account.workspace.name}</Badge>
-          <Badge variant="outline">{account.plan.label}</Badge>
+          <Badge variant="outline">{getPlanLabel(account.plan.slug, t)}</Badge>
         </div>
       </div>
       {showSection("all") ? (
@@ -449,8 +463,11 @@ export default function SettingsCenter({
           />
           <StatCard
             title={t("settingsCenter.stats.billing")}
-            value={account.billing.status}
-            description={account.billing.dunningStatus}
+            value={getBillingStatusLabel(account.billing.status, t)}
+            description={getDunningStatusLabel(
+              account.billing.dunningStatus,
+              t
+            )}
           />
         </div>
       ) : null}
@@ -614,47 +631,19 @@ export default function SettingsCenter({
                       }
                     />
                     <FieldDescription>
-                      Antal poäng som måste tappas innan regression skickas.
+                      {t(
+                        "settingsCenter.notifications.scoreDropThresholdDescription"
+                      )}
                     </FieldDescription>
                   </Field>
                   <Field>
                     <FieldLabel>
-                      {t("settingsCenter.notifications.languageLabel")}
+                      {t("settingsCenter.notifications.slackWebhookLabel")}
                     </FieldLabel>
-                    <Select
-                      value={resolvedSettings.preferredLocale}
-                      onValueChange={(value) =>
-                        setSettingsForm((prev) => ({
-                          ...prev,
-                          preferredLocale: value as Locale,
-                        }))
-                      }
-                      disabled={!isAdmin}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue
-                          placeholder={t(
-                            "settingsCenter.notifications.languagePlaceholder"
-                          )}
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="sv">
-                          {t("settingsCenter.notifications.languageOptionSv")}
-                        </SelectItem>
-                        <SelectItem value="en">
-                          {t("settingsCenter.notifications.languageOptionEn")}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FieldDescription>
-                      {t("settingsCenter.notifications.languageDescription")}
-                    </FieldDescription>
-                  </Field>
-                  <Field>
-                    <FieldLabel>Slack webhook URL</FieldLabel>
                     <Input
-                      placeholder="https://hooks.slack.com/services/..."
+                      placeholder={t(
+                        "settingsCenter.notifications.slackWebhookPlaceholder"
+                      )}
                       value={resolvedSettings.slackWebhookUrl}
                       onChange={(e) =>
                         setSettingsForm((prev) => ({
@@ -701,7 +690,8 @@ export default function SettingsCenter({
                       <div>
                         <p className="text-sm font-medium">{entry.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {entry.role} · {entry.plan.label}
+                          {getRoleLabel(entry.role, t)} ·{" "}
+                          {getPlanLabel(entry.plan.slug, t)}
                         </p>
                       </div>
                       {entry.isActive ? (
@@ -723,6 +713,53 @@ export default function SettingsCenter({
                     </div>
                   ))}
                 </div>
+                <div className="rounded-xl border p-4">
+                  <Field>
+                    <FieldLabel>
+                      {t("settingsCenter.team.workspaceLanguageLabel")}
+                    </FieldLabel>
+                    <Select
+                      value={resolvedWorkspaceLocale}
+                      onValueChange={(value) =>
+                        setWorkspaceLocale(value as Locale)
+                      }
+                      disabled={!isAdmin}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue
+                          placeholder={t(
+                            "settingsCenter.team.workspaceLanguagePlaceholder"
+                          )}
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="sv">
+                          {t("common.language.sv")}
+                        </SelectItem>
+                        <SelectItem value="en">
+                          {t("common.language.en")}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FieldDescription>
+                      {t("settingsCenter.team.workspaceLanguageDescription")}
+                    </FieldDescription>
+                  </Field>
+                  <div className="mt-4 flex justify-end">
+                    <Button
+                      variant="outline"
+                      disabled={
+                        !isAdmin ||
+                        saveWorkspaceLanguage.isPending ||
+                        resolvedWorkspaceLocale ===
+                          account.workspace.preferredLocale
+                      }
+                      onClick={() => saveWorkspaceLanguage.mutate()}
+                    >
+                      {t("settingsCenter.team.saveWorkspaceLanguage")}
+                    </Button>
+                  </div>
+                </div>
                 {pendingInvites.length > 0 ? (
                   <div className="space-y-2 rounded-xl border border-chart-1/20 bg-chart-1/5 p-4">
                     <p className="text-sm font-medium">
@@ -738,9 +775,9 @@ export default function SettingsCenter({
                             {invite.workspaceName}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {invite.role} ·{" "}
+                            {getRoleLabel(invite.role, t)} ·{" "}
                             {t("settingsCenter.team.validUntil")}{" "}
-                            {formatStamp(invite.expiresAt, t)}
+                            {formatStamp(invite.expiresAt, t, locale)}
                           </p>
                         </div>
                         <div className="flex gap-2">
@@ -773,7 +810,7 @@ export default function SettingsCenter({
                             {member.email || member.clerkUserId}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {member.role}
+                            {getRoleLabel(member.role, t)}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
@@ -809,7 +846,9 @@ export default function SettingsCenter({
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           ) : null}
-                          <Badge variant="outline">{member.role}</Badge>
+                          <Badge variant="outline">
+                            {getRoleLabel(member.role, t)}
+                          </Badge>
                         </div>
                       </div>
                     </div>
@@ -845,7 +884,7 @@ export default function SettingsCenter({
                               setInviteForm((prev) => ({ ...prev, role }))
                             }
                           >
-                            {role}
+                            {getRoleLabel(role, t)}
                           </Button>
                         ))}
                       </div>
@@ -858,7 +897,7 @@ export default function SettingsCenter({
                       onClick={() => createInvite.mutate()}
                     >
                       <MailPlus className="h-4 w-4" />
-                      Skicka inbjudan
+                      {t("settingsCenter.team.sendInvite")}
                     </Button>
                   </div>
                 </div>
@@ -871,7 +910,8 @@ export default function SettingsCenter({
                       <div>
                         <p className="text-sm font-medium">{invite.email}</p>
                         <p className="text-xs text-muted-foreground">
-                          {invite.role} · {invite.status}
+                          {getRoleLabel(invite.role, t)} ·{" "}
+                          {getInviteStatusLabel(invite.status, t)}
                         </p>
                       </div>
                       {invite.status === "pending" ? (
@@ -884,7 +924,9 @@ export default function SettingsCenter({
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       ) : (
-                        <Badge variant="outline">{invite.status}</Badge>
+                        <Badge variant="outline">
+                          {getInviteStatusLabel(invite.status, t)}
+                        </Badge>
                       )}
                     </div>
                   ))}
@@ -953,7 +995,7 @@ export default function SettingsCenter({
                         }))
                       }
                     >
-                      {eventType}
+                      {getEventTypeLabel(eventType, t)}
                     </Button>
                   )
                 })}
@@ -997,7 +1039,7 @@ export default function SettingsCenter({
                       <div className="flex flex-wrap gap-2">
                         {eventTypes.map((eventType) => (
                           <Badge key={eventType} variant="outline">
-                            {eventType}
+                            {getEventTypeLabel(eventType, t)}
                           </Badge>
                         ))}
                       </div>
@@ -1053,7 +1095,7 @@ export default function SettingsCenter({
               <CardContent className="space-y-4">
                 {!account.capabilities.apiAccess ? (
                   <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-                    API access is available on the Enterprise plan only.
+                    {t("settingsCenter.apiKeys.enterpriseOnly")}
                   </div>
                 ) : null}
                 {latestApiKey ? (
@@ -1161,7 +1203,7 @@ export default function SettingsCenter({
                           setSupportForm((prev) => ({ ...prev, category }))
                         }
                       >
-                        {category}
+                        {getSupportCategoryLabel(category, t)}
                       </Button>
                     ))}
                   </div>
@@ -1181,7 +1223,7 @@ export default function SettingsCenter({
                             setSupportForm((prev) => ({ ...prev, priority }))
                           }
                         >
-                          {priority}
+                          {getSupportPriorityLabel(priority, t)}
                         </Button>
                       )
                     )}
@@ -1221,11 +1263,14 @@ export default function SettingsCenter({
                               {request.subject}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {request.category} · {request.priority} ·{" "}
-                              {request.status}
+                              {getSupportCategoryLabel(request.category, t)} ·{" "}
+                              {getSupportPriorityLabel(request.priority, t)} ·{" "}
+                              {getRequestStatusLabel(request.status, t)}
                             </p>
                           </div>
-                          <Badge variant="outline">{request.status}</Badge>
+                          <Badge variant="outline">
+                            {getRequestStatusLabel(request.status, t)}
+                          </Badge>
                         </div>
                       </div>
                     ))
@@ -1247,7 +1292,7 @@ export default function SettingsCenter({
               items={auditLogs.map((item) => ({
                 id: item.id,
                 title: item.summary,
-                meta: `${item.action} · ${formatStamp(item.createdAt, t)}`,
+                meta: formatStamp(item.createdAt, t, locale),
                 tone: "neutral" as const,
               }))}
             />
@@ -1270,8 +1315,8 @@ export default function SettingsCenter({
             description={t("settingsCenter.logs.deliveryDescription")}
             items={deliveries.map((item) => ({
               id: item.id,
-              title: `${item.channel} → ${item.destination}`,
-              meta: `${item.eventType} · ${item.status} · ${formatStamp(item.createdAt, t)}`,
+              title: `${getDeliveryChannelLabel(item.channel, t)} → ${item.destination}`,
+              meta: `${getEventTypeLabel(item.eventType, t)} · ${getDeliveryStatusLabel(item.status, t)} · ${formatStamp(item.createdAt, t, locale)}`,
               tone:
                 item.status === "failed"
                   ? ("danger" as const)
@@ -1299,9 +1344,13 @@ function invalidateAccountViews() {
   qc.invalidateQueries({ queryKey: ["pendingInvites"] })
 }
 
-function formatStamp(value: string | null | undefined, t: TFunction) {
+function formatStamp(
+  value: string | null | undefined,
+  t: TFunction,
+  locale: Locale
+) {
   if (!value) return t("dashboard.unknownTime")
-  return new Date(value).toLocaleString()
+  return formatDate(value, locale)
 }
 
 function StatCard({
@@ -1337,6 +1386,7 @@ function ToggleRow({
   checked: boolean
   onToggle: () => void
 }) {
+  const { t } = useTranslation("common")
   return (
     <div className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-start sm:justify-between">
       <div className="space-y-1">
@@ -1348,7 +1398,7 @@ function ToggleRow({
         variant={checked ? "default" : "outline"}
         onClick={onToggle}
       >
-        {checked ? "På" : "Av"}
+        {checked ? t("common.state.on") : t("common.state.off")}
       </Button>
     </div>
   )
@@ -1363,6 +1413,7 @@ function OnboardingRow({
   checked: boolean
   onToggle: (next: boolean) => void
 }) {
+  const { t } = useTranslation("common")
   return (
     <div className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between">
       <p className="text-sm font-medium">{label}</p>
@@ -1372,7 +1423,7 @@ function OnboardingRow({
         variant={checked ? "default" : "outline"}
         onClick={() => onToggle(!checked)}
       >
-        {checked ? "Klar" : "Markera"}
+        {checked ? t("common.action.done") : t("common.action.mark")}
       </Button>
     </div>
   )
@@ -1394,6 +1445,7 @@ function LogCard({
     tone: "neutral" | "danger" | "success"
   }>
 }) {
+  const { t } = useTranslation("common")
   return (
     <Card>
       <CardHeader>
@@ -1405,7 +1457,9 @@ function LogCard({
       </CardHeader>
       <CardContent className="space-y-3">
         {items.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Inga poster ännu.</p>
+          <p className="text-sm text-muted-foreground">
+            {t("settingsCenter.logs.empty")}
+          </p>
         ) : (
           items.map((item) => (
             <div key={item.id} className="rounded-lg border p-3">

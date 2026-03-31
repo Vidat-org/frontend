@@ -15,7 +15,8 @@ export default async function Page({
 }: {
   params: Promise<{ id: string }>
 }) {
-  const { t } = await getT("common")
+  const { t, i18n } = await getT("common")
+  const locale = i18n.resolvedLanguage === "en" ? "en" : "sv"
   const { id } = await params
   const website = await client.getWebsite({ id })
   const scans = await client.listWebsiteScans({
@@ -94,7 +95,7 @@ export default async function Page({
           title={t("websitePage.latestScan")}
           value={
             website?.lastCheckedAt
-              ? formatDate(new Date(website.lastCheckedAt), "sv")
+              ? formatDate(new Date(website.lastCheckedAt), locale)
               : t("common.never")
           }
           icon={<Clock className="h-4 w-4" />}
@@ -103,7 +104,7 @@ export default async function Page({
           title={t("websitePage.nextScan")}
           value={
             website?.nextCheckAt
-              ? formatDate(new Date(website.nextCheckAt), "sv")
+              ? formatDate(new Date(website.nextCheckAt), locale)
               : "-"
           }
           icon={<Calendar className="h-4 w-4" />}

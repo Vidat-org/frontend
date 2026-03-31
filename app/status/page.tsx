@@ -1,5 +1,6 @@
 import { getT } from "next-i18next/server"
 import { getSystemHealth } from "@/lib/health"
+import { formatDate } from "@/lib/utils"
 
 const systemLabels = {
   scanning: "status.systemScanning",
@@ -21,7 +22,8 @@ function getStatusAppearance(status: "operational" | "degraded" | "outage") {
 }
 
 export default async function StatusPage() {
-  const { t } = await getT("common")
+  const { t, i18n } = await getT("common")
+  const locale = i18n.resolvedLanguage === "en" ? "en" : "sv"
   const health = await getSystemHealth()
 
   return (
@@ -37,7 +39,7 @@ export default async function StatusPage() {
           {t("status.intro")}
         </p>
         <p className="text-sm text-muted-foreground">
-          {t("status.checkedAt")}: {new Date(health.checkedAt).toLocaleString()}
+          {t("status.checkedAt")}: {formatDate(health.checkedAt, locale)}
         </p>
       </section>
 
@@ -58,7 +60,7 @@ export default async function StatusPage() {
               </span>
             </div>
             <p className="mt-3 text-sm leading-7 text-muted-foreground">
-              {system.detail}
+              {t(system.detailKey)}
             </p>
           </article>
         ))}

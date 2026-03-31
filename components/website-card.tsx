@@ -4,8 +4,9 @@ import { formatDate } from "@/lib/utils"
 import { Skeleton } from "./ui/skeleton"
 import Link from "next/link"
 import { useEffect, useRef } from "react"
-import { useT } from "next-i18next/client"
 import type { TFunction } from "i18next"
+import { useTranslation } from "react-i18next"
+import { type Locale } from "@/lib/i18n"
 
 type Props = {
   website: Website
@@ -112,7 +113,8 @@ function RingCanvas({ score, size = 100 }: { score: number; size?: number }) {
 }
 
 export default function WebsiteCard({ website }: Props) {
-  const { t } = useT("common")
+  const { t, i18n } = useTranslation("common")
+  const locale = (i18n.resolvedLanguage === "en" ? "en" : "sv") as Locale
   const perf = website.lastPerformanceScore ?? 0
   const seo = website.lastSeoScore ?? 0
   const avgScore = Math.round((perf + seo) / 2)
@@ -123,10 +125,7 @@ export default function WebsiteCard({ website }: Props) {
   const stripeRight = scoreColor(seo).stroke
 
   const lastChecked = website.lastCheckedAt
-    ? formatDate(
-        new Date(website.lastCheckedAt)
-        // i18n.resolvedLanguage as "sv" | "en"
-      )
+    ? formatDate(new Date(website.lastCheckedAt), locale)
     : t("common.never")
 
   const intervalHours = website.intervalSeconds / 60 / 60

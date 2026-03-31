@@ -15,14 +15,17 @@ type Props = {
 }
 
 export default async function ReportCard({ report }: Props) {
-  const { t } = await getT("common")
+  const { t, i18n } = await getT("common")
+  const locale = i18n.resolvedLanguage === "en" ? "en-US" : "sv-SE"
   return (
     <Link href={`/dashboard/reports/${report.id}`}>
       <Card>
         <CardHeader>
           <CardDescription>{t("reportCard.reportFrom")}</CardDescription>
           <CardTitle>
-            {new Date(report.createdAt || "").toLocaleDateString()}
+            {new Intl.DateTimeFormat(locale).format(
+              new Date(report.createdAt || "")
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>

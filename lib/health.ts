@@ -10,6 +10,7 @@ export type HealthComponent = {
   key: "scanning" | "reports" | "billing" | "notifications"
   status: ComponentStatus
   detail: string
+  detailKey: string
 }
 
 export type SystemHealth = {
@@ -59,7 +60,9 @@ async function checkValkey() {
   if (!redis) {
     return {
       ok: false,
-      detail: "VALKEY_URL is not configured; cache-backed delivery tracking is degraded.",
+      detail:
+        "VALKEY_URL is not configured; cache-backed delivery tracking is degraded.",
+      detailKey: "status.detailNotificationsMissingCache",
     }
   }
 
@@ -68,12 +71,14 @@ async function checkValkey() {
     return {
       ok: true,
       detail: "Delivery cache and rate limiting are responding normally.",
+      detailKey: "status.detailNotificationsOperational",
     }
   } catch (error) {
     console.error("[health] valkey ping failed", error)
     return {
       ok: false,
       detail: "Valkey is unavailable; caching and rate limiting are degraded.",
+      detailKey: "status.detailNotificationsUnavailable",
     }
   }
 }
@@ -91,7 +96,10 @@ function summarizeStatus(statuses: ComponentStatus[]): ComponentStatus {
 }
 
 export async function getSystemHealth(): Promise<SystemHealth> {
-  const [databaseOk, valkey] = await Promise.all([checkDatabase(), checkValkey()])
+  const [databaseOk, valkey] = await Promise.all([
+    checkDatabase(),
+    checkValkey(),
+  ])
 
   const components: HealthComponent[] = [
     {
@@ -100,6 +108,9 @@ export async function getSystemHealth(): Promise<SystemHealth> {
       detail: databaseOk
         ? "Database connectivity is healthy for scheduled and manual scans."
         : "Database connectivity is failing, so scans cannot be recorded reliably.",
+      detailKey: databaseOk
+        ? "status.detailScanningOperational"
+        : "status.detailScanningOutage",
     },
     {
       key: "reports",
@@ -107,16 +118,22 @@ export async function getSystemHealth(): Promise<SystemHealth> {
       detail: databaseOk
         ? "Reports can be read and generated with the current database connection."
         : "Reports are impacted because the database is unavailable.",
+      detailKey: databaseOk
+        ? "status.detailReportsOperational"
+        : "status.detailReportsOutage",
     },
     {
       key: "billing",
       status: "operational",
-      detail: "Clerk Billing is the source of truth for subscription state and billing events.",
+      detail:
+        "Clerk Billing is the source of truth for subscription state and billing events.",
+      detailKey: "status.detailBillingOperational",
     },
     {
       key: "notifications",
       status: valkey.ok ? "operational" : "degraded",
       detail: valkey.detail,
+      detailKey: valkey.detailKey,
     },
   ]
 

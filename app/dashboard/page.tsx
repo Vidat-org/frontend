@@ -18,7 +18,19 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty"
 import WebsiteCard, { WebsiteCardSkeleton } from "@/components/website-card"
+import { type Locale } from "@/lib/i18n"
+import {
+  getBillingStatusLabel,
+  getDeliveryChannelLabel,
+  getDeliveryStatusLabel,
+  getDunningStatusLabel,
+  getEventTypeLabel,
+  getPlanLabel,
+  getRoleLabel,
+  getScanStatusLabel,
+} from "@/lib/messages"
 import { client } from "@/lib/orpc"
+import { formatDate } from "@/lib/utils"
 import { useQuery } from "@tanstack/react-query"
 import {
   Activity,
@@ -36,10 +48,11 @@ import Link from "next/link"
 import type { ReactNode } from "react"
 import type { TFunction } from "i18next"
 
-import { useT } from "next-i18next/client"
+import { useTranslation } from "react-i18next"
 
 export default function Page() {
-  const { t } = useT("common")
+  const { t, i18n } = useTranslation("common")
+  const locale = (i18n.resolvedLanguage === "en" ? "en" : "sv") as Locale
 
   const { data, isLoading } = useQuery({
     queryKey: ["dashboardOverview"],
@@ -97,8 +110,8 @@ export default function Page() {
         />
         <SummaryCard
           title={t("dashboard.plan")}
-          value={summary?.plan.label ?? "Free"}
-          description={`${summary?.billing.status ?? "trialing"} · ${summary?.billing.dunningStatus ?? "clear"}`}
+          value={getPlanLabel(summary?.plan.slug, t)}
+          description={`${getBillingStatusLabel(summary?.billing.status, t)} · ${getDunningStatusLabel(summary?.billing.dunningStatus, t)}`}
           icon={<Zap className="h-4 w-4" />}
         />
       </section>
@@ -188,7 +201,10 @@ export default function Page() {
                 items={
                   data?.alerts.unhealthySites.map((site) => ({
                     label: site.name || site.url,
-                    detail: `Perf ${site.lastPerformanceScore ?? 0} · SEO ${site.lastSeoScore ?? 0}`,
+                    detail: t("dashboard.performanceSeoSummary", {
+                      perf: site.lastPerformanceScore ?? 0,
+                      seo: site.lastSeoScore ?? 0,
+                    }),
                   })) ?? []
                 }
                 emptyText={t("dashboard.noSitesBelowTarget")}
@@ -216,7 +232,10 @@ export default function Page() {
                     <p className="text-xs text-muted-foreground">
                       {scan.status === "failed"
                         ? scan.errorMessage || t("dashboard.scanFailed")
-                        : `Perf ${scan.performanceScore ?? 0} · SEO ${scan.seoScore ?? 0}`}
+                        : t("dashboard.performanceSeoSummary", {
+                            perf: scan.performanceScore ?? 0,
+                            seo: scan.seoScore ?? 0,
+                          })}
                     </p>
                   </div>
                   <Badge
@@ -224,7 +243,7 @@ export default function Page() {
                       scan.status === "failed" ? "destructive" : "outline"
                     }
                   >
-                    {scan.status}
+                    {getScanStatusLabel(scan.status, t)}
                   </Badge>
                 </div>
               </div>
@@ -251,10 +270,11 @@ export default function Page() {
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="text-sm font-medium">
-                      {entry.channel} → {entry.destination}
+                      {getDeliveryChannelLabel(entry.channel, t)} →{" "}
+                      {entry.destination}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {entry.eventType}
+                      {getEventTypeLabel(entry.eventType, t)}
                     </p>
                   </div>
                   <Badge
@@ -262,7 +282,7 @@ export default function Page() {
                       entry.status === "failed" ? "destructive" : "outline"
                     }
                   >
-                    {entry.status}
+                    {getDeliveryStatusLabel(entry.status, t)}
                   </Badge>
                 </div>
               </div>
@@ -277,7 +297,7 @@ export default function Page() {
             <CardTitle>{t("dashboard.onboardingAndTeam")}</CardTitle>
             <CardDescription>
               {summary?.workspace.name} · {t("dashboard.role")}{" "}
-              {summary?.workspace.role}
+              {getRoleLabel(summary?.workspace.role, t)}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -322,7 +342,7 @@ export default function Page() {
               <div key={entry.id} className="rounded-lg border p-3">
                 <p className="text-sm font-medium">{entry.summary}</p>
                 <p className="text-xs text-muted-foreground">
-                  {entry.action} · {formatStamp(entry.createdAt, t)}
+                  {formatStamp(entry.createdAt, t, locale)}
                 </p>
               </div>
             ))}
@@ -435,7 +455,7 @@ function AlertList({
 }
 
 function ChecklistRow({ label, checked }: { label: string; checked: boolean }) {
-  const { t } = useT("common")
+  const { t } = useTranslation("common")
   return (
     <div className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between">
       <p className="text-sm font-medium">{label}</p>
@@ -446,7 +466,11 @@ function ChecklistRow({ label, checked }: { label: string; checked: boolean }) {
   )
 }
 
-function formatStamp(value: string | null | undefined, t: TFunction) {
+function formatStamp(
+  value: string | null | undefined,
+  t: TFunction,
+  locale: Locale
+) {
   if (!value) return t("dashboard.unknownTime")
-  return new Date(value).toLocaleString()
+  return formatDate(value, locale)
 }

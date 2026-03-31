@@ -13,7 +13,7 @@ import {
   ShieldCheck,
   Tag,
 } from "lucide-react"
-import { auditLabels } from "@/lib/messages"
+import { getAuditLabel, getIssueCategoryLabel } from "@/lib/messages"
 import { useT } from "next-i18next/client"
 
 const categoryIcon: Record<string, React.ReactNode> = {
@@ -114,7 +114,7 @@ export default function IssuesList({ scanId }: { scanId: string }) {
                   <div className="min-w-0 flex-1 space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-sm leading-none font-medium">
-                        {auditLabels[issue.key] ?? issue.title ?? issue.key}
+                        {getAuditLabel(issue.key, t, issue.title)}
                       </p>
                       <Badge
                         variant={severity.variant}
@@ -131,7 +131,7 @@ export default function IssuesList({ scanId }: { scanId: string }) {
 
                   <div className="shrink-0">
                     <span className="text-xs text-muted-foreground capitalize">
-                      {issue.category}
+                      {getIssueCategoryLabel(issue.category, t)}
                     </span>
                   </div>
                 </li>

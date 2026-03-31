@@ -11,10 +11,10 @@ import {
   ChartLegendContent,
 } from "@/components/ui/chart"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid } from "recharts"
-import { format } from "date-fns"
 import { Skeleton } from "./ui/skeleton"
 import { parseAsStringEnum, useQueryState } from "nuqs"
-import { useT } from "next-i18next/client"
+import { type Locale } from "@/lib/i18n"
+import { useTranslation } from "react-i18next"
 
 export default function ScanChart({
   websiteId,
@@ -23,7 +23,9 @@ export default function ScanChart({
   websiteId: string
   onScanClick?: (scanId: string) => void
 }) {
-  const { t } = useT("common")
+  const { t, i18n } = useTranslation("common")
+  const locale = (i18n.resolvedLanguage === "en" ? "en" : "sv") as Locale
+  const dateLocale = locale === "en" ? "en-US" : "sv-SE"
   const [device] = useQueryState(
     "device",
     parseAsStringEnum(["mobile", "desktop"]).withDefault("mobile")
@@ -68,7 +70,10 @@ export default function ScanChart({
     .filter((s) => s.status === "success")
     .map((s) => ({
       id: s.id,
-      date: format(new Date(s.createdAt || ""), "d MMM"),
+      date: new Intl.DateTimeFormat(dateLocale, {
+        day: "numeric",
+        month: "short",
+      }).format(new Date(s.createdAt || "")),
       performanceScore: s.performanceScore,
       seoScore: s.seoScore,
       accessibilityScore: s.accessibilityScore,
