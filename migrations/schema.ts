@@ -322,6 +322,11 @@ export const supportRequests = pgTable(
       "btree",
       table.workspaceId.asc().nullsLast().op("text_ops")
     ),
+    index("idx_support_requests_workspace_id_created_at").using(
+      "btree",
+      table.workspaceId.asc().nullsLast().op("text_ops"),
+      table.createdAt.desc().nullsFirst().op("text_ops")
+    ),
     foreignKey({
       columns: [table.workspaceId],
       foreignColumns: [workspaces.id],
@@ -362,6 +367,11 @@ export const reports = pgTable(
     }).defaultNow(),
   },
   (table) => [
+    index("idx_reports_website_id_created_at").using(
+      "btree",
+      table.websiteId.asc().nullsLast().op("text_ops"),
+      table.createdAt.desc().nullsFirst().op("text_ops")
+    ),
     foreignKey({
       columns: [table.websiteId],
       foreignColumns: [websites.id],
@@ -385,14 +395,14 @@ export const gooseDbVersion = pgTable("goose_db_version", {
   tstamp: timestamp({ mode: "string" }).defaultNow().notNull(),
 })
 
-export const userSettings = pgTable(
-  "user_settings",
+export const workspaceSettings = pgTable(
+  "workspace_settings",
   {
     id: text()
-      .default(sql`nanoid('uset_', 22)`)
+      .default(sql`nanoid('wset_', 22)`)
       .primaryKey()
       .notNull(),
-    userId: text("user_id").notNull(),
+    workspaceId: text("workspace_id").notNull(),
     emailAlerts: boolean("email_alerts").default(true).notNull(),
     weeklyDigest: boolean("weekly_digest").default(true).notNull(),
     productUpdates: boolean("product_updates").default(false).notNull(),
@@ -403,7 +413,6 @@ export const userSettings = pgTable(
     notifyOnScoreDrop: boolean("notify_on_score_drop").default(true).notNull(),
     scoreDropThreshold: integer("score_drop_threshold").default(10).notNull(),
     slackWebhookUrl: text("slack_webhook_url"),
-    preferredLocale: text("preferred_locale").default("sv").notNull(),
     updatedAt: timestamp("updated_at", {
       withTimezone: true,
       mode: "string",
@@ -414,11 +423,11 @@ export const userSettings = pgTable(
     }).defaultNow(),
   },
   (table) => [
-    unique("user_settings_user_id_key").on(table.userId),
+    unique("workspace_settings_workspace_id_key").on(table.workspaceId),
     foreignKey({
-      columns: [table.userId],
-      foreignColumns: [users.id],
-      name: "user_settings_user_id_fkey",
+      columns: [table.workspaceId],
+      foreignColumns: [workspaces.id],
+      name: "workspace_settings_workspace_id_fkey",
     }).onDelete("cascade"),
   ]
 )
@@ -513,6 +522,11 @@ export const websites = pgTable(
       "btree",
       table.workspaceId.asc().nullsLast().op("text_ops")
     ),
+    index("idx_websites_workspace_id_created_at").using(
+      "btree",
+      table.workspaceId.asc().nullsLast().op("text_ops"),
+      table.createdAt.desc().nullsFirst().op("text_ops")
+    ),
     foreignKey({
       columns: [table.userId],
       foreignColumns: [users.id],
@@ -568,6 +582,12 @@ export const scans = pgTable(
       table.websiteId.asc().nullsLast().op("text_ops"),
       table.createdAt.desc().nullsFirst().op("text_ops")
     ),
+    index("idx_scans_website_id_device_type_created_at").using(
+      "btree",
+      table.websiteId.asc().nullsLast().op("text_ops"),
+      table.deviceType.asc().nullsLast().op("text_ops"),
+      table.createdAt.desc().nullsFirst().op("text_ops")
+    ),
     foreignKey({
       columns: [table.websiteId],
       foreignColumns: [websites.id],
@@ -599,6 +619,11 @@ export const scanIssues = pgTable(
     }).defaultNow(),
   },
   (table) => [
+    index("idx_scan_issues_scan_id_created_at").using(
+      "btree",
+      table.scanId.asc().nullsLast().op("text_ops"),
+      table.createdAt.desc().nullsFirst().op("text_ops")
+    ),
     foreignKey({
       columns: [table.scanId],
       foreignColumns: [scans.id],
@@ -613,7 +638,7 @@ export const scanIssues = pgTable(
 
 export type Website = InferSelectModel<typeof websites>
 export type Report = InferSelectModel<typeof reports>
-export type UserSettings = InferSelectModel<typeof userSettings>
+export type WorkspaceSettings = InferSelectModel<typeof workspaceSettings>
 export type WebhookDestination = InferSelectModel<typeof webhookDestinations>
 export type Workspace = InferSelectModel<typeof workspaces>
 export type BillingSubscription = InferSelectModel<typeof billingSubscriptions>

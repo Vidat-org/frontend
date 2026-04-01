@@ -7,11 +7,12 @@ import {
   auditLogs,
   notificationDeliveries,
   reports,
+  scanIssues,
   scans,
   supportRequests,
-  userSettings,
   users,
   webhookDestinations,
+  workspaceSettings,
   websites,
   workspaces,
 } from "@/migrations/schema"
@@ -30,6 +31,7 @@ import {
   markOnboardingStep,
   updateWorkspaceBillingSubscription,
 } from "@/lib/saas"
+import { getSupportInboxAddress, sendEmail } from "@/lib/email"
 import {
   cachedQuery,
   invalidateCacheTags,
@@ -116,15 +118,24 @@ const listAuditLogsSchema = z.object({
   offset: z.number().int().min(0).default(0),
 })
 
-async function ensureUserSettings(userId: string) {
-  let settings = await db.query.userSettings.findFirst({
-    where: eq(userSettings.userId, userId),
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;")
+}
+
+async function ensureWorkspaceSettings(workspaceId: string) {
+  let settings = await db.query.workspaceSettings.findFirst({
+    where: eq(workspaceSettings.workspaceId, workspaceId),
   })
 
   if (!settings) {
     const inserted = await db
-      .insert(userSettings)
-      .values({ userId })
+      .insert(workspaceSettings)
+      .values({ workspaceId })
       .returning()
     settings = inserted[0]
   }
@@ -149,8 +160,7 @@ async function buildAccountSummary(context: {
     pendingInviteCount,
     subscription,
     onboarding,
-    activeWebsites,
-    totalWebsites,
+    websiteUsage,
     totalScans,
     totalReports,
     deliveryHealth,
@@ -161,7 +171,7 @@ async function buildAccountSummary(context: {
     db.query.workspaces.findFirst({
       where: eq(workspaces.id, context.workspaceId),
     }),
-    ensureUserSettings(context.userId),
+    ensureWorkspaceSettings(context.workspaceId),
     getClerkOrganization(context.clerkOrganizationId),
     getPendingOrganizationInviteCount(context.clerkOrganizationId),
     ensureWorkspaceBillingSubscription({
@@ -170,16 +180,13 @@ async function buildAccountSummary(context: {
     }),
     ensureOnboardingState(context.workspaceId),
     db
-      .select({ count: count() })
-      .from(websites)
-      .where(
-        and(
-          eq(websites.workspaceId, context.workspaceId),
-          eq(websites.isEnabled, true)
-        )
-      ),
-    db
-      .select({ count: count() })
+      .select({
+        activeCount:
+          sql<number>`coalesce(count(*) filter (where ${websites.isEnabled} = true), 0)`.as(
+            "active_count"
+          ),
+        totalCount: count(),
+      })
       .from(websites)
       .where(eq(websites.workspaceId, context.workspaceId)),
     db
@@ -218,8 +225,8 @@ async function buildAccountSummary(context: {
     plan,
     rawPlan: normalizedPlan,
     usage: {
-      activeWebsites: activeWebsites[0]?.count ?? 0,
-      totalWebsites: totalWebsites[0]?.count ?? 0,
+      activeWebsites: Number(websiteUsage[0]?.activeCount ?? 0),
+      totalWebsites: websiteUsage[0]?.totalCount ?? 0,
       websiteLimit: planToWebsiteCount(normalizedPlan),
       scans: totalScans[0]?.count ?? 0,
       reports: totalReports[0]?.count ?? 0,
@@ -380,18 +387,19 @@ export const getDashboardOverview = protectedProcedure.handler(
                 .select({
                   scanId: scans.id,
                   websiteId: websites.id,
-                  key: sql<string>`min(${scans.id})`.as("key"),
-                  issueCount: count(),
+                  key: sql<string>`min(${scanIssues.key})`.as("key"),
+                  issueCount: count(scanIssues.id),
                 })
                 .from(scans)
                 .innerJoin(websites, eq(websites.id, scans.websiteId))
+                .innerJoin(scanIssues, eq(scanIssues.scanId, scans.id))
                 .where(
                   and(
                     eq(websites.workspaceId, context.workspaceId),
                     inArray(scans.websiteId, websiteIds)
                   )
                 )
-                .groupBy(scans.id, websites.id)
+                .groupBy(scans.id, websites.id, scans.createdAt)
                 .orderBy(desc(scans.createdAt))
                 .limit(4)
 
@@ -428,11 +436,11 @@ export const getNotificationSettings = protectedProcedure.handler(
   async ({ context }) => {
     return cachedQuery(
       {
-        key: `account:notification-settings:${context.userId}`,
+        key: `account:notification-settings:${context.workspaceId}`,
         ttlSeconds: 120,
         tags: getAccountCacheTags(context),
       },
-      () => ensureUserSettings(context.userId)
+      () => ensureWorkspaceSettings(context.workspaceId)
     )
   }
 )
@@ -440,10 +448,11 @@ export const getNotificationSettings = protectedProcedure.handler(
 export const updateNotificationSettings = protectedProcedure
   .input(notificationSettingsSchema)
   .handler(async ({ context, input }) => {
-    await ensureUserSettings(context.userId)
+    requireWorkspaceAdmin(context.workspaceRole)
+    await ensureWorkspaceSettings(context.workspaceId)
 
     const updated = await db
-      .update(userSettings)
+      .update(workspaceSettings)
       .set({
         emailAlerts: input.emailAlerts,
         weeklyDigest: input.weeklyDigest,
@@ -455,7 +464,7 @@ export const updateNotificationSettings = protectedProcedure
         slackWebhookUrl: input.slackWebhookUrl || null,
         updatedAt: new Date().toISOString(),
       })
-      .where(eq(userSettings.userId, context.userId))
+      .where(eq(workspaceSettings.workspaceId, context.workspaceId))
       .returning()
 
     await markOnboardingStep(context.workspaceId, {
@@ -468,7 +477,7 @@ export const updateNotificationSettings = protectedProcedure
       actorUserId: context.userId,
       targetType: "notification_settings",
       action: "notification_settings.updated",
-      summary: "Notifieringsinställningar uppdaterades",
+      summary: "Workspace-notifieringar uppdaterades",
       metadata: {
         emailAlerts: input.emailAlerts,
         weeklyDigest: input.weeklyDigest,
@@ -521,7 +530,10 @@ export const updateWorkspaceLocale = protectedProcedure
       },
     })
 
-    await invalidateCacheTags([workspaceTag(context.workspaceId), userTag(context.userId)])
+    await invalidateCacheTags([
+      workspaceTag(context.workspaceId),
+      userTag(context.userId),
+    ])
 
     return updated[0] ?? null
   })
@@ -935,21 +947,93 @@ export const createSupportRequest = protectedProcedure
       },
     })
 
-    await createNotificationDelivery({
-      workspaceId: context.workspaceId,
-      channel: "email",
-      eventType: "support.request.created",
-      destination: "support@vidat.app",
-      status: "sent",
-      attempts: 1,
-      payload: {
-        subject: input.subject,
-        priority: input.priority,
-      },
-    })
+    const supportInbox = getSupportInboxAddress()
+    const [requester, workspace] = await Promise.all([
+      db.query.users.findFirst({
+        where: eq(users.id, context.userId),
+      }),
+      db.query.workspaces.findFirst({
+        where: eq(workspaces.id, context.workspaceId),
+      }),
+    ])
+    const workspaceName = workspace?.name ?? context.workspaceName
+    const requesterIdentity = requester?.email ?? context.userId
+    const escapedWorkspaceName = escapeHtml(workspaceName)
+    const escapedRequesterIdentity = escapeHtml(requesterIdentity)
+    const escapedSubject = escapeHtml(input.subject)
+    const escapedCategory = escapeHtml(input.category)
+    const escapedPriority = escapeHtml(input.priority)
+    const escapedMessage = escapeHtml(input.message)
+
+    try {
+      const emailResult = await sendEmail({
+        to: supportInbox,
+        replyTo: requester?.email ?? undefined,
+        subject: `[Vidat] ${input.category}/${input.priority}: ${input.subject}`,
+        text: [
+          "New support request",
+          "",
+          `Workspace: ${workspaceName} (${context.workspaceId})`,
+          `From user: ${requesterIdentity}`,
+          `Category: ${input.category}`,
+          `Priority: ${input.priority}`,
+          `Subject: ${input.subject}`,
+          "",
+          input.message,
+        ].join("\n"),
+        html: `
+          <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827;">
+            <h2 style="margin-bottom: 16px;">New support request</h2>
+            <p><strong>Workspace:</strong> ${escapedWorkspaceName} (${context.workspaceId})</p>
+            <p><strong>From user:</strong> ${escapedRequesterIdentity}</p>
+            <p><strong>Category:</strong> ${escapedCategory}</p>
+            <p><strong>Priority:</strong> ${escapedPriority}</p>
+            <p><strong>Subject:</strong> ${escapedSubject}</p>
+            <p style="margin-top: 24px;"><strong>Message</strong></p>
+            <p style="white-space: pre-wrap;">${escapedMessage}</p>
+          </div>
+        `,
+      })
+
+      await createNotificationDelivery({
+        workspaceId: context.workspaceId,
+        channel: "email",
+        eventType: "support.request.created",
+        destination: supportInbox,
+        providerMessageId: emailResult.id,
+        status: "sent",
+        attempts: 1,
+        payload: {
+          subject: input.subject,
+          priority: input.priority,
+          category: input.category,
+          requesterEmail: requester?.email ?? null,
+        },
+      })
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unknown email error"
+
+      await createNotificationDelivery({
+        workspaceId: context.workspaceId,
+        channel: "email",
+        eventType: "support.request.created",
+        destination: supportInbox,
+        status: "failed",
+        attempts: 1,
+        errorMessage: message,
+        payload: {
+          subject: input.subject,
+          priority: input.priority,
+          category: input.category,
+          requesterEmail: requester?.email ?? null,
+        },
+      })
+
+      throw new Error(message)
+    }
 
     await invalidateCacheTags([workspaceTag(context.workspaceId)])
 
     return inserted[0]
   })
-

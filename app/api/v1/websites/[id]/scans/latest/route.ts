@@ -1,4 +1,5 @@
 import { db } from "@/db/drizzle"
+import { jsonWithCache } from "@/lib/response-cache"
 import { requireApiKey } from "@/middlewares/api-key"
 import { scans, websites } from "@/migrations/schema"
 import { and, desc, eq } from "drizzle-orm"
@@ -29,8 +30,12 @@ export async function GET(
     .limit(1)
 
   if (!result[0]) {
-    return Response.json({ error: "scan_not_found" }, { status: 404 })
+    return jsonWithCache(
+      { error: "scan_not_found" },
+      { status: 404 },
+      "private-short"
+    )
   }
 
-  return Response.json({ data: result[0].scan })
+  return jsonWithCache({ data: result[0].scan }, undefined, "private-short")
 }

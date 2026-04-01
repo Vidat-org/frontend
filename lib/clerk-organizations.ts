@@ -1,5 +1,10 @@
 import { db } from "@/db/drizzle"
-import { billingSubscriptions, onboardingStates, workspaces } from "@/migrations/schema"
+import {
+  billingSubscriptions,
+  onboardingStates,
+  workspaceSettings,
+  workspaces,
+} from "@/migrations/schema"
 import { normalizePlanSlug } from "@/lib/plans"
 import { clerkClient } from "@clerk/nextjs/server"
 import { eq } from "drizzle-orm"
@@ -103,6 +108,14 @@ export async function ensureWorkspaceForClerkOrganization(input: {
           : "active",
       amountSek: 0,
     })
+  }
+
+  const existingSettings = await db.query.workspaceSettings.findFirst({
+    where: eq(workspaceSettings.workspaceId, workspace.id),
+  })
+
+  if (!existingSettings) {
+    await db.insert(workspaceSettings).values({ workspaceId: workspace.id })
   }
 
   return { workspace, organization }

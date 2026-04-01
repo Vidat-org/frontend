@@ -1,3 +1,4 @@
+import "@/lib/orpc.server"
 import { client } from "@/lib/orpc"
 import Link from "next/link"
 import { ArrowLeft, Calendar, TrendingDown, TrendingUp } from "lucide-react"
@@ -16,15 +17,17 @@ export default async function Page({
 }: {
   params: Promise<{ id: string }>
 }) {
-  const { t, i18n } = await getT("common")
-  const locale = i18n.resolvedLanguage === "en" ? "en" : "sv"
   const { id } = await params
-  const website = await client.getWebsite({ id })
-  const scans = await client.listWebsiteScans({
-    website: id,
-    device: "mobile",
-    limit: 2,
-  })
+  const [{ t, i18n }, website, scans] = await Promise.all([
+    getT("common"),
+    client.getWebsite({ id }),
+    client.listWebsiteScans({
+      website: id,
+      device: "mobile",
+      limit: 2,
+    }),
+  ])
+  const locale = i18n.resolvedLanguage === "en" ? "en" : "sv"
 
   const latest = scans?.[0]
   const previous = scans?.[1]

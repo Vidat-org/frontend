@@ -8,10 +8,10 @@ import {
 	reports,
 	scanIssues,
 	scans,
-	userSettings,
 	users,
 	webhookDestinations,
 	supportRequests,
+	workspaceSettings,
 	workspaces,
 	websites,
 } from "./schema";
@@ -40,17 +40,9 @@ export const websitesRelations = relations(websites, ({one, many}) => ({
 export const usersRelations = relations(users, ({many}) => ({
 	websites: many(websites),
 	webhookDestinations: many(webhookDestinations),
-	userSettings: many(userSettings),
 	auditLogs: many(auditLogs),
 	apiKeys: many(apiKeys),
 	supportRequests: many(supportRequests),
-}));
-
-export const userSettingsRelations = relations(userSettings, ({one}) => ({
-	user: one(users, {
-		fields: [userSettings.userId],
-		references: [users.id]
-	}),
 }));
 
 export const webhookDestinationsRelations = relations(webhookDestinations, ({one}) => ({
@@ -83,11 +75,19 @@ export const workspacesRelations = relations(workspaces, ({many}) => ({
 	websites: many(websites),
 	billingSubscriptions: many(billingSubscriptions),
 	onboardingStates: many(onboardingStates),
+	workspaceSettings: many(workspaceSettings),
 	auditLogs: many(auditLogs),
 	notificationDeliveries: many(notificationDeliveries),
 	webhookDestinations: many(webhookDestinations),
 	apiKeys: many(apiKeys),
 	supportRequests: many(supportRequests),
+}));
+
+export const workspaceSettingsRelations = relations(workspaceSettings, ({one}) => ({
+	workspace: one(workspaces, {
+		fields: [workspaceSettings.workspaceId],
+		references: [workspaces.id]
+	}),
 }));
 
 export const billingSubscriptionsRelations = relations(billingSubscriptions, ({one}) => ({

@@ -18,6 +18,7 @@ const cachePrefix = process.env.VALKEY_PREFIX ?? "vidat"
 const valkeyUrl = process.env.VALKEY_URL
 
 let client: Redis | null | undefined
+const inflightQueries = new Map<string, Promise<unknown>>()
 
 function getValkeyClient(): Redis | null {
   if (client !== undefined) {
@@ -66,6 +67,7 @@ export async function cachedQuery<T>(
   loader: () => Promise<T>
 ): Promise<T> {
   const redis = getValkeyClient()
+  let inflightKey: string | null = null
 
   // No Redis → just run normally
   if (!redis) {
@@ -75,6 +77,7 @@ export async function cachedQuery<T>(
   try {
     const suffix = await getVersionSuffix(redis, options.tags ?? [])
     const cacheKey = `${cachePrefix}:data:${options.key}:${suffix}`
+    inflightKey = `${options.key}:${suffix}`
 
     const cached = await redis.get(cacheKey)
 
@@ -82,14 +85,41 @@ export async function cachedQuery<T>(
       return JSON.parse(cached) as T
     }
 
-    const value = await loader()
+    const existing = inflightQueries.get(inflightKey)
 
-    await redis.set(cacheKey, JSON.stringify(value), "EX", options.ttlSeconds)
+    if (existing) {
+      return existing as Promise<T>
+    }
+
+    const pending = (async () => {
+      const value = await loader()
+
+      try {
+        await redis.set(
+          cacheKey,
+          JSON.stringify(value),
+          "EX",
+          options.ttlSeconds
+        )
+      } catch (error) {
+        console.error("[valkey] cache write failed", error)
+      }
+
+      return value
+    })()
+
+    inflightQueries.set(inflightKey, pending)
+
+    const value = await pending
 
     return value
   } catch (error) {
-    console.error("[valkey] cache failed", error)
+    console.error("[valkey] cache read failed", error)
     return loader()
+  } finally {
+    if (inflightKey) {
+      inflightQueries.delete(inflightKey)
+    }
   }
 }
 

@@ -1,3 +1,5 @@
+import "@/lib/orpc.server"
+import OnboardingReportRedirect from "@/components/onboarding-report-redirect"
 import ReportCard from "@/components/report-card"
 import {
   Empty,
@@ -12,11 +14,15 @@ import { FileChartColumn } from "lucide-react"
 import { getT } from "next-i18next/server"
 
 export default async function Page() {
-  const { t } = await getT("common")
-  const query = await client.listReports()
+  const [{ t }, query] = await Promise.all([
+    getT("common"),
+    client.listReports(),
+  ])
 
   return (
     <div className="space-y-8">
+      <OnboardingReportRedirect />
+
       {query.map((website) => (
         <div key={website.website} className="space-y-3">
           <h3 className="text-2xl font-semibold">

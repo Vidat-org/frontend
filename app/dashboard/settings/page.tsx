@@ -12,7 +12,7 @@ import { getT } from "next-i18next/server"
 
 const items = [
   {
-    href: "/dashboard/settings",
+    href: "/dashboard/settings/billing",
     title: "settingsPage.billingTitle",
     description: "settingsPage.billingDescription",
     icon: CreditCard,

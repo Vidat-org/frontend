@@ -1,4 +1,8 @@
-export type CanonicalPlan = "free_user" | "starter" | "pro" | "enterprise"
+export type CanonicalPlan =
+  | "free_org"
+  | "starter_org"
+  | "pro_org"
+  | "enterprise_org"
 
 type PlanDefinition = {
   slug: CanonicalPlan
@@ -10,23 +14,32 @@ type PlanDefinition = {
 }
 
 const BILLING_SLUG_ALIASES: Record<string, CanonicalPlan> = {
-  free: "free_user",
-  free_user: "free_user",
-  "free-plan": "free_user",
-  free_user_plan: "free_user",
-  starter: "starter",
-  start: "starter",
-  basic: "starter",
-  pro: "pro",
-  professional: "pro",
-  business: "pro",
-  enterprise: "enterprise",
-  custom: "enterprise",
+  // canonical pass-throughs
+  free_org: "free_org",
+  starter_org: "starter_org",
+  pro_org: "pro_org",
+  enterprise_org: "enterprise_org",
+  // free aliases
+  free: "free_org",
+  free_user: "free_org",
+  "free-plan": "free_org",
+  free_user_plan: "free_org",
+  // starter aliases
+  starter: "starter_org",
+  start: "starter_org",
+  basic: "starter_org",
+  // pro aliases
+  pro: "pro_org",
+  professional: "pro_org",
+  business: "pro_org",
+  // enterprise aliases
+  enterprise: "enterprise_org",
+  custom: "enterprise_org",
 }
 
 export const PLAN_DEFINITIONS: Record<CanonicalPlan, PlanDefinition> = {
-  free_user: {
-    slug: "free_user",
+  free_org: {
+    slug: "free_org",
     label: "Free",
     monthlyPriceSek: 0,
     websiteLimit: 1,
@@ -38,8 +51,8 @@ export const PLAN_DEFINITIONS: Record<CanonicalPlan, PlanDefinition> = {
       "Grundlaggande rapporter",
     ],
   },
-  starter: {
-    slug: "starter",
+  starter_org: {
+    slug: "starter_org",
     label: "Starter",
     monthlyPriceSek: 149,
     websiteLimit: 5,
@@ -51,8 +64,8 @@ export const PLAN_DEFINITIONS: Record<CanonicalPlan, PlanDefinition> = {
       "E-postaviseringar",
     ],
   },
-  pro: {
-    slug: "pro",
+  pro_org: {
+    slug: "pro_org",
     label: "Pro",
     monthlyPriceSek: 399,
     websiteLimit: 25,
@@ -64,8 +77,8 @@ export const PLAN_DEFINITIONS: Record<CanonicalPlan, PlanDefinition> = {
       "Webhook- och Slack-integrationer",
     ],
   },
-  enterprise: {
-    slug: "enterprise",
+  enterprise_org: {
+    slug: "enterprise_org",
     label: "Enterprise",
     monthlyPriceSek: 999,
     websiteLimit: 9999,
@@ -79,12 +92,12 @@ export const PLAN_DEFINITIONS: Record<CanonicalPlan, PlanDefinition> = {
   },
 }
 
-export function normalizePlanSlug(plan: string | null | undefined): CanonicalPlan {
-  if (!plan) {
-    return "free_user"
-  }
-
-  return BILLING_SLUG_ALIASES[plan] ?? "free_user"
+export function normalizePlanSlug(
+  plan: string | null | undefined
+): CanonicalPlan {
+  if (!plan) return "free_org"
+  if (plan in PLAN_DEFINITIONS) return plan as CanonicalPlan
+  return BILLING_SLUG_ALIASES[plan] ?? "free_org"
 }
 
 export function getPlanDefinition(plan: string | null | undefined) {

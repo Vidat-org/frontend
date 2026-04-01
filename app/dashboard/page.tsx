@@ -281,7 +281,7 @@ export default function Page() {
           </CardContent>
         </Card>
 
-        <BillingOverviewCard summary={summary} locale={locale} />
+        {/* <BillingOverviewCard summary={summary} locale={locale} /> */}
       </section>
 
       <section className="grid gap-4 xl:grid-cols-2">
@@ -410,7 +410,7 @@ export default function Page() {
               </EmptyDescription>
             </EmptyHeader>
             <EmptyContent>
-              <AddWebsite />
+              <AddWebsite redirectOnCreate />
             </EmptyContent>
           </Empty>
         ) : (
@@ -587,14 +587,12 @@ function OnboardingGuideCard({
   workspaceName: string | undefined
   completedSteps: number
   totalSteps: number
-  nextStep:
-    | {
-        key: string
-        label: string
-        description: string
-        href: string | null
-      }
-    | null
+  nextStep: {
+    key: string
+    label: string
+    description: string
+    href: string | null
+  } | null
   steps: Array<{
     key: string
     label: string
@@ -604,7 +602,8 @@ function OnboardingGuideCard({
   }>
 }) {
   const { t } = useTranslation("common")
-  const progress = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0
+  const progress =
+    totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0
 
   return (
     <section>
@@ -618,7 +617,8 @@ function OnboardingGuideCard({
               <div className="space-y-2">
                 <CardTitle className="text-2xl tracking-tight sm:text-3xl">
                   {t("dashboard.onboardingHeroTitle", {
-                    workspace: workspaceName || t("dashboard.workspaceFallback"),
+                    workspace:
+                      workspaceName || t("dashboard.workspaceFallback"),
                   })}
                 </CardTitle>
                 <CardDescription className="max-w-2xl text-sm sm:text-base">
@@ -631,14 +631,16 @@ function OnboardingGuideCard({
               </div>
             </div>
             <div className="min-w-40 rounded-2xl border bg-background/85 p-4">
-              <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+              <p className="text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
                 {t("dashboard.progress")}
               </p>
               <p className="mt-2 text-3xl font-semibold">
                 {completedSteps}/{totalSteps}
               </p>
               <p className="text-sm text-muted-foreground">
-                {t("dashboard.onboardingProgressPercent", { percent: progress })}
+                {t("dashboard.onboardingProgressPercent", {
+                  percent: progress,
+                })}
               </p>
             </div>
           </div>
@@ -652,7 +654,9 @@ function OnboardingGuideCard({
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {nextStep?.key === "website" || !nextStep ? <AddWebsite /> : null}
+            {nextStep?.key === "website" || !nextStep ? (
+              <AddWebsite redirectOnCreate />
+            ) : null}
             {nextStep?.href ? (
               <Button asChild variant="outline">
                 <Link href={nextStep.href}>
@@ -711,7 +715,7 @@ function StepPreview({
 function InfoStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg border p-3">
-      <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+      <p className="text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
         {label}
       </p>
       <p className="mt-2 text-sm font-medium">{value}</p>
@@ -734,14 +738,12 @@ function OnboardingChecklistCard({
     checked: boolean
     href: string | null
   }>
-  nextStep:
-    | {
-        key: string
-        label: string
-        description: string
-        href: string | null
-      }
-    | null
+  nextStep: {
+    key: string
+    label: string
+    description: string
+    href: string | null
+  } | null
 }) {
   const { t } = useTranslation("common")
 
@@ -756,7 +758,7 @@ function OnboardingChecklistCard({
       <CardContent className="space-y-3">
         {nextStep ? (
           <div className="rounded-xl border border-primary/15 bg-primary/6 p-4">
-            <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+            <p className="text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
               {t("dashboard.nextRecommendedStep")}
             </p>
             <p className="mt-2 text-sm font-medium">{nextStep.label}</p>
@@ -764,7 +766,9 @@ function OnboardingChecklistCard({
               {nextStep.description}
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
-              {nextStep.key === "website" ? <AddWebsite /> : null}
+              {nextStep.key === "website" ? (
+                <AddWebsite redirectOnCreate />
+              ) : null}
               {nextStep.href ? (
                 <Button asChild size="sm" variant="outline">
                   <Link href={nextStep.href}>

@@ -54,14 +54,14 @@ export default function DashboardSidebar() {
   ]
   const settingsNav: NavItem[] = [
     {
-      title: t("sidebar.billing"),
-      url: "/dashboard/settings/billing",
-      icon: CreditCard,
-    },
-    {
       title: t("sidebar.settings"),
       url: "/dashboard/settings",
       icon: Settings,
+    },
+    {
+      title: t("sidebar.billing"),
+      url: "/dashboard/settings/billing",
+      icon: CreditCard,
     },
     { title: t("sidebar.team"), url: "/dashboard/settings/team", icon: Users },
     {

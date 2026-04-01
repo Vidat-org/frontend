@@ -17,6 +17,7 @@ import { Spinner } from "./ui/spinner"
 import { getQueryClient } from "@/lib/query-client"
 import { parseAsIsoDateTime, parseAsStringEnum, useQueryState } from "nuqs"
 import { useT } from "next-i18next/client"
+import { useRouter } from "next/navigation"
 
 export default function NewCheck({
   websiteId,
@@ -26,9 +27,14 @@ export default function NewCheck({
   defaultDeviceType: "mobile" | "desktop"
 }) {
   const { t } = useT("common")
+  const router = useRouter()
   const [urlDevice] = useQueryState(
     "device",
     parseAsStringEnum(["mobile", "desktop"]).withDefault("mobile")
+  )
+  const [onboarding] = useQueryState(
+    "onboarding",
+    parseAsStringEnum(["1"])
   )
   const [device, setDevice] = useState<"mobile" | "desktop">(defaultDeviceType)
 
@@ -54,8 +60,21 @@ export default function NewCheck({
         queryKey: ["scans", websiteId, urlDevice],
       })
       toast.success(t("newCheck.scanDone"))
+
+      if (onboarding === "1") {
+        router.push(`/dashboard/reports?onboarding=1&website=${websiteId}`)
+      }
     }
-  }, [latestScan, pollingSince, setPollingSince, t, urlDevice, websiteId])
+  }, [
+    latestScan,
+    onboarding,
+    pollingSince,
+    router,
+    setPollingSince,
+    t,
+    urlDevice,
+    websiteId,
+  ])
 
   const { mutateAsync, isPending } = useMutation({
     mutationFn: async (date: Date) =>

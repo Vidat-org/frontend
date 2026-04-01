@@ -377,9 +377,10 @@ export default function SettingsCenter({
   const setInviteForm = (
     value:
       | { email: string; role: "admin" | "member" }
-      | ((
-          prev: { email: string; role: "admin" | "member" }
-        ) => { email: string; role: "admin" | "member" })
+      | ((prev: { email: string; role: "admin" | "member" }) => {
+          email: string
+          role: "admin" | "member"
+        })
   ) => {
     void value
   }
@@ -586,7 +587,7 @@ export default function SettingsCenter({
                 />
                 <BillingStat
                   label={t("settingsCenter.monthlyAmount")}
-                  value={formatSekAmount(account.billing.amountSek, locale)}
+                  value={formatAmount(account.billing.amountSek, locale)}
                 />
                 <BillingStat
                   label={getBillingDateLabel(account.billing, t)}
@@ -725,12 +726,21 @@ export default function SettingsCenter({
                 </FieldGroup>
               </CardContent>
               <CardFooter className="justify-end">
-                <Button
-                  onClick={() => saveSettings.mutate()}
-                  disabled={saveSettings.isPending}
-                >
-                  {t("settingsCenter.saveSettings")}
-                </Button>
+                <div className="flex w-full items-center justify-between gap-3">
+                  {!isAdmin ? (
+                    <p className="text-sm text-muted-foreground">
+                      {t("settingsCenter.notifications.workspaceAdminHint")}
+                    </p>
+                  ) : (
+                    <div />
+                  )}
+                  <Button
+                    onClick={() => saveSettings.mutate()}
+                    disabled={!isAdmin || saveSettings.isPending}
+                  >
+                    {t("settingsCenter.saveSettings")}
+                  </Button>
+                </div>
               </CardFooter>
             </Card>
           ) : null}
@@ -1612,11 +1622,22 @@ function formatSekAmount(amountSek: number, locale: Locale) {
     return "SEK -"
   }
 
+  // return new Intl.NumberFormat(locale === "sv" ? "sv-SE" : "en-US", {
+  //   style: "currency",
+  //   currency: "SEK",
+  //   maximumFractionDigits: 0,
+  // }).format(amountSek)
+  return amountSek
+}
+
+function formatAmount(amountCents: number, locale: Locale) {
+  if (amountCents <= 0) return "Free"
+
   return new Intl.NumberFormat(locale === "sv" ? "sv-SE" : "en-US", {
     style: "currency",
-    currency: "SEK",
+    currency: "USD",
     maximumFractionDigits: 0,
-  }).format(amountSek)
+  }).format(amountCents / 100)
 }
 
 type SettingsCenterAccount = NonNullable<

@@ -1,4 +1,5 @@
 import { getSystemHealth } from "@/lib/health"
+import { jsonWithCache } from "@/lib/response-cache"
 
 export async function GET() {
   const health = await getSystemHealth()
@@ -9,5 +10,5 @@ export async function GET() {
         ? 206
         : 503
 
-  return Response.json(health, { status: statusCode })
+  return jsonWithCache(health, { status: statusCode }, "public-health")
 }

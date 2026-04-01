@@ -1,7 +1,7 @@
 import { db } from "@/db/drizzle"
 import { protectedProcedure } from "../orpc"
 import { reports, websites } from "@/migrations/schema"
-import { and, eq } from "drizzle-orm"
+import { and, asc, desc, eq } from "drizzle-orm"
 import z from "zod"
 import { appendAuditLog, markOnboardingStep } from "@/lib/saas"
 import { cachedQuery, reportTag, workspaceTag } from "@/lib/cache"
@@ -23,6 +23,7 @@ export const listReports = protectedProcedure.handler(async ({ context }) => {
         .from(websites)
         .leftJoin(reports, eq(reports.websiteId, websites.id))
         .where(eq(websites.workspaceId, context.workspaceId))
+        .orderBy(asc(websites.url), desc(reports.createdAt))
   )
 
   const grouped = Object.values(

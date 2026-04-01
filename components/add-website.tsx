@@ -36,9 +36,15 @@ import {
 import { ErrUpgradePlan } from "@/lib/errors"
 import { ORPCError } from "@orpc/server"
 import { useT } from "next-i18next/client"
+import { useRouter } from "next/navigation"
 
-export default function AddWebsite() {
+export default function AddWebsite({
+  redirectOnCreate = false,
+}: {
+  redirectOnCreate?: boolean
+}) {
   const { t } = useT("common")
+  const router = useRouter()
   const { mutateAsync } = useMutation({
     mutationFn: async (values: {
       url: string
@@ -60,7 +66,7 @@ export default function AddWebsite() {
     },
     onSubmit: async ({ value, formApi }) => {
       try {
-        await mutateAsync({
+        const created = await mutateAsync({
           url: value.url,
           interval: value.interval as (typeof intervals)[number],
           name: value.name,
@@ -72,6 +78,10 @@ export default function AddWebsite() {
         toast.success(t("addWebsite.success"))
         formApi.reset()
         setIsFormOpen(false)
+
+        if (redirectOnCreate && created?.id) {
+          router.push(`/dashboard/${created.id}?onboarding=1`)
+        }
       } catch (err) {
         const error = err as ORPCError<string, unknown>
 

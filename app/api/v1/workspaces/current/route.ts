@@ -1,5 +1,6 @@
 import { db } from "@/db/drizzle"
 import { getPlanDefinition } from "@/lib/plans"
+import { jsonWithCache } from "@/lib/response-cache"
 import { requireApiKey } from "@/middlewares/api-key"
 import {
   billingSubscriptions,
@@ -35,28 +36,36 @@ export async function GET(request: Request) {
   ])
 
   if (!workspace) {
-    return Response.json({ error: "workspace_not_found" }, { status: 404 })
+    return jsonWithCache(
+      { error: "workspace_not_found" },
+      { status: 404 },
+      "private-short"
+    )
   }
 
   const plan = getPlanDefinition(subscription?.planSlug ?? "free_user")
 
-  return Response.json({
-    workspace: {
-      id: workspace.id,
-      name: workspace.name,
-      slug: workspace.slug,
-      preferredLocale: workspace.preferredLocale,
-      plan: plan.slug,
-      planLabel: plan.label,
+  return jsonWithCache(
+    {
+      workspace: {
+        id: workspace.id,
+        name: workspace.name,
+        slug: workspace.slug,
+        preferredLocale: workspace.preferredLocale,
+        plan: plan.slug,
+        planLabel: plan.label,
+      },
+      usage: {
+        websites: websiteUsage[0]?.count ?? 0,
+        websiteLimit: plan.websiteLimit,
+        scans: scanUsage[0]?.count ?? 0,
+      },
+      apiKey: {
+        label: apiKey.auth.label,
+        prefix: apiKey.auth.keyPrefix,
+      },
     },
-    usage: {
-      websites: websiteUsage[0]?.count ?? 0,
-      websiteLimit: plan.websiteLimit,
-      scans: scanUsage[0]?.count ?? 0,
-    },
-    apiKey: {
-      label: apiKey.auth.label,
-      prefix: apiKey.auth.keyPrefix,
-    },
-  })
+    undefined,
+    "private-short"
+  )
 }

@@ -137,6 +137,7 @@ export async function createNotificationDelivery(input: {
   channel: "email" | "slack" | "webhook"
   eventType: string
   destination: string
+  providerMessageId?: string | null
   status?: "pending" | "sent" | "failed" | "retrying"
   attempts?: number
   errorMessage?: string | null
@@ -150,6 +151,7 @@ export async function createNotificationDelivery(input: {
       channel: input.channel,
       eventType: input.eventType,
       destination: input.destination,
+      providerMessageId: input.providerMessageId ?? null,
       status: input.status ?? "pending",
       attempts: input.attempts ?? 0,
       errorMessage: input.errorMessage ?? null,

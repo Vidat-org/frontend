@@ -6,7 +6,9 @@ import { NextRequest } from "next/server"
 
 export async function POST(req: NextRequest) {
   try {
-    const evt = await verifyWebhook(req)
+    const evt = await verifyWebhook(req, {
+      signingSecret: process.env.CLERK_WEBHOOK_SIGNING_SECRET_USERS,
+    })
 
     const eventType = evt.type
 
@@ -16,7 +18,9 @@ export async function POST(req: NextRequest) {
           .insert(users)
           .values({
             clerkUserId: evt.data.id,
-            email: evt.data.email_addresses?.[0]?.email_address?.toLowerCase() ?? null,
+            email:
+              evt.data.email_addresses?.[0]?.email_address?.toLowerCase() ??
+              null,
             plan: "free_user",
           })
           .onConflictDoNothing()
@@ -25,7 +29,9 @@ export async function POST(req: NextRequest) {
         await db
           .update(users)
           .set({
-            email: evt.data.email_addresses?.[0]?.email_address?.toLowerCase() ?? null,
+            email:
+              evt.data.email_addresses?.[0]?.email_address?.toLowerCase() ??
+              null,
           })
           .where(eq(users.clerkUserId, evt.data.id))
         break

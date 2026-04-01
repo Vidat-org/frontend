@@ -95,10 +95,10 @@ const eventTypeKeys: Record<string, string> = {
 }
 
 const planNameKeys: Record<string, string> = {
-  free_user: "home.pricing.free.name",
-  starter: "home.pricing.starter.name",
-  pro: "home.pricing.pro.name",
-  enterprise: "home.pricing.enterprise.name",
+  free_org: "home.pricing.free.name",
+  starter_org: "home.pricing.starter.name",
+  pro_org: "home.pricing.pro.name",
+  enterprise_org: "home.pricing.enterprise.name",
 }
 
 function translateMappedValue(

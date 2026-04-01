@@ -1,4 +1,3 @@
-import "../lib/orpc.server"
 import { Inter, Playfair_Display, JetBrains_Mono } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -16,7 +15,6 @@ import {
   initServerI18next,
 } from "next-i18next/server"
 import i18nConfig from "@/i18n.config"
-import { getCurrentWorkspaceLocale } from "@/lib/workspace-locale"
 import { DEFAULT_LOCALE } from "@/lib/i18n"
 
 initServerI18next(i18nConfig)
@@ -45,10 +43,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const locale = await getCurrentWorkspaceLocale().catch((e) => {
-    console.log("locale fallback:", e)
-    return DEFAULT_LOCALE
-  })
+  const locale = DEFAULT_LOCALE
   const { i18n } = await getT("common", { lng: locale })
   const resources = getResources(i18n, ["common"])
   return (

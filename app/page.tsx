@@ -17,11 +17,6 @@ import {
 } from "lucide-react"
 
 import { getT } from "next-i18next/server"
-import { PricingTable, Show } from "@clerk/nextjs"
-import {
-  CheckoutButton,
-  SubscriptionDetailsButton,
-} from "@clerk/nextjs/experimental"
 
 // --- Datakonstanter ---
 
