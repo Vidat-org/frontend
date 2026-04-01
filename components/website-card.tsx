@@ -130,72 +130,75 @@ export default function WebsiteCard({ website }: Props) {
 
   const intervalHours = website.intervalSeconds / 60 / 60
 
-  return (
-    <Link href={`/dashboard/${website.id}`}>
+  const cardContent = (
+    <div
+      className={`relative overflow-hidden rounded-xl border bg-card p-5 transition-colors ${!website.isEnabled && "cursor-not-allowed opacity-65 hover:border-border"} ${website.isEnabled && "hover:border-border"}`}
+      style={{ fontFamily: "'JetBrains Mono', monospace" }}
+    >
       <div
-        className="relative overflow-hidden rounded-xl border bg-card p-5 transition-colors hover:border-border"
-        style={{ fontFamily: "'JetBrains Mono', monospace" }}
-      >
-        <div
-          className="absolute inset-x-0 top-0 h-[2px]"
+        className="absolute inset-x-0 top-0 h-[2px]"
+        style={{
+          background: `linear-gradient(90deg, ${stripeLeft} 0%, ${stripeRight} 100%)`,
+          opacity: 0.6,
+        }}
+      />
+
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <span
+          className="size-[6px] shrink-0 rounded-full"
           style={{
-            background: `linear-gradient(90deg, ${stripeLeft} 0%, ${stripeRight} 100%)`,
-            opacity: 0.6,
+            background: website.isEnabled ? dotColor : "#6b7280",
+            boxShadow: `0 0 0 3px ${
+              website.isEnabled ? `${dotColor}22` : "rgba(107,114,128,0.16)"
+            }`,
           }}
         />
+        <span className="truncate text-[13px] font-medium">{website.url}</span>
 
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <span
-            className="size-[6px] shrink-0 rounded-full"
-            style={{
-              background: website.isEnabled ? dotColor : "#6b7280",
-              boxShadow: `0 0 0 3px ${
-                website.isEnabled ? `${dotColor}22` : "rgba(107,114,128,0.16)"
-              }`,
-            }}
-          />
-          <span className="truncate text-[13px] font-medium">
-            {website.url}
+        {!website.isEnabled && (
+          <span className="rounded border border-dashed px-2 py-0.5 text-[10px] text-muted-foreground">
+            {t("websiteCard.pausedByPlan")}
           </span>
-          {!website.isEnabled && (
-            <span className="rounded border border-dashed px-2 py-0.5 text-[10px] text-muted-foreground">
-              {t("websiteCard.pausedByPlan")}
-            </span>
-          )}
-        </div>
+        )}
+      </div>
 
-        <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-around">
-          <div className="flex flex-col items-center gap-2">
-            <RingCanvas score={perf} size={88} />
-            <span className="text-[10px] tracking-widest text-muted-foreground uppercase">
-              {t("scanChart.performance")}
-            </span>
-          </div>
-          <div className="h-px w-full bg-border sm:h-16 sm:w-px" />
-          <div className="flex flex-col items-center gap-2">
-            <RingCanvas score={seo} size={88} />
-            <span className="text-[10px] tracking-widest text-muted-foreground uppercase">
-              SEO
-            </span>
-          </div>
-        </div>
-
-        <div className="mt-4 flex flex-col gap-2 border-t pt-3 sm:flex-row sm:items-center sm:justify-between">
-          <span className="text-[10px] text-muted-foreground">
-            {t("websiteCard.lastCheckedEvery", {
-              date: lastChecked,
-              hours: intervalHours,
-            })}
+      <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-around">
+        <div className="flex flex-col items-center gap-2">
+          <RingCanvas score={perf} size={88} />
+          <span className="text-[10px] tracking-widest text-muted-foreground uppercase">
+            {t("scanChart.performance")}
           </span>
-          <span
-            className="rounded px-2 py-0.5 text-[10px] font-medium"
-            style={{ background: bg, color, border: `0.5px solid ${border}` }}
-          >
-            {label}
+        </div>
+        <div className="h-px w-full bg-border sm:h-16 sm:w-px" />
+        <div className="flex flex-col items-center gap-2">
+          <RingCanvas score={seo} size={88} />
+          <span className="text-[10px] tracking-widest text-muted-foreground uppercase">
+            SEO
           </span>
         </div>
       </div>
-    </Link>
+
+      <div className="mt-4 flex flex-col gap-2 border-t pt-3 sm:flex-row sm:items-center sm:justify-between">
+        <span className="text-[10px] text-muted-foreground">
+          {t("websiteCard.lastCheckedEvery", {
+            date: lastChecked,
+            hours: intervalHours,
+          })}
+        </span>
+        <span
+          className="rounded px-2 py-0.5 text-[10px] font-medium"
+          style={{ background: bg, color, border: `0.5px solid ${border}` }}
+        >
+          {label}
+        </span>
+      </div>
+    </div>
+  )
+
+  return website.isEnabled ? (
+    <Link href={`/dashboard/${website.id}`}>{cardContent}</Link>
+  ) : (
+    cardContent
   )
 }
 

@@ -157,6 +157,8 @@
   "reportsPage.onboardingWaitingTitle": "Forbereder din forsta rapport",
   "reportsPage.onboardingWaitingDescription": "Den forsta rapporten plockas fram nu. Du skickas vidare automatiskt sa fort den ar redo.",
   "websitePage.backToOverview": "Tillbaka till översikten",
+  "websitePage.active": "Aktiv",
+  "websitePage.inActive": "Inaktiv",
   "websitePage.seoScore": "SEO-poäng",
   "websitePage.performance": "Prestanda",
   "websitePage.latestScan": "Senaste scan",

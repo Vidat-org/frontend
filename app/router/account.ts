@@ -245,12 +245,13 @@ async function buildAccountSummary(context: {
       pendingInviteCount,
     },
     capabilities: {
-      scheduledScans: normalizedPlan !== "free_user",
-      emailAlerts: normalizedPlan !== "free_user",
-      slackAlerts: normalizedPlan === "pro" || normalizedPlan === "enterprise",
-      apiAccess: normalizedPlan === "enterprise",
-      teamManagement: normalizedPlan !== "free_user",
-      auditLogs: normalizedPlan !== "free_user",
+      scheduledScans: normalizedPlan !== "free_org",
+      emailAlerts: normalizedPlan !== "free_org",
+      slackAlerts:
+        normalizedPlan === "pro_org" || normalizedPlan === "enterprise_org",
+      apiAccess: normalizedPlan === "enterprise_org",
+      teamManagement: normalizedPlan !== "free_org",
+      auditLogs: normalizedPlan !== "free_org",
     },
     billing: {
       ...links,
@@ -293,7 +294,7 @@ function requireWorkspaceAdmin(role: string) {
 }
 
 function requireEnterprisePlan(plan: string) {
-  if (normalizePlanSlug(plan) !== "enterprise") {
+  if (normalizePlanSlug(plan) !== "enterprise_org") {
     throw new Error("PLAN_REQUIRES_ENTERPRISE")
   }
 }

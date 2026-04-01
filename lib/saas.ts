@@ -23,9 +23,9 @@ export function getBillingLinks(planSlug: string) {
       enterprise: process.env.NEXT_PUBLIC_CHECKOUT_ENTERPRISE_URL ?? null,
     },
     recommendedUpgrade:
-      normalized === "free_user"
+      normalized === "free_org"
         ? "starter"
-        : normalized === "starter"
+        : normalized === "starter_org"
           ? "pro"
           : "enterprise",
   }

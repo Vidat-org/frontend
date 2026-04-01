@@ -56,6 +56,12 @@ export default async function Page({
               {website?.name}
             </h1>
 
+            <Badge variant={website?.isEnabled ? "success" : "secondary"}>
+              {website?.isEnabled
+                ? t("websitePage.active")
+                : t("websitePage.inActive")}
+            </Badge>
+
             <a
               href={website?.url}
               target="_blank"

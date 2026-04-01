@@ -34,7 +34,9 @@ export async function getClerkOrganization(organizationId: string) {
   })
 }
 
-export async function getPendingOrganizationInviteCount(organizationId: string) {
+export async function getPendingOrganizationInviteCount(
+  organizationId: string
+) {
   const client = await clerkClient()
   const response = await client.organizations.getOrganizationInvitationList({
     organizationId,
@@ -103,7 +105,7 @@ export async function ensureWorkspaceForClerkOrganization(input: {
       provider: "clerk",
       planSlug: normalizePlanSlug(input.fallbackPlanSlug),
       status:
-        normalizePlanSlug(input.fallbackPlanSlug) === "free_user"
+        normalizePlanSlug(input.fallbackPlanSlug) === "free_org"
           ? "trialing"
           : "active",
       amountSek: 0,

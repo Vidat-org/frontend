@@ -157,6 +157,8 @@
   "reportsPage.onboardingWaitingTitle": "Preparing your first report",
   "reportsPage.onboardingWaitingDescription": "The first report is being picked up now. You will be sent there automatically as soon as it is ready.",
   "websitePage.backToOverview": "Back to overview",
+  "websitePage.active": "Active",
+  "websitePage.inActive": "Disabled",
   "websitePage.seoScore": "SEO score",
   "websitePage.performance": "Performance",
   "websitePage.latestScan": "Latest scan",
