@@ -68,7 +68,7 @@ export default async function RootLayout({
         <ClerkProvider
           localization={locale === "sv" ? svSE : enGB}
           appearance={{
-            baseTheme: shadcn,
+            theme: shadcn,
           }}
         >
           <I18nProvider

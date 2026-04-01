@@ -5,7 +5,6 @@ import type { Locale } from "@/lib/i18n"
 import {
   apiKeys,
   auditLogs,
-  billingSubscriptions,
   notificationDeliveries,
   reports,
   scans,
@@ -14,8 +13,6 @@ import {
   users,
   webhookDestinations,
   websites,
-  workspaceInvites,
-  workspaceMembers,
   workspaces,
 } from "@/migrations/schema"
 import { and, count, desc, eq, inArray, sql } from "drizzle-orm"
@@ -45,6 +42,10 @@ import {
   getApiKeyPrefix,
   hashApiKey,
 } from "@/lib/api-key"
+import {
+  getClerkOrganization,
+  getPendingOrganizationInviteCount,
+} from "@/lib/clerk-organizations"
 
 const notificationSettingsSchema = z.object({
   emailAlerts: z.boolean(),
@@ -68,28 +69,6 @@ const webhookSchema = z.object({
     .array(z.enum(["scan.failed", "score.regression", "report.ready"]))
     .min(1),
   secret: z.string().trim().max(120).optional().default(""),
-})
-
-const inviteSchema = z.object({
-  email: z.email(),
-  role: z.enum(["admin", "member"]).default("member"),
-})
-
-const workspaceSwitchSchema = z.object({
-  workspaceId: z.string(),
-})
-
-const inviteActionSchema = z.object({
-  inviteId: z.string(),
-})
-
-const workspaceMemberRoleSchema = z.object({
-  memberId: z.string(),
-  role: z.enum(["admin", "member"]),
-})
-
-const removeWorkspaceMemberSchema = z.object({
-  memberId: z.string(),
 })
 
 const billingSchema = z.object({
@@ -137,10 +116,6 @@ const listAuditLogsSchema = z.object({
   offset: z.number().int().min(0).default(0),
 })
 
-function normalizeEmail(email: string | null | undefined) {
-  return email?.trim().toLowerCase() ?? null
-}
-
 async function ensureUserSettings(userId: string) {
   let settings = await db.query.userSettings.findFirst({
     where: eq(userSettings.userId, userId),
@@ -160,6 +135,7 @@ async function ensureUserSettings(userId: string) {
 async function buildAccountSummary(context: {
   userId: string
   clerkUserId: string
+  clerkOrganizationId: string
   plan: string
   workspaceId: string
   workspaceRole: string
@@ -169,8 +145,8 @@ async function buildAccountSummary(context: {
     user,
     workspace,
     settings,
-    members,
-    invites,
+    organization,
+    pendingInviteCount,
     subscription,
     onboarding,
     activeWebsites,
@@ -186,19 +162,8 @@ async function buildAccountSummary(context: {
       where: eq(workspaces.id, context.workspaceId),
     }),
     ensureUserSettings(context.userId),
-    db
-      .select({ count: count() })
-      .from(workspaceMembers)
-      .where(eq(workspaceMembers.workspaceId, context.workspaceId)),
-    db
-      .select({ count: count() })
-      .from(workspaceInvites)
-      .where(
-        and(
-          eq(workspaceInvites.workspaceId, context.workspaceId),
-          eq(workspaceInvites.status, "pending")
-        )
-      ),
+    getClerkOrganization(context.clerkOrganizationId),
+    getPendingOrganizationInviteCount(context.clerkOrganizationId),
     ensureWorkspaceBillingSubscription({
       workspaceId: context.workspaceId,
       planSlug: context.plan,
@@ -266,11 +231,11 @@ async function buildAccountSummary(context: {
     },
     workspace: {
       id: context.workspaceId,
-      name: workspace?.name ?? context.workspaceName,
+      name: organization.name ?? workspace?.name ?? context.workspaceName,
       role: context.workspaceRole,
       preferredLocale: (workspace?.preferredLocale ?? "sv") as Locale,
-      memberCount: members[0]?.count ?? 0,
-      pendingInviteCount: invites[0]?.count ?? 0,
+      memberCount: organization.membersCount ?? 0,
+      pendingInviteCount,
     },
     capabilities: {
       scheduledScans: normalizedPlan !== "free_user",
@@ -320,25 +285,10 @@ function requireWorkspaceAdmin(role: string) {
   }
 }
 
-function requireWorkspaceOwner(role: string) {
-  if (role !== "owner") {
-    throw new Error("FORBIDDEN")
-  }
-}
-
 function requireEnterprisePlan(plan: string) {
   if (normalizePlanSlug(plan) !== "enterprise") {
     throw new Error("PLAN_REQUIRES_ENTERPRISE")
   }
-}
-
-function createInviteToken() {
-  const bytes = new Uint8Array(18)
-  crypto.getRandomValues(bytes)
-
-  return `invite_${Array.from(bytes, (byte) =>
-    byte.toString(16).padStart(2, "0")
-  ).join("")}`
 }
 
 function getAccountCacheTags(context: { workspaceId: string; userId: string }) {
@@ -357,229 +307,6 @@ export const getAccountSummary = protectedProcedure.handler(
     )
   }
 )
-
-export const listUserWorkspaces = protectedProcedure.handler(async ({ context }) => {
-  return cachedQuery(
-    {
-      key: `account:user-workspaces:${context.userId}`,
-      ttlSeconds: 60,
-      tags: [userTag(context.userId)],
-    },
-    async () => {
-      const rows = await db
-        .select({
-          workspaceId: workspaces.id,
-          name: workspaces.name,
-          slug: workspaces.slug,
-          role: workspaceMembers.role,
-          createdAt: workspaces.createdAt,
-          planSlug: billingSubscriptions.planSlug,
-        })
-        .from(workspaceMembers)
-        .innerJoin(workspaces, eq(workspaces.id, workspaceMembers.workspaceId))
-        .leftJoin(
-          billingSubscriptions,
-          eq(billingSubscriptions.workspaceId, workspaces.id)
-        )
-        .where(eq(workspaceMembers.userId, context.userId))
-        .orderBy(desc(workspaces.createdAt))
-
-      return rows.map((row) => ({
-        ...row,
-        isActive: row.workspaceId === context.workspaceId,
-        plan: getPlanDefinition(row.planSlug ?? context.plan),
-      }))
-    }
-  )
-})
-
-export const switchActiveWorkspace = protectedProcedure
-  .input(workspaceSwitchSchema)
-  .handler(async ({ context, input }) => {
-    const membership = await db.query.workspaceMembers.findFirst({
-      where: and(
-        eq(workspaceMembers.userId, context.userId),
-        eq(workspaceMembers.workspaceId, input.workspaceId)
-      ),
-    })
-
-    if (!membership) {
-      throw new Error("FORBIDDEN")
-    }
-
-    await db
-      .update(users)
-      .set({ activeWorkspaceId: input.workspaceId })
-      .where(eq(users.id, context.userId))
-
-    await invalidateCacheTags([userTag(context.userId), workspaceTag(input.workspaceId)])
-
-    return { success: true }
-  })
-
-export const listPendingInvites = protectedProcedure.handler(async ({ context }) => {
-  return cachedQuery(
-    {
-      key: `account:pending-invites:${context.userId}`,
-      ttlSeconds: 60,
-      tags: [userTag(context.userId)],
-    },
-    async () => {
-      const user = await db.query.users.findFirst({
-        where: eq(users.id, context.userId),
-      })
-      const email = normalizeEmail(user?.email)
-
-      if (!email) {
-        return []
-      }
-
-      return db
-        .select({
-          id: workspaceInvites.id,
-          workspaceId: workspaceInvites.workspaceId,
-          workspaceName: workspaces.name,
-          email: workspaceInvites.email,
-          role: workspaceInvites.role,
-          status: workspaceInvites.status,
-          expiresAt: workspaceInvites.expiresAt,
-          createdAt: workspaceInvites.createdAt,
-        })
-        .from(workspaceInvites)
-        .innerJoin(workspaces, eq(workspaces.id, workspaceInvites.workspaceId))
-        .where(
-          and(
-            eq(workspaceInvites.status, "pending"),
-            sql`lower(${workspaceInvites.email}) = ${email}`
-          )
-        )
-        .orderBy(desc(workspaceInvites.createdAt))
-    }
-  )
-})
-
-export const acceptWorkspaceInvite = protectedProcedure
-  .input(inviteActionSchema)
-  .handler(async ({ context, input }) => {
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, context.userId),
-    })
-    const email = normalizeEmail(user?.email)
-
-    if (!email) {
-      throw new Error("MISSING_EMAIL")
-    }
-
-    const invite = await db.query.workspaceInvites.findFirst({
-      where: and(
-        eq(workspaceInvites.id, input.inviteId),
-        eq(workspaceInvites.status, "pending")
-      ),
-    })
-
-    if (!invite || normalizeEmail(invite.email) !== email) {
-      throw new Error("FORBIDDEN")
-    }
-
-    if (new Date(invite.expiresAt) < new Date()) {
-      await db
-        .update(workspaceInvites)
-        .set({
-          status: "expired",
-          updatedAt: new Date().toISOString(),
-        })
-        .where(eq(workspaceInvites.id, input.inviteId))
-      throw new Error("INVITE_EXPIRED")
-    }
-
-    await db.transaction(async (tx) => {
-      const existingMembership = await tx.query.workspaceMembers.findFirst({
-        where: and(
-          eq(workspaceMembers.userId, context.userId),
-          eq(workspaceMembers.workspaceId, invite.workspaceId)
-        ),
-      })
-
-      if (!existingMembership) {
-        await tx.insert(workspaceMembers).values({
-          workspaceId: invite.workspaceId,
-          userId: context.userId,
-          role: invite.role,
-        })
-      }
-
-      await tx
-        .update(workspaceInvites)
-        .set({
-          status: "accepted",
-          updatedAt: new Date().toISOString(),
-        })
-        .where(eq(workspaceInvites.id, invite.id))
-
-      await tx
-        .update(users)
-        .set({ activeWorkspaceId: invite.workspaceId })
-        .where(eq(users.id, context.userId))
-    })
-
-    await appendAuditLog({
-      workspaceId: invite.workspaceId,
-      actorUserId: context.userId,
-      targetType: "workspace_invite",
-      targetId: invite.id,
-      action: "workspace.invite_accepted",
-      summary: `${email} gick med i workspacet`,
-    })
-
-    await invalidateCacheTags([userTag(context.userId), workspaceTag(invite.workspaceId)])
-
-    return { success: true, workspaceId: invite.workspaceId }
-  })
-
-export const declineWorkspaceInvite = protectedProcedure
-  .input(inviteActionSchema)
-  .handler(async ({ context, input }) => {
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, context.userId),
-    })
-    const email = normalizeEmail(user?.email)
-
-    if (!email) {
-      throw new Error("MISSING_EMAIL")
-    }
-
-    const invite = await db.query.workspaceInvites.findFirst({
-      where: and(
-        eq(workspaceInvites.id, input.inviteId),
-        eq(workspaceInvites.status, "pending")
-      ),
-    })
-
-    if (!invite || normalizeEmail(invite.email) !== email) {
-      throw new Error("FORBIDDEN")
-    }
-
-    await db
-      .update(workspaceInvites)
-      .set({
-        status: "revoked",
-        updatedAt: new Date().toISOString(),
-      })
-      .where(eq(workspaceInvites.id, invite.id))
-
-    await appendAuditLog({
-      workspaceId: invite.workspaceId,
-      actorUserId: context.userId,
-      targetType: "workspace_invite",
-      targetId: invite.id,
-      action: "workspace.invite_declined",
-      summary: `${email} avböjde en inbjudan`,
-    })
-
-    await invalidateCacheTags([userTag(context.userId), workspaceTag(invite.workspaceId)])
-
-    return { success: true }
-  })
 
 export const getDashboardOverview = protectedProcedure.handler(
   async ({ context }) => {
@@ -933,243 +660,6 @@ export const deleteWebhookDestination = protectedProcedure
     return { success: true }
   })
 
-export const listWorkspaceMembers = protectedProcedure.handler(
-  async ({ context }) => {
-    return cachedQuery(
-      {
-        key: `account:workspace-members:${context.workspaceId}`,
-        ttlSeconds: 120,
-        tags: [workspaceTag(context.workspaceId)],
-      },
-      async () => {
-        const [members, invites] = await Promise.all([
-          db
-            .select({
-              id: workspaceMembers.id,
-              role: workspaceMembers.role,
-              joinedAt: workspaceMembers.joinedAt,
-              userId: users.id,
-              clerkUserId: users.clerkUserId,
-              email: users.email,
-            })
-            .from(workspaceMembers)
-            .innerJoin(users, eq(users.id, workspaceMembers.userId))
-            .where(eq(workspaceMembers.workspaceId, context.workspaceId))
-            .orderBy(desc(workspaceMembers.createdAt)),
-          db.query.workspaceInvites.findMany({
-            where: eq(workspaceInvites.workspaceId, context.workspaceId),
-            orderBy: desc(workspaceInvites.createdAt),
-          }),
-        ])
-
-        return { members, invites }
-      }
-    )
-  }
-)
-
-export const createWorkspaceInvite = protectedProcedure
-  .input(inviteSchema)
-  .handler(async ({ context, input }) => {
-    requireWorkspaceAdmin(context.workspaceRole)
-    await assertRateLimit({
-      key: `ratelimit:account:invites:${context.workspaceId}:${context.userId}`,
-      windowMs: 60_000,
-      limit: 10,
-    })
-
-    const normalizedEmail = normalizeEmail(input.email)
-    const currentUser = await db.query.users.findFirst({
-      where: eq(users.id, context.userId),
-    })
-
-    if (normalizedEmail && normalizeEmail(currentUser?.email) === normalizedEmail) {
-      throw new Error("INVALID_INVITE_TARGET")
-    }
-
-    const existingMember = normalizedEmail
-      ? await db
-          .select({ id: workspaceMembers.id })
-          .from(workspaceMembers)
-          .innerJoin(users, eq(users.id, workspaceMembers.userId))
-          .where(
-            and(
-              eq(workspaceMembers.workspaceId, context.workspaceId),
-              sql`lower(${users.email}) = ${normalizedEmail}`
-            )
-          )
-          .limit(1)
-      : []
-
-    if (existingMember[0]) {
-      throw new Error("ALREADY_MEMBER")
-    }
-
-    const existingInvite = await db.query.workspaceInvites.findFirst({
-      where: and(
-        eq(workspaceInvites.workspaceId, context.workspaceId),
-        eq(workspaceInvites.status, "pending"),
-        sql`lower(${workspaceInvites.email}) = ${normalizedEmail}`
-      ),
-    })
-
-    if (existingInvite) {
-      throw new Error("INVITE_ALREADY_PENDING")
-    }
-
-    const token = createInviteToken()
-    const expiresAt = new Date(
-      Date.now() + 1000 * 60 * 60 * 24 * 7
-    ).toISOString()
-    const inserted = await db
-      .insert(workspaceInvites)
-      .values({
-        workspaceId: context.workspaceId,
-        email: normalizedEmail ?? input.email,
-        role: input.role,
-        invitedByUserId: context.userId,
-        token,
-        expiresAt,
-      })
-      .returning()
-
-    await appendAuditLog({
-      workspaceId: context.workspaceId,
-      actorUserId: context.userId,
-      targetType: "workspace_invite",
-      targetId: inserted[0]?.id,
-      action: "workspace.invite_created",
-      summary: `Inbjudan skickades till ${input.email}`,
-      metadata: { role: input.role },
-    })
-
-    await createNotificationDelivery({
-      workspaceId: context.workspaceId,
-      channel: "email",
-      eventType: "workspace.invite",
-      destination: input.email,
-      status: "sent",
-      attempts: 1,
-      payload: { role: input.role, token },
-    })
-
-    await invalidateCacheTags([workspaceTag(context.workspaceId)])
-
-    return inserted[0]
-  })
-
-export const revokeWorkspaceInvite = protectedProcedure
-  .input(z.object({ inviteId: z.string() }))
-  .handler(async ({ context, input }) => {
-    requireWorkspaceAdmin(context.workspaceRole)
-
-    const updated = await db
-      .update(workspaceInvites)
-      .set({
-        status: "revoked",
-        updatedAt: new Date().toISOString(),
-      })
-      .where(
-        and(
-          eq(workspaceInvites.id, input.inviteId),
-          eq(workspaceInvites.workspaceId, context.workspaceId)
-        )
-      )
-      .returning()
-
-    await appendAuditLog({
-      workspaceId: context.workspaceId,
-      actorUserId: context.userId,
-      targetType: "workspace_invite",
-      targetId: input.inviteId,
-      action: "workspace.invite_revoked",
-      summary: "Inbjudan återkallades",
-    })
-
-    await invalidateCacheTags([workspaceTag(context.workspaceId)])
-
-    return updated[0] ?? null
-  })
-
-export const updateWorkspaceMemberRole = protectedProcedure
-  .input(workspaceMemberRoleSchema)
-  .handler(async ({ context, input }) => {
-    requireWorkspaceOwner(context.workspaceRole)
-
-    const member = await db.query.workspaceMembers.findFirst({
-      where: and(
-        eq(workspaceMembers.id, input.memberId),
-        eq(workspaceMembers.workspaceId, context.workspaceId)
-      ),
-    })
-
-    if (!member || member.role === "owner") {
-      throw new Error("FORBIDDEN")
-    }
-
-    const updated = await db
-      .update(workspaceMembers)
-      .set({ role: input.role })
-      .where(eq(workspaceMembers.id, input.memberId))
-      .returning()
-
-    await appendAuditLog({
-      workspaceId: context.workspaceId,
-      actorUserId: context.userId,
-      targetType: "workspace_member",
-      targetId: input.memberId,
-      action: "workspace.member_role_updated",
-      summary: `En medlems roll ändrades till ${input.role}`,
-      metadata: { role: input.role },
-    })
-
-    await invalidateCacheTags([workspaceTag(context.workspaceId)])
-
-    return updated[0] ?? null
-  })
-
-export const removeWorkspaceMember = protectedProcedure
-  .input(removeWorkspaceMemberSchema)
-  .handler(async ({ context, input }) => {
-    requireWorkspaceAdmin(context.workspaceRole)
-
-    const member = await db.query.workspaceMembers.findFirst({
-      where: and(
-        eq(workspaceMembers.id, input.memberId),
-        eq(workspaceMembers.workspaceId, context.workspaceId)
-      ),
-    })
-
-    if (!member || member.role === "owner" || member.userId === context.userId) {
-      throw new Error("FORBIDDEN")
-    }
-
-    await db.delete(workspaceMembers).where(eq(workspaceMembers.id, input.memberId))
-
-    const fallbackMembership = await db.query.workspaceMembers.findFirst({
-      where: eq(workspaceMembers.userId, member.userId),
-      orderBy: desc(workspaceMembers.createdAt),
-    })
-
-    await db
-      .update(users)
-      .set({ activeWorkspaceId: fallbackMembership?.workspaceId ?? null })
-      .where(eq(users.id, member.userId))
-
-    await appendAuditLog({
-      workspaceId: context.workspaceId,
-      actorUserId: context.userId,
-      targetType: "workspace_member",
-      targetId: input.memberId,
-      action: "workspace.member_removed",
-      summary: "En medlem togs bort från workspacet",
-    })
-
-    await invalidateCacheTags([workspaceTag(context.workspaceId), userTag(member.userId)])
-
-    return { success: true }
-  })
-
 export const getBillingSummary = protectedProcedure.handler(
   async ({ context }) => {
     const summary = await cachedQuery(
@@ -1462,3 +952,4 @@ export const createSupportRequest = protectedProcedure
 
     return inserted[0]
   })
+

@@ -24,7 +24,6 @@ export const users = pgTable(
     clerkUserId: text("clerk_user_id").notNull(),
     email: text(),
     plan: text().default("free").notNull(),
-    activeWorkspaceId: text("active_workspace_id"),
     createdAt: timestamp("created_at", {
       withTimezone: true,
       mode: "string",
@@ -41,6 +40,7 @@ export const workspaces = pgTable("workspaces", {
     .default(sql`nanoid('ws_', 22)`)
     .primaryKey()
     .notNull(),
+  clerkOrganizationId: text("clerk_organization_id"),
   name: text().notNull(),
   slug: text().notNull(),
   ownerUserId: text("owner_user_id").notNull(),
@@ -54,96 +54,8 @@ export const workspaces = pgTable("workspaces", {
     withTimezone: true,
     mode: "string",
   }).defaultNow(),
-})
-
-export const workspaceMembers = pgTable(
-  "workspace_members",
-  {
-    id: text()
-      .default(sql`nanoid('wsm_', 22)`)
-      .primaryKey()
-      .notNull(),
-    workspaceId: text("workspace_id").notNull(),
-    userId: text("user_id").notNull(),
-    role: text().default("owner").notNull(),
-    joinedAt: timestamp("joined_at", {
-      withTimezone: true,
-      mode: "string",
-    }).defaultNow(),
-    createdAt: timestamp("created_at", {
-      withTimezone: true,
-      mode: "string",
-    }).defaultNow(),
-  },
-  (table) => [
-    unique("workspace_members_workspace_user_key").on(
-      table.workspaceId,
-      table.userId
-    ),
-    foreignKey({
-      columns: [table.workspaceId],
-      foreignColumns: [workspaces.id],
-      name: "workspace_members_workspace_id_fkey",
-    }).onDelete("cascade"),
-    foreignKey({
-      columns: [table.userId],
-      foreignColumns: [users.id],
-      name: "workspace_members_user_id_fkey",
-    }).onDelete("cascade"),
-    check(
-      "workspace_members_role_check",
-      sql`role = ANY (ARRAY['owner'::text, 'admin'::text, 'member'::text])`
-    ),
-  ]
-)
-
-export const workspaceInvites = pgTable(
-  "workspace_invites",
-  {
-    id: text()
-      .default(sql`nanoid('inv_', 22)`)
-      .primaryKey()
-      .notNull(),
-    workspaceId: text("workspace_id").notNull(),
-    email: text().notNull(),
-    role: text().default("member").notNull(),
-    invitedByUserId: text("invited_by_user_id").notNull(),
-    status: text().default("pending").notNull(),
-    token: text().notNull(),
-    expiresAt: timestamp("expires_at", {
-      withTimezone: true,
-      mode: "string",
-    }).notNull(),
-    createdAt: timestamp("created_at", {
-      withTimezone: true,
-      mode: "string",
-    }).defaultNow(),
-    updatedAt: timestamp("updated_at", {
-      withTimezone: true,
-      mode: "string",
-    }).defaultNow(),
-  },
-  (table) => [
-    unique("workspace_invites_token_key").on(table.token),
-    foreignKey({
-      columns: [table.workspaceId],
-      foreignColumns: [workspaces.id],
-      name: "workspace_invites_workspace_id_fkey",
-    }).onDelete("cascade"),
-    foreignKey({
-      columns: [table.invitedByUserId],
-      foreignColumns: [users.id],
-      name: "workspace_invites_invited_by_user_id_fkey",
-    }).onDelete("cascade"),
-    check(
-      "workspace_invites_role_check",
-      sql`role = ANY (ARRAY['owner'::text, 'admin'::text, 'member'::text])`
-    ),
-    check(
-      "workspace_invites_status_check",
-      sql`status = ANY (ARRAY['pending'::text, 'accepted'::text, 'revoked'::text, 'expired'::text])`
-    ),
-  ]
+},
+  (table) => [unique("workspaces_clerk_organization_id_key").on(table.clerkOrganizationId)]
 )
 
 export const billingSubscriptions = pgTable(
@@ -704,8 +616,6 @@ export type Report = InferSelectModel<typeof reports>
 export type UserSettings = InferSelectModel<typeof userSettings>
 export type WebhookDestination = InferSelectModel<typeof webhookDestinations>
 export type Workspace = InferSelectModel<typeof workspaces>
-export type WorkspaceMember = InferSelectModel<typeof workspaceMembers>
-export type WorkspaceInvite = InferSelectModel<typeof workspaceInvites>
 export type BillingSubscription = InferSelectModel<typeof billingSubscriptions>
 export type OnboardingState = InferSelectModel<typeof onboardingStates>
 export type AuditLog = InferSelectModel<typeof auditLogs>

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, type ReactNode } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query"
 import { useChangeLanguage } from "next-i18next/client"
@@ -52,13 +53,13 @@ import {
 import {
   Bell,
   CheckCircle2,
+  CreditCard,
   History,
   KeyRound,
   LifeBuoy,
   MailPlus,
   Rocket,
   Trash2,
-  Users,
   Webhook,
   X,
 } from "lucide-react"
@@ -78,6 +79,7 @@ type SupportFormState = {
 
 export type SettingsSection =
   | "all"
+  | "billing"
   | "notifications"
   | "team"
   | "integrations"
@@ -102,10 +104,6 @@ export default function SettingsCenter({
   const webhooksQuery = useQuery({
     queryKey: ["webhookDestinations"],
     queryFn: async () => client.listWebhookDestinations(),
-  })
-  const workspaceQuery = useQuery({
-    queryKey: ["workspaceMembers"],
-    queryFn: async () => client.listWorkspaceMembers(),
   })
   const auditLogsPageSize = 10
   const auditQuery = useInfiniteQuery({
@@ -135,15 +133,6 @@ export default function SettingsCenter({
     queryKey: ["supportRequests"],
     queryFn: async () => client.listSupportRequests(),
   })
-  const userWorkspacesQuery = useQuery({
-    queryKey: ["userWorkspaces"],
-    queryFn: async () => client.listUserWorkspaces(),
-  })
-  const pendingInvitesQuery = useQuery({
-    queryKey: ["pendingInvites"],
-    queryFn: async () => client.listPendingInvites(),
-  })
-
   const [settingsForm, setSettingsForm] = useState({
     emailAlerts: undefined as boolean | undefined,
     weeklyDigest: undefined as boolean | undefined,
@@ -162,10 +151,6 @@ export default function SettingsCenter({
     url: "",
     eventTypes: ["scan.failed", "score.regression"] as string[],
     secret: "",
-  })
-  const [inviteForm, setInviteForm] = useState({
-    email: "",
-    role: "member" as "admin" | "member",
   })
   const [apiKeyLabel, setApiKeyLabel] = useState("")
   const [latestApiKey, setLatestApiKey] = useState<string | null>(null)
@@ -265,75 +250,6 @@ export default function SettingsCenter({
     },
   })
 
-  const createInvite = useMutation({
-    mutationFn: async () =>
-      client.createWorkspaceInvite({
-        email: inviteForm.email,
-        role: inviteForm.role,
-      }),
-    onSuccess: () => {
-      setInviteForm({ email: "", role: "member" })
-      invalidateAccountViews()
-      toast.success(t("settingsCenter.inviteCreated"))
-    },
-  })
-
-  const revokeInvite = useMutation({
-    mutationFn: async (inviteId: string) =>
-      client.revokeWorkspaceInvite({ inviteId }),
-    onSuccess: () => {
-      invalidateAccountViews()
-      toast.success(t("settingsCenter.inviteRevoked"))
-    },
-  })
-
-  const switchWorkspace = useMutation({
-    mutationFn: async (workspaceId: string) =>
-      client.switchActiveWorkspace({ workspaceId }),
-    onSuccess: () => {
-      invalidateAccountViews()
-      router.push("/dashboard")
-      router.refresh()
-      toast.success(t("settingsCenter.workspaceSwitched"))
-    },
-  })
-  const acceptInvite = useMutation({
-    mutationFn: async (inviteId: string) =>
-      client.acceptWorkspaceInvite({ inviteId }),
-    onSuccess: () => {
-      invalidateAccountViews()
-      router.push("/dashboard")
-      router.refresh()
-      toast.success(t("settingsCenter.inviteAccepted"))
-    },
-  })
-  const declineInvite = useMutation({
-    mutationFn: async (inviteId: string) =>
-      client.declineWorkspaceInvite({ inviteId }),
-    onSuccess: () => {
-      invalidateAccountViews()
-      toast.success(t("settingsCenter.inviteDeclined"))
-    },
-  })
-  const updateMemberRole = useMutation({
-    mutationFn: async (payload: {
-      memberId: string
-      role: "admin" | "member"
-    }) => client.updateWorkspaceMemberRole(payload),
-    onSuccess: () => {
-      invalidateAccountViews()
-      toast.success(t("settingsCenter.memberRoleUpdated"))
-    },
-  })
-  const removeMember = useMutation({
-    mutationFn: async (memberId: string) =>
-      client.removeWorkspaceMember({ memberId }),
-    onSuccess: () => {
-      invalidateAccountViews()
-      toast.success(t("settingsCenter.memberRemoved"))
-    },
-  })
-
   const updateOnboarding = useMutation({
     mutationFn: async (step: {
       key:
@@ -394,16 +310,86 @@ export default function SettingsCenter({
     )
   }
 
-  const workspace = workspaceQuery.data
   const auditLogs = auditQuery.data?.pages.flatMap((page) => page) ?? []
   const deliveries = deliveriesQuery.data ?? []
   const onboarding = onboardingQuery.data
   const webhooks = webhooksQuery.data ?? []
   const apiKeys = apiKeysQuery.data ?? []
   const supportRequests = supportQuery.data ?? []
-  const userWorkspaces = userWorkspacesQuery.data ?? []
-  const pendingInvites = pendingInvitesQuery.data ?? []
-  const isOwner = account.workspace.role === "owner"
+  const userWorkspaces: Array<{
+    workspaceId: string
+    name: string
+    role: "owner" | "admin" | "member"
+    plan: { slug: string }
+    isActive: boolean
+  }> = []
+  const pendingInvites: Array<{
+    id: string
+    workspaceName: string
+    role: "owner" | "admin" | "member"
+    expiresAt: string | null
+  }> = []
+  const workspace: {
+    members: Array<{
+      id: string
+      email: string | null
+      clerkUserId: string
+      role: "owner" | "admin" | "member"
+    }>
+    invites: Array<{
+      id: string
+      email: string
+      role: "owner" | "admin" | "member"
+      status: "pending" | "accepted" | "revoked" | "expired"
+    }>
+  } = { members: [], invites: [] }
+  const isOwner = false
+  const switchWorkspace = {
+    isPending: false,
+    mutate: (workspaceId: string) => {
+      void workspaceId
+    },
+  }
+  const acceptInvite = {
+    isPending: false,
+    mutate: (inviteId: string) => {
+      void inviteId
+    },
+  }
+  const declineInvite = {
+    isPending: false,
+    mutate: (inviteId: string) => {
+      void inviteId
+    },
+  }
+  const updateMemberRole = {
+    isPending: false,
+    mutate: (payload: { memberId: string; role: "admin" | "member" }) => {
+      void payload
+    },
+  }
+  const removeMember = {
+    isPending: false,
+    mutate: (memberId: string) => {
+      void memberId
+    },
+  }
+  const setInviteForm = (
+    value:
+      | { email: string; role: "admin" | "member" }
+      | ((
+          prev: { email: string; role: "admin" | "member" }
+        ) => { email: string; role: "admin" | "member" })
+  ) => {
+    void value
+  }
+  const inviteForm = { email: "", role: "member" as const }
+  const createInvite = { isPending: false, mutate: () => {} }
+  const revokeInvite = {
+    mutate: (inviteId: string) => {
+      void inviteId
+    },
+  }
   const showSection = (...sections: SettingsSection[]) =>
     section === "all" || sections.includes(section)
 
@@ -472,88 +458,171 @@ export default function SettingsCenter({
         </div>
       ) : null}
 
-      {showSection("all") ? (
+      {showSection("all", "billing") ? (
         <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+          {showSection("all") ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Rocket className="h-4 w-4" />
+                  {t("settingsCenter.onboardingTitle")}
+                </CardTitle>
+                <CardDescription>
+                  {t("settingsCenter.onboardingDescription")}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <OnboardingRow
+                  label={t("settingsCenter.onboarding.firstWebsiteAdded")}
+                  checked={
+                    onboarding?.hasAddedWebsite ??
+                    account.onboarding.hasAddedWebsite
+                  }
+                  onToggle={(completed) =>
+                    updateOnboarding.mutate({
+                      key: "hasAddedWebsite",
+                      completed,
+                    })
+                  }
+                />
+                <OnboardingRow
+                  label={t("settingsCenter.onboarding.firstScanRun")}
+                  checked={
+                    onboarding?.hasRunFirstScan ??
+                    account.onboarding.hasRunFirstScan
+                  }
+                  onToggle={(completed) =>
+                    updateOnboarding.mutate({
+                      key: "hasRunFirstScan",
+                      completed,
+                    })
+                  }
+                />
+                <OnboardingRow
+                  label={t("settingsCenter.onboarding.reportOpened")}
+                  checked={
+                    onboarding?.hasViewedReport ??
+                    account.onboarding.hasViewedReport
+                  }
+                  onToggle={(completed) =>
+                    updateOnboarding.mutate({
+                      key: "hasViewedReport",
+                      completed,
+                    })
+                  }
+                />
+                <OnboardingRow
+                  label={t("settingsCenter.onboarding.alertsConfigured")}
+                  checked={
+                    onboarding?.hasConfiguredAlerts ??
+                    account.onboarding.hasConfiguredAlerts
+                  }
+                  onToggle={(completed) =>
+                    updateOnboarding.mutate({
+                      key: "hasConfiguredAlerts",
+                      completed,
+                    })
+                  }
+                />
+                <OnboardingRow
+                  label={t("settingsCenter.onboarding.integrationConnected")}
+                  checked={
+                    onboarding?.hasConnectedIntegration ??
+                    account.onboarding.hasConnectedIntegration
+                  }
+                  onToggle={(completed) =>
+                    updateOnboarding.mutate({
+                      key: "hasConnectedIntegration",
+                      completed,
+                    })
+                  }
+                />
+                <div className="rounded-xl border p-4">
+                  <p className="text-sm font-medium">
+                    {t("settingsApi.restApiTitle")}
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {t("settingsCenter.restApiHint")}
+                  </p>
+                  <div className="mt-3 space-y-2 font-mono text-xs text-muted-foreground">
+                    <p>GET /api/v1/workspaces/current</p>
+                    <p>GET /api/v1/websites</p>
+                    <p>GET /api/v1/websites/:id/scans/latest</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Rocket className="h-4 w-4" />
-                {t("settingsCenter.onboardingTitle")}
+                <CreditCard className="h-4 w-4" />
+                {t("settingsCenter.billingTitle")}
               </CardTitle>
               <CardDescription>
-                {t("settingsCenter.onboardingDescription")}
+                {t("settingsCenter.billingOverviewDescription")}
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <OnboardingRow
-                label={t("settingsCenter.onboarding.firstWebsiteAdded")}
-                checked={
-                  onboarding?.hasAddedWebsite ??
-                  account.onboarding.hasAddedWebsite
-                }
-                onToggle={(completed) =>
-                  updateOnboarding.mutate({ key: "hasAddedWebsite", completed })
-                }
-              />
-              <OnboardingRow
-                label={t("settingsCenter.onboarding.firstScanRun")}
-                checked={
-                  onboarding?.hasRunFirstScan ??
-                  account.onboarding.hasRunFirstScan
-                }
-                onToggle={(completed) =>
-                  updateOnboarding.mutate({ key: "hasRunFirstScan", completed })
-                }
-              />
-              <OnboardingRow
-                label={t("settingsCenter.onboarding.reportOpened")}
-                checked={
-                  onboarding?.hasViewedReport ??
-                  account.onboarding.hasViewedReport
-                }
-                onToggle={(completed) =>
-                  updateOnboarding.mutate({ key: "hasViewedReport", completed })
-                }
-              />
-              <OnboardingRow
-                label={t("settingsCenter.onboarding.alertsConfigured")}
-                checked={
-                  onboarding?.hasConfiguredAlerts ??
-                  account.onboarding.hasConfiguredAlerts
-                }
-                onToggle={(completed) =>
-                  updateOnboarding.mutate({
-                    key: "hasConfiguredAlerts",
-                    completed,
-                  })
-                }
-              />
-              <OnboardingRow
-                label={t("settingsCenter.onboarding.integrationConnected")}
-                checked={
-                  onboarding?.hasConnectedIntegration ??
-                  account.onboarding.hasConnectedIntegration
-                }
-                onToggle={(completed) =>
-                  updateOnboarding.mutate({
-                    key: "hasConnectedIntegration",
-                    completed,
-                  })
-                }
-              />
-              <div className="rounded-xl border p-4">
-                <p className="text-sm font-medium">
-                  {t("settingsApi.restApiTitle")}
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {t("settingsCenter.restApiHint")}
-                </p>
-                <div className="mt-3 space-y-2 font-mono text-xs text-muted-foreground">
-                  <p>GET /api/v1/workspaces/current</p>
-                  <p>GET /api/v1/websites</p>
-                  <p>GET /api/v1/websites/:id/scans/latest</p>
-                </div>
+            <CardContent className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <BillingStat
+                  label={t("settingsCenter.plan")}
+                  value={getPlanLabel(account.plan.slug, t)}
+                />
+                <BillingStat
+                  label={t("settingsCenter.billingStatus")}
+                  value={getBillingStatusLabel(account.billing.status, t)}
+                />
+                <BillingStat
+                  label={t("settingsCenter.dunningStatus")}
+                  value={getDunningStatusLabel(
+                    account.billing.dunningStatus,
+                    t
+                  )}
+                />
+                <BillingStat
+                  label={t("settingsCenter.billingCycle")}
+                  value={getBillingCycleLabel(account.billing.amountSek, t)}
+                />
+                <BillingStat
+                  label={t("settingsCenter.monthlyAmount")}
+                  value={formatSekAmount(account.billing.amountSek, locale)}
+                />
+                <BillingStat
+                  label={getBillingDateLabel(account.billing, t)}
+                  value={getBillingDateValue(account.billing, t, locale)}
+                />
               </div>
+              <div className="flex flex-wrap gap-2">
+                {account.billing.manageUrl ? (
+                  <Button asChild>
+                    <Link
+                      href={account.billing.manageUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {t("settingsCenter.billingPrimaryCta")}
+                    </Link>
+                  </Button>
+                ) : null}
+                {getUpgradeHref(account.billing) ? (
+                  <Button asChild variant="outline">
+                    <Link
+                      href={getUpgradeHref(account.billing)!}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {t("settingsCenter.billingSecondaryCta")}
+                    </Link>
+                  </Button>
+                ) : null}
+              </div>
+              {!account.billing.manageUrl &&
+              !getUpgradeHref(account.billing) ? (
+                <p className="text-sm text-muted-foreground">
+                  {t("settingsCenter.billingNoAction")}
+                </p>
+              ) : null}
             </CardContent>
           </Card>
         </div>
@@ -669,12 +738,11 @@ export default function SettingsCenter({
           {showSection("team") ? (
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  {t("settingsCenter.team.title")}
-                </CardTitle>
+                <CardTitle>{t("settingsCenter.team.title")}</CardTitle>
                 <CardDescription>
-                  {t("settingsCenter.team.description")}
+                  Medlemskap, roller och inbjudningar hanteras via Clerk
+                  Organizations. Språket för den aktiva organizationen styrs
+                  fortfarande här.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -1334,14 +1402,11 @@ function invalidateAccountViews() {
   qc.invalidateQueries({ queryKey: ["accountSummary"] })
   qc.invalidateQueries({ queryKey: ["dashboardOverview"] })
   qc.invalidateQueries({ queryKey: ["webhookDestinations"] })
-  qc.invalidateQueries({ queryKey: ["workspaceMembers"] })
   qc.invalidateQueries({ queryKey: ["auditLogs"] })
   qc.invalidateQueries({ queryKey: ["notificationDeliveries"] })
   qc.invalidateQueries({ queryKey: ["onboardingState"] })
   qc.invalidateQueries({ queryKey: ["apiKeys"] })
   qc.invalidateQueries({ queryKey: ["supportRequests"] })
-  qc.invalidateQueries({ queryKey: ["userWorkspaces"] })
-  qc.invalidateQueries({ queryKey: ["pendingInvites"] })
 }
 
 function formatStamp(
@@ -1482,3 +1547,78 @@ function LogCard({
     </Card>
   )
 }
+
+function BillingStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border p-3">
+      <p className="text-xs tracking-[0.16em] text-muted-foreground uppercase">
+        {label}
+      </p>
+      <p className="mt-2 text-sm font-medium">{value}</p>
+    </div>
+  )
+}
+
+function getUpgradeHref(
+  billing: SettingsCenterAccount["billing"]
+): string | null | undefined {
+  const recommendedUpgrade = billing.recommendedUpgrade as
+    | "starter"
+    | "pro"
+    | "enterprise"
+    | undefined
+
+  return recommendedUpgrade ? billing.checkout[recommendedUpgrade] : null
+}
+
+function getBillingDateLabel(
+  billing: SettingsCenterAccount["billing"],
+  t: TFunction
+) {
+  if (billing.cancelAtPeriodEnd || billing.status === "canceled") {
+    return t("settingsCenter.billingCancelScheduled")
+  }
+
+  if (billing.trialEndsAt) {
+    return t("settingsCenter.billingTrialEnds")
+  }
+
+  return t("settingsCenter.billingRenewal")
+}
+
+function getBillingDateValue(
+  billing: SettingsCenterAccount["billing"],
+  t: TFunction,
+  locale: Locale
+) {
+  const value =
+    billing.cancelAtPeriodEnd || billing.status === "canceled"
+      ? billing.currentPeriodEndsAt
+      : (billing.trialEndsAt ?? billing.currentPeriodEndsAt)
+
+  return value ? formatDate(value, locale) : t("settingsCenter.billingNone")
+}
+
+function getBillingCycleLabel(amountSek: number, t: TFunction) {
+  if (amountSek > 0) {
+    return t("settingsCenter.billingCycleMonthly")
+  }
+
+  return t("settingsCenter.billingCycleUnknown")
+}
+
+function formatSekAmount(amountSek: number, locale: Locale) {
+  if (amountSek <= 0) {
+    return "SEK -"
+  }
+
+  return new Intl.NumberFormat(locale === "sv" ? "sv-SE" : "en-US", {
+    style: "currency",
+    currency: "SEK",
+    maximumFractionDigits: 0,
+  }).format(amountSek)
+}
+
+type SettingsCenterAccount = NonNullable<
+  Awaited<ReturnType<typeof client.getAccountSummary>>
+>

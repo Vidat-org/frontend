@@ -2,7 +2,11 @@ import { db } from "@/db/drizzle"
 import { websites } from "@/migrations/schema"
 import { and, count, desc, eq } from "drizzle-orm"
 import { protectedProcedure } from "../orpc"
-import { createWebsiteSchema, intervalToSeconds } from "@/lib/schemas/website"
+import {
+  createWebsiteSchema,
+  intervalToSeconds,
+  updateWebsiteSchema,
+} from "@/lib/schemas/website"
 import z from "zod"
 import { planToWebsiteCount } from "@/lib/utils"
 import { ORPCError } from "@orpc/server"
@@ -163,4 +167,79 @@ export const updateWebsiteDeviceType = protectedProcedure
       )
 
     await invalidateWebsiteQueries(context.workspaceId, input.website)
+  })
+
+export const updateWebsite = protectedProcedure
+  .input(updateWebsiteSchema)
+  .handler(async ({ context, input }) => {
+    const interval = intervalToSeconds[input.interval]
+
+    await db
+      .update(websites)
+      .set({
+        name: input.name,
+        url: input.url,
+        intervalSeconds: interval,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(
+        and(
+          eq(websites.workspaceId, context.workspaceId),
+          eq(websites.id, input.id)
+        )
+      )
+
+    await appendAuditLog({
+      workspaceId: context.workspaceId,
+      actorUserId: context.userId,
+      targetType: "website",
+      targetId: input.id,
+      action: "website.updated",
+      summary: `Webbplatsen ${input.url} uppdaterades`,
+      metadata: {
+        intervalSeconds: interval,
+      },
+    })
+
+    await invalidateWebsiteQueries(context.workspaceId, input.id)
+  })
+
+export const deleteWebsite = protectedProcedure
+  .input(z.object({ id: z.string() }))
+  .handler(async ({ context, input }) => {
+    const website = await db.query.websites.findFirst({
+      where: and(
+        eq(websites.workspaceId, context.workspaceId),
+        eq(websites.id, input.id)
+      ),
+    })
+
+    if (!website) {
+      return null
+    }
+
+    await db
+      .delete(websites)
+      .where(
+        and(
+          eq(websites.workspaceId, context.workspaceId),
+          eq(websites.id, input.id)
+        )
+      )
+
+    await appendAuditLog({
+      workspaceId: context.workspaceId,
+      actorUserId: context.userId,
+      targetType: "website",
+      targetId: input.id,
+      action: "website.deleted",
+      summary: `Webbplatsen ${website.url} togs bort`,
+      metadata: {
+        url: website.url,
+      },
+    })
+
+    await invalidateWebsiteQueries(context.workspaceId, input.id)
+
+    return { id: input.id }
   })

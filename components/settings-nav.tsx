@@ -2,7 +2,15 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Bell, History, KeyRound, LifeBuoy, Users, Webhook } from "lucide-react"
+import {
+  Bell,
+  CreditCard,
+  History,
+  KeyRound,
+  LifeBuoy,
+  Users,
+  Webhook,
+} from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useT } from "next-i18next/client"
 
@@ -11,6 +19,11 @@ const items = [
     href: "/dashboard/settings",
     label: "settingsNav.overview",
     match: "/dashboard/settings",
+  },
+  {
+    href: "/dashboard/settings/billing",
+    label: "settingsNav.billing",
+    icon: CreditCard,
   },
   {
     href: "/dashboard/settings/notifications",

@@ -12,8 +12,6 @@ import {
 	users,
 	webhookDestinations,
 	supportRequests,
-	workspaceInvites,
-	workspaceMembers,
 	workspaces,
 	websites,
 } from "./schema";
@@ -43,8 +41,6 @@ export const usersRelations = relations(users, ({many}) => ({
 	websites: many(websites),
 	webhookDestinations: many(webhookDestinations),
 	userSettings: many(userSettings),
-	workspaceMembers: many(workspaceMembers),
-	workspaceInvites: many(workspaceInvites),
 	auditLogs: many(auditLogs),
 	apiKeys: many(apiKeys),
 	supportRequests: many(supportRequests),
@@ -85,8 +81,6 @@ export const scansRelations = relations(scans, ({one, many}) => ({
 
 export const workspacesRelations = relations(workspaces, ({many}) => ({
 	websites: many(websites),
-	members: many(workspaceMembers),
-	invites: many(workspaceInvites),
 	billingSubscriptions: many(billingSubscriptions),
 	onboardingStates: many(onboardingStates),
 	auditLogs: many(auditLogs),
@@ -94,28 +88,6 @@ export const workspacesRelations = relations(workspaces, ({many}) => ({
 	webhookDestinations: many(webhookDestinations),
 	apiKeys: many(apiKeys),
 	supportRequests: many(supportRequests),
-}));
-
-export const workspaceMembersRelations = relations(workspaceMembers, ({one}) => ({
-	workspace: one(workspaces, {
-		fields: [workspaceMembers.workspaceId],
-		references: [workspaces.id]
-	}),
-	user: one(users, {
-		fields: [workspaceMembers.userId],
-		references: [users.id]
-	}),
-}));
-
-export const workspaceInvitesRelations = relations(workspaceInvites, ({one}) => ({
-	workspace: one(workspaces, {
-		fields: [workspaceInvites.workspaceId],
-		references: [workspaces.id]
-	}),
-	invitedByUser: one(users, {
-		fields: [workspaceInvites.invitedByUserId],
-		references: [users.id]
-	}),
 }));
 
 export const billingSubscriptionsRelations = relations(billingSubscriptions, ({one}) => ({

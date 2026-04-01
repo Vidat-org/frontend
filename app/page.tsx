@@ -17,6 +17,11 @@ import {
 } from "lucide-react"
 
 import { getT } from "next-i18next/server"
+import { PricingTable, Show } from "@clerk/nextjs"
+import {
+  CheckoutButton,
+  SubscriptionDetailsButton,
+} from "@clerk/nextjs/experimental"
 
 // --- Datakonstanter ---
 
@@ -716,13 +721,19 @@ export default async function HomePage() {
           </div>
 
           <nav className="flex flex-wrap gap-x-8 gap-y-4 font-medium">
-            {["privacy", "terms", "docs", "contact"].map((key) => (
+            {[
+              { href: "/trust", label: "Trust Center" },
+              { href: "/privacy", label: "Privacy" },
+              { href: "/terms", label: "Terms" },
+              { href: "/security", label: "Security" },
+              { href: "/contact", label: t("home.footer.links.contact") },
+            ].map((item) => (
               <Link
-                key={key}
-                href={`/${key}`}
+                key={item.href}
+                href={item.href}
                 className="transition-colors hover:text-foreground"
               >
-                {t(`home.footer.links.${key}`)}
+                {item.label}
               </Link>
             ))}
           </nav>

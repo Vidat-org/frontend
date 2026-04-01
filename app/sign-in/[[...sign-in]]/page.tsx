@@ -2,8 +2,17 @@ import { SignIn } from "@clerk/nextjs"
 
 export default function SignInPage() {
   return (
-    <div className="flex w-full flex-1 items-center justify-center p-6 md:p-10">
-      <SignIn forceRedirectUrl={"/dashboard"} />
+    <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-background p-6 md:p-10">
+      <div className="w-full max-w-sm">
+        <SignIn
+          forceRedirectUrl={"/dashboard"}
+          appearance={{
+            variables: {
+              colorShadow: "transparent",
+            },
+          }}
+        />
+      </div>
     </div>
   )
 }

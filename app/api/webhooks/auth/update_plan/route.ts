@@ -2,7 +2,7 @@ import { db } from "@/db/drizzle"
 import { invalidateCacheTags, userTag, workspaceTag } from "@/lib/cache"
 import { updateWorkspaceBillingSubscription } from "@/lib/saas"
 import { normalizePlanSlug, planToWebsiteCount } from "@/lib/plans"
-import { users, websites, workspaceMembers } from "@/migrations/schema"
+import { users, websites, workspaces } from "@/migrations/schema"
 import { verifyWebhook } from "@clerk/nextjs/webhooks"
 import { desc, eq } from "drizzle-orm"
 import { NextRequest } from "next/server"
@@ -12,62 +12,86 @@ export async function POST(request: NextRequest) {
     const evt = await verifyWebhook(request)
     const payload = evt.data as {
       items?: Array<{ plan?: { slug?: string | null } | null }> | null
-      payer?: { user_id?: string | null } | null
+      payer?: {
+        user_id?: string | null
+        organization_id?: string | null
+      } | null
     }
     const newPlan = normalizePlanSlug(
       payload.items?.[payload.items.length - 1]?.plan?.slug
     )
     const clerkUserId = payload.payer?.user_id
+    const clerkOrganizationId = payload.payer?.organization_id
 
-    if (!clerkUserId) {
-      return Response.json({ message: "Missing payer user id" }, { status: 400 })
+    if (!clerkUserId && !clerkOrganizationId) {
+      return Response.json(
+        { message: "Missing payer user id or organization id" },
+        { status: 400 }
+      )
     }
 
-    console.log("[plan-change] Webhook received", { clerkUserId, newPlan })
+    console.log("[plan-change] Webhook received", {
+      clerkUserId,
+      clerkOrganizationId,
+      newPlan,
+    })
 
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.clerkUserId, clerkUserId))
+    const [user] = clerkUserId
+      ? await db.select().from(users).where(eq(users.clerkUserId, clerkUserId))
+      : [null]
 
-    if (!user) {
+    if (clerkUserId && !user) {
       console.error("[plan-change] User not found", { clerkUserId })
       return Response.json({ message: "User not found" }, { status: 404 })
     }
 
     console.log("[plan-change] Found user", {
-      userId: user.id,
-      currentPlan: user.plan,
+      userId: user?.id ?? null,
+      currentPlan: user?.plan ?? null,
       newPlan,
     })
 
-    await db
-      .update(users)
-      .set({ plan: newPlan })
-      .where(eq(users.clerkUserId, clerkUserId))
+    if (clerkUserId) {
+      await db
+        .update(users)
+        .set({ plan: newPlan })
+        .where(eq(users.clerkUserId, clerkUserId))
+    }
 
-    const membership = await db.query.workspaceMembers.findFirst({
-      where: eq(workspaceMembers.userId, user.id),
-    })
+    const workspace = clerkOrganizationId
+      ? await db.query.workspaces.findFirst({
+          where: eq(workspaces.clerkOrganizationId, clerkOrganizationId),
+        })
+      : null
 
-    if (membership) {
+    if (workspace) {
       await updateWorkspaceBillingSubscription({
-        workspaceId: membership.workspaceId,
+        workspaceId: workspace.id,
         planSlug: newPlan,
         status: newPlan === "free_user" ? "trialing" : "active",
+        provider: "clerk",
+        providerCustomerId: clerkOrganizationId ?? null,
       })
 
       await invalidateCacheTags([
-        workspaceTag(membership.workspaceId),
-        userTag(user.id),
+        workspaceTag(workspace.id),
+        ...(user ? [userTag(user.id)] : []),
       ])
     }
 
-    console.log("[plan-change] Plan updated", { userId: user.id, newPlan })
+    console.log("[plan-change] Plan updated", {
+      userId: user?.id ?? null,
+      workspaceId: workspace?.id ?? null,
+      newPlan,
+    })
 
     const limit = planToWebsiteCount(newPlan)
 
     console.log("[plan-change] Website limit for plan", { plan: newPlan, limit })
+
+    if (!user) {
+      return Response.json({ message: "Updated plan" })
+    }
 
     const userWebsites = await db
       .select({ id: websites.id })
@@ -109,15 +133,15 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    if (membership) {
+    if (workspace) {
       await invalidateCacheTags([
-        workspaceTag(membership.workspaceId),
+        workspaceTag(workspace.id),
         userTag(user.id),
       ])
     }
 
     console.log("[plan-change] Webhook handled successfully", {
-      userId: user.id,
+      userId: user?.id ?? null,
       newPlan,
     })
 

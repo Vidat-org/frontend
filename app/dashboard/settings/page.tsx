@@ -1,8 +1,22 @@
 import Link from "next/link"
-import { Bell, History, KeyRound, LifeBuoy, Users, Webhook } from "lucide-react"
+import {
+  Bell,
+  CreditCard,
+  History,
+  KeyRound,
+  LifeBuoy,
+  Users,
+  Webhook,
+} from "lucide-react"
 import { getT } from "next-i18next/server"
 
 const items = [
+  {
+    href: "/dashboard/settings",
+    title: "settingsPage.billingTitle",
+    description: "settingsPage.billingDescription",
+    icon: CreditCard,
+  },
   {
     href: "/dashboard/settings/notifications",
     title: "settingsPage.notificationsTitle",

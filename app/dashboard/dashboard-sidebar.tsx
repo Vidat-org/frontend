@@ -14,9 +14,10 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { UserButton } from "@clerk/nextjs"
+import { OrganizationSwitcher, UserButton } from "@clerk/nextjs"
 import {
   Bell,
+  CreditCard,
   FileChartColumn,
   History,
   KeyRound,
@@ -52,6 +53,11 @@ export default function DashboardSidebar() {
     },
   ]
   const settingsNav: NavItem[] = [
+    {
+      title: t("sidebar.billing"),
+      url: "/dashboard/settings/billing",
+      icon: CreditCard,
+    },
     {
       title: t("sidebar.settings"),
       url: "/dashboard/settings",
@@ -117,16 +123,30 @@ export default function DashboardSidebar() {
       </SidebarContent>
 
       <SidebarFooter>
-        <div
-          className={`flex items-center justify-between gap-2 ${state === "collapsed" && "flex-col flex-col-reverse"}`}
-        >
-          <UserButton
+        <div className="space-y-3">
+          <OrganizationSwitcher
+            hidePersonal
+            afterSelectOrganizationUrl="/dashboard"
+            afterCreateOrganizationUrl="/dashboard"
             appearance={{
-              elements: {},
+              elements: {
+                rootBox: "w-full",
+                organizationSwitcherTrigger:
+                  "w-full justify-between rounded-lg border bg-background px-3 py-2",
+              },
             }}
-            showName={state === "expanded"}
           />
-          <ThemeSwitcher />
+          <div
+            className={`flex items-center justify-between gap-2 ${state === "collapsed" && "flex-col flex-col-reverse"}`}
+          >
+            <UserButton
+              appearance={{
+                elements: {},
+              }}
+              showName={state === "expanded"}
+            />
+            <ThemeSwitcher />
+          </div>
         </div>
       </SidebarFooter>
     </Sidebar>

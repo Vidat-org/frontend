@@ -1,6 +1,7 @@
 "use client"
 
 import AddWebsite from "@/components/add-website"
+import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
   Card,
@@ -35,6 +36,7 @@ import { useQuery } from "@tanstack/react-query"
 import {
   Activity,
   AlertTriangle,
+  CreditCard,
   FileChartColumn,
   Globe,
   Link as LinkIcon,
@@ -214,6 +216,10 @@ export default function Page() {
           </CardContent>
         </Card>
 
+        <BillingOverviewCard summary={summary} locale={locale} />
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>{t("dashboard.latestActivity")}</CardTitle>
@@ -289,9 +295,6 @@ export default function Page() {
             ))}
           </CardContent>
         </Card>
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>{t("dashboard.onboardingAndTeam")}</CardTitle>
@@ -414,6 +417,97 @@ function SummaryCard({
   )
 }
 
+function BillingOverviewCard({
+  summary,
+  locale,
+}: {
+  summary:
+    | Awaited<ReturnType<typeof client.getDashboardOverview>>["summary"]
+    | undefined
+  locale: Locale
+}) {
+  const { t } = useTranslation("common")
+  const billing = summary?.billing
+  const recommendedUpgrade = billing?.recommendedUpgrade as
+    | "starter"
+    | "pro"
+    | "enterprise"
+    | undefined
+  const amount =
+    billing?.amountSek && billing.amountSek > 0
+      ? new Intl.NumberFormat(locale === "sv" ? "sv-SE" : "en-US", {
+          style: "currency",
+          currency: "SEK",
+          maximumFractionDigits: 0,
+        }).format(billing.amountSek)
+      : null
+  const meta = getBillingMeta(summary, t, locale)
+  const upgradeUrl = recommendedUpgrade
+    ? (billing?.checkout?.[recommendedUpgrade] ?? null)
+    : null
+  const primaryHref = billing?.manageUrl ?? upgradeUrl
+  const primaryLabel = billing?.manageUrl
+    ? t("dashboard.subscriptionManage")
+    : upgradeUrl
+      ? t("dashboard.subscriptionUpgrade")
+      : null
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <CreditCard className="h-4 w-4" />
+              {t("dashboard.subscriptionTitle")}
+            </CardTitle>
+            <CardDescription>
+              {t("dashboard.subscriptionDescription")}
+            </CardDescription>
+          </div>
+          <Badge variant={billing?.status === "active" ? "success" : "outline"}>
+            {getBillingStatusLabel(billing?.status, t)}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-2xl font-bold">
+              {getPlanLabel(summary?.plan.slug, t)}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {getDunningStatusLabel(billing?.dunningStatus, t)}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-sm font-medium">{amount ?? "SEK -"}</p>
+            <p className="text-xs text-muted-foreground">{meta}</p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {primaryHref && primaryLabel ? (
+            <Button asChild>
+              <Link href={primaryHref} target="_blank" rel="noreferrer">
+                {primaryLabel}
+              </Link>
+            </Button>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {t("dashboard.subscriptionUnavailable")}
+            </p>
+          )}
+          <Button asChild variant="outline">
+            <Link href="/dashboard/settings/billing">
+              {t("sidebar.billing")}
+            </Link>
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
 function AlertList({
   title,
   items,
@@ -473,4 +567,42 @@ function formatStamp(
 ) {
   if (!value) return t("dashboard.unknownTime")
   return formatDate(value, locale)
+}
+
+function getBillingMeta(
+  summary:
+    | Awaited<ReturnType<typeof client.getDashboardOverview>>["summary"]
+    | undefined,
+  t: TFunction,
+  locale: Locale
+) {
+  const billing = summary?.billing
+  const format = (value: string | null | undefined) =>
+    value ? formatDate(value, locale) : t("dashboard.unknownTime")
+
+  if (billing?.cancelAtPeriodEnd && billing.currentPeriodEndsAt) {
+    return t("dashboard.subscriptionCancelsOn", {
+      date: format(billing.currentPeriodEndsAt),
+    })
+  }
+
+  if (billing?.status === "canceled" && billing?.currentPeriodEndsAt) {
+    return t("dashboard.subscriptionCanceledOn", {
+      date: format(billing.currentPeriodEndsAt),
+    })
+  }
+
+  if (billing?.trialEndsAt) {
+    return t("dashboard.subscriptionTrialEndsOn", {
+      date: format(billing.trialEndsAt),
+    })
+  }
+
+  if (billing?.currentPeriodEndsAt) {
+    return t("dashboard.subscriptionRenewsOn", {
+      date: format(billing.currentPeriodEndsAt),
+    })
+  }
+
+  return getDunningStatusLabel(billing?.dunningStatus, t)
 }

@@ -7,6 +7,7 @@ import { formatDate } from "@/lib/utils"
 import WebsiteDetail from "@/components/dashboard-wrapper"
 import NewCheck from "@/components/new-check"
 import { Badge } from "@/components/ui/badge"
+import WebsiteDangerZone from "@/components/website-danger-zone"
 
 import { getT } from "next-i18next/server"
 
@@ -45,20 +46,18 @@ export default async function Page({
         </Link>
 
         {/* Header content */}
-        <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-          {/* Left side - Website info */}
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <h1 className="truncate text-2xl font-extrabold tracking-tight sm:text-3xl md:text-4xl">
-                {website?.name}
-              </h1>
-            </div>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          {/* Left side */}
+          <div className="flex min-w-0 flex-1 flex-col">
+            <h1 className="truncate text-2xl font-extrabold tracking-tight sm:text-3xl md:text-4xl">
+              {website?.name}
+            </h1>
 
             <a
               href={website?.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block max-w-full"
+              className="min-w-0"
             >
               <p className="truncate text-sm text-muted-foreground underline hover:text-primary sm:text-base">
                 {website?.url}
@@ -66,8 +65,8 @@ export default async function Page({
             </a>
           </div>
 
-          {/* Right side - Scan component with fixed min-width */}
-          <div className="w-full sm:w-auto sm:min-w-[280px] sm:flex-shrink-0">
+          {/* Right side */}
+          <div className="w-full flex-shrink-0 sm:w-auto sm:min-w-[280px]">
             {website && (
               <NewCheck
                 websiteId={website.id}
@@ -117,6 +116,8 @@ export default async function Page({
           websiteId={website?.id || ""}
         />
       )}
+
+      {website && <WebsiteDangerZone website={website} />}
     </div>
   )
 }
