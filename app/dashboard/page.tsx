@@ -1,8 +1,8 @@
 "use client"
 
 import AddWebsite from "@/components/add-website"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -33,9 +33,13 @@ import {
 import { client } from "@/lib/orpc"
 import { formatDate } from "@/lib/utils"
 import { useQuery } from "@tanstack/react-query"
+import type { TFunction } from "i18next"
 import {
   Activity,
   AlertTriangle,
+  ArrowRight,
+  CheckCircle2,
+  CircleDashed,
   CreditCard,
   FileChartColumn,
   Globe,
@@ -48,8 +52,6 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import type { ReactNode } from "react"
-import type { TFunction } from "i18next"
-
 import { useTranslation } from "react-i18next"
 
 export default function Page() {
@@ -86,9 +88,72 @@ export default function Page() {
 
   const websites = data?.websites ?? []
   const summary = data?.summary
+  const onboarding = summary?.onboarding
+  const onboardingSteps = [
+    {
+      key: "website",
+      label: t("dashboard.firstWebsiteAdded"),
+      description: t("dashboard.onboardingStepWebsiteDescription"),
+      checked: onboarding?.hasAddedWebsite ?? false,
+      href: null,
+    },
+    {
+      key: "scan",
+      label: t("dashboard.firstScanRun"),
+      description: t("dashboard.onboardingStepScanDescription"),
+      checked: onboarding?.hasRunFirstScan ?? false,
+      href: websites[0] ? `/dashboard/${websites[0].id}` : null,
+    },
+    {
+      key: "report",
+      label: t("dashboard.reportRead"),
+      description: t("dashboard.onboardingStepReportDescription"),
+      checked: onboarding?.hasViewedReport ?? false,
+      href: "/dashboard/reports",
+    },
+    {
+      key: "alerts",
+      label: t("dashboard.alertsConfigured"),
+      description: t("dashboard.onboardingStepAlertsDescription"),
+      checked: onboarding?.hasConfiguredAlerts ?? false,
+      href: "/dashboard/settings/notifications",
+    },
+    {
+      key: "integration",
+      label: t("dashboard.integrationConnected"),
+      description: t("dashboard.onboardingStepIntegrationDescription"),
+      checked: onboarding?.hasConnectedIntegration ?? false,
+      href: "/dashboard/settings/integrations",
+    },
+  ]
+  const nextStep = onboardingSteps.find((step) => !step.checked) ?? null
+  const showOnboardingGuide =
+    websites.length === 0 ||
+    (onboarding?.completedSteps ?? 0) < (onboarding?.totalSteps ?? 0)
+
+  if (websites.length === 0) {
+    return (
+      <FirstRunOnboardingPage
+        workspaceName={summary?.workspace.name}
+        memberCount={summary?.workspace.memberCount ?? 0}
+        pendingInviteCount={summary?.workspace.pendingInviteCount ?? 0}
+        totalSteps={onboarding?.totalSteps ?? 0}
+      />
+    )
+  }
 
   return (
     <div className="space-y-6">
+      {showOnboardingGuide ? (
+        <OnboardingGuideCard
+          workspaceName={summary?.workspace.name}
+          completedSteps={onboarding?.completedSteps ?? 0}
+          totalSteps={onboarding?.totalSteps ?? 0}
+          nextStep={nextStep}
+          steps={onboardingSteps}
+        />
+      ) : null}
+
       <section className="grid gap-4 md:grid-cols-4">
         <SummaryCard
           title={t("dashboard.activeSites")}
@@ -129,7 +194,7 @@ export default function Page() {
         />
         <SummaryCard
           title={t("dashboard.onboarding")}
-          value={`${summary?.onboarding.completedSteps ?? 0}/${summary?.onboarding.totalSteps ?? 0}`}
+          value={`${onboarding?.completedSteps ?? 0}/${onboarding?.totalSteps ?? 0}`}
           description={t("dashboard.firstValueSteps")}
           icon={<Rocket className="h-4 w-4" />}
         />
@@ -295,43 +360,13 @@ export default function Page() {
             ))}
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("dashboard.onboardingAndTeam")}</CardTitle>
-            <CardDescription>
-              {summary?.workspace.name} · {t("dashboard.role")}{" "}
-              {getRoleLabel(summary?.workspace.role, t)}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <ChecklistRow
-              label={t("dashboard.firstWebsiteAdded")}
-              checked={summary?.onboarding.hasAddedWebsite ?? false}
-            />
-            <ChecklistRow
-              label={t("dashboard.firstScanRun")}
-              checked={summary?.onboarding.hasRunFirstScan ?? false}
-            />
-            <ChecklistRow
-              label={t("dashboard.reportRead")}
-              checked={summary?.onboarding.hasViewedReport ?? false}
-            />
-            <ChecklistRow
-              label={t("dashboard.alertsConfigured")}
-              checked={summary?.onboarding.hasConfiguredAlerts ?? false}
-            />
-            <ChecklistRow
-              label={t("dashboard.integrationConnected")}
-              checked={summary?.onboarding.hasConnectedIntegration ?? false}
-            />
-            <Link
-              href="/dashboard/settings"
-              className="text-sm underline underline-offset-4"
-            >
-              {t("dashboard.openSettingsToManageWorkspace")}
-            </Link>
-          </CardContent>
-        </Card>
+
+        <OnboardingChecklistCard
+          workspaceName={summary?.workspace.name}
+          role={getRoleLabel(summary?.workspace.role, t)}
+          steps={onboardingSteps}
+          nextStep={nextStep}
+        />
 
         <Card>
           <CardHeader>
@@ -412,6 +447,352 @@ function SummaryCard({
       <CardContent>
         <div className="text-2xl font-bold">{value}</div>
         <p className="text-sm text-muted-foreground">{description}</p>
+      </CardContent>
+    </Card>
+  )
+}
+
+function FirstRunOnboardingPage({
+  workspaceName,
+  memberCount,
+  pendingInviteCount,
+  totalSteps,
+}: {
+  workspaceName: string | undefined
+  memberCount: number
+  pendingInviteCount: number
+  totalSteps: number
+}) {
+  const { t } = useTranslation("common")
+
+  return (
+    <div className="mx-auto flex min-h-[calc(100vh-7rem)] max-w-5xl items-center">
+      <div className="grid w-full gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <Card className="border-primary/15 bg-gradient-to-br from-primary/8 via-background to-background">
+          <CardHeader className="space-y-4">
+            <Badge variant="outline" className="w-fit">
+              {t("dashboard.onboarding")}
+            </Badge>
+            <div className="space-y-3">
+              <CardTitle className="text-3xl tracking-tight sm:text-4xl">
+                {t("dashboard.firstRunTitle", {
+                  workspace: workspaceName || t("dashboard.workspaceFallback"),
+                })}
+              </CardTitle>
+              <CardDescription className="max-w-2xl text-base">
+                {t("dashboard.firstRunDescription")}
+              </CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <div className="flex flex-wrap gap-3">
+              <AddWebsite />
+              <Button asChild variant="outline">
+                <Link href="/dashboard/settings/team">
+                  {t("dashboard.manageTeam")}
+                </Link>
+              </Button>
+            </div>
+
+            <div className="grid gap-3">
+              <StepPreview
+                label={t("dashboard.firstRunStepOneTitle")}
+                description={t("dashboard.firstRunStepOneDescription")}
+                checked={false}
+              />
+              <StepPreview
+                label={t("dashboard.firstRunStepTwoTitle")}
+                description={t("dashboard.firstRunStepTwoDescription")}
+                checked={false}
+              />
+              <StepPreview
+                label={t("dashboard.firstRunStepThreeTitle")}
+                description={t("dashboard.firstRunStepThreeDescription")}
+                checked={false}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("dashboard.whatHappensNext")}</CardTitle>
+              <CardDescription>
+                {t("dashboard.whatHappensNextDescription", {
+                  count: totalSteps,
+                })}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <ChecklistRow
+                label={t("dashboard.firstWebsiteAdded")}
+                description={t("dashboard.onboardingStepWebsiteDescription")}
+                checked={false}
+                href={null}
+              />
+              <ChecklistRow
+                label={t("dashboard.firstScanRun")}
+                description={t("dashboard.onboardingStepScanDescription")}
+                checked={false}
+                href={null}
+              />
+              <ChecklistRow
+                label={t("dashboard.reportRead")}
+                description={t("dashboard.onboardingStepReportDescription")}
+                checked={false}
+                href={null}
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("dashboard.workspaceReadyTitle")}</CardTitle>
+              <CardDescription>
+                {t("dashboard.workspaceReadyDescription")}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <InfoStat
+                label={t("dashboard.workspace")}
+                value={workspaceName || t("dashboard.workspaceFallback")}
+              />
+              <InfoStat
+                label={t("dashboard.workspaceMembers")}
+                value={String(memberCount)}
+              />
+              <InfoStat
+                label={t("dashboard.pendingInvitesLabel")}
+                value={String(pendingInviteCount)}
+              />
+              <p className="text-sm text-muted-foreground">
+                {t("dashboard.switchOrgHint")}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function OnboardingGuideCard({
+  workspaceName,
+  completedSteps,
+  totalSteps,
+  nextStep,
+  steps,
+}: {
+  workspaceName: string | undefined
+  completedSteps: number
+  totalSteps: number
+  nextStep:
+    | {
+        key: string
+        label: string
+        description: string
+        href: string | null
+      }
+    | null
+  steps: Array<{
+    key: string
+    label: string
+    description: string
+    checked: boolean
+    href: string | null
+  }>
+}) {
+  const { t } = useTranslation("common")
+  const progress = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0
+
+  return (
+    <section>
+      <Card className="border-primary/15 bg-gradient-to-br from-primary/8 via-background to-background">
+        <CardHeader className="gap-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+            <div className="space-y-3">
+              <Badge variant="outline" className="w-fit">
+                {t("dashboard.onboarding")}
+              </Badge>
+              <div className="space-y-2">
+                <CardTitle className="text-2xl tracking-tight sm:text-3xl">
+                  {t("dashboard.onboardingHeroTitle", {
+                    workspace: workspaceName || t("dashboard.workspaceFallback"),
+                  })}
+                </CardTitle>
+                <CardDescription className="max-w-2xl text-sm sm:text-base">
+                  {nextStep
+                    ? t("dashboard.onboardingHeroDescription", {
+                        step: nextStep.label,
+                      })
+                    : t("dashboard.onboardingCompleteDescription")}
+                </CardDescription>
+              </div>
+            </div>
+            <div className="min-w-40 rounded-2xl border bg-background/85 p-4">
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                {t("dashboard.progress")}
+              </p>
+              <p className="mt-2 text-3xl font-semibold">
+                {completedSteps}/{totalSteps}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {t("dashboard.onboardingProgressPercent", { percent: progress })}
+              </p>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="h-2 overflow-hidden rounded-full bg-background/80">
+            <div
+              className="h-full rounded-full bg-primary transition-all"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {nextStep?.key === "website" || !nextStep ? <AddWebsite /> : null}
+            {nextStep?.href ? (
+              <Button asChild variant="outline">
+                <Link href={nextStep.href}>
+                  {t("dashboard.openNextStep")}
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            ) : null}
+            <Button asChild variant="ghost">
+              <Link href="/dashboard/settings/team">
+                {t("dashboard.manageTeam")}
+              </Link>
+            </Button>
+          </div>
+
+          <div className="grid gap-3 lg:grid-cols-3">
+            {steps.slice(0, 3).map((step) => (
+              <StepPreview
+                key={step.key}
+                label={step.label}
+                description={step.description}
+                checked={step.checked}
+              />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </section>
+  )
+}
+
+function StepPreview({
+  label,
+  description,
+  checked,
+}: {
+  label: string
+  description: string
+  checked: boolean
+}) {
+  return (
+    <div className="rounded-xl border bg-background/80 p-4">
+      <div className="mb-3 flex items-center gap-2">
+        {checked ? (
+          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+        ) : (
+          <CircleDashed className="h-4 w-4 text-muted-foreground" />
+        )}
+        <p className="text-sm font-medium">{label}</p>
+      </div>
+      <p className="text-sm text-muted-foreground">{description}</p>
+    </div>
+  )
+}
+
+function InfoStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border p-3">
+      <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-2 text-sm font-medium">{value}</p>
+    </div>
+  )
+}
+
+function OnboardingChecklistCard({
+  workspaceName,
+  role,
+  steps,
+  nextStep,
+}: {
+  workspaceName: string | undefined
+  role: string
+  steps: Array<{
+    key: string
+    label: string
+    description: string
+    checked: boolean
+    href: string | null
+  }>
+  nextStep:
+    | {
+        key: string
+        label: string
+        description: string
+        href: string | null
+      }
+    | null
+}) {
+  const { t } = useTranslation("common")
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("dashboard.onboardingAndTeam")}</CardTitle>
+        <CardDescription>
+          {workspaceName} · {t("dashboard.role")} {role}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {nextStep ? (
+          <div className="rounded-xl border border-primary/15 bg-primary/6 p-4">
+            <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+              {t("dashboard.nextRecommendedStep")}
+            </p>
+            <p className="mt-2 text-sm font-medium">{nextStep.label}</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {nextStep.description}
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {nextStep.key === "website" ? <AddWebsite /> : null}
+              {nextStep.href ? (
+                <Button asChild size="sm" variant="outline">
+                  <Link href={nextStep.href}>
+                    {t("dashboard.openStep")}
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+
+        {steps.map((step) => (
+          <ChecklistRow
+            key={step.key}
+            label={step.label}
+            description={step.description}
+            checked={step.checked}
+            href={step.href}
+          />
+        ))}
+
+        <Link
+          href="/dashboard/settings"
+          className="text-sm underline underline-offset-4"
+        >
+          {t("dashboard.openSettingsToManageWorkspace")}
+        </Link>
       </CardContent>
     </Card>
   )
@@ -548,14 +929,40 @@ function AlertList({
   )
 }
 
-function ChecklistRow({ label, checked }: { label: string; checked: boolean }) {
+function ChecklistRow({
+  label,
+  description,
+  checked,
+  href,
+}: {
+  label: string
+  description: string
+  checked: boolean
+  href: string | null
+}) {
   const { t } = useTranslation("common")
+
   return (
-    <div className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between">
-      <p className="text-sm font-medium">{label}</p>
-      <Badge variant={checked ? "success" : "outline"}>
-        {checked ? t("dashboard.done") : t("dashboard.missing")}
-      </Badge>
+    <div className="flex flex-col gap-3 rounded-lg border p-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm font-medium">{label}</p>
+          <p className="text-xs text-muted-foreground">{description}</p>
+        </div>
+        <Badge variant={checked ? "success" : "outline"}>
+          {checked ? t("dashboard.done") : t("dashboard.missing")}
+        </Badge>
+      </div>
+      {!checked && href ? (
+        <div>
+          <Button asChild size="sm" variant="ghost">
+            <Link href={href}>
+              {t("dashboard.openStep")}
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
+      ) : null}
     </div>
   )
 }

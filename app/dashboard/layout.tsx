@@ -1,10 +1,9 @@
+import NoOrganizationState from "@/components/no-organization-state"
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { OrganizationList } from "@clerk/nextjs"
 import { auth } from "@clerk/nextjs/server"
 import { redirect } from "next/navigation"
 import React from "react"
@@ -22,23 +21,7 @@ export default async function Layout({
   }
 
   if (!orgId) {
-    return (
-      <main className="mx-auto flex min-h-screen w-full max-w-5xl items-center justify-center px-6 py-12">
-        <Card className="w-full max-w-3xl">
-          <CardHeader>
-            <CardTitle>Välj eller skapa en organization</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <OrganizationList
-              hidePersonal
-              skipInvitationScreen
-              afterCreateOrganizationUrl="/dashboard"
-              afterSelectOrganizationUrl="/dashboard"
-            />
-          </CardContent>
-        </Card>
-      </main>
-    )
+    return <NoOrganizationState />
   }
 
   return (
