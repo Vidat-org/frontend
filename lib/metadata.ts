@@ -1,6 +1,5 @@
 import type { Metadata } from "next"
 import { getT } from "next-i18next/server"
-import { getCurrentWorkspaceLocale } from "@/lib/workspace-locale"
 import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n"
 import { cookies } from "next/headers"
 
@@ -18,9 +17,7 @@ function buildAbsoluteTitle(title?: string) {
   return title ? `${title} | ${SITE_NAME}` : SITE_NAME
 }
 
-export async function getMetadataLocale(): Promise<Locale> {
-  return await getCurrentWorkspaceLocale()
-}
+
 
 export async function getMetadataT() {
   // const locale = await getMetadataLocale()
