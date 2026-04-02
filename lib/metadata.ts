@@ -17,6 +17,26 @@ function buildAbsoluteTitle(title?: string) {
   return title ? `${title} | ${SITE_NAME}` : SITE_NAME
 }
 
+export async function getCurrentWorkspaceLocale(): Promise<Locale> {
+  try {
+    const client = globalThis.$client
+    if (!client) throw new Error("missing client")
+
+    const account = await Promise.race([
+      client.getAccountSummary(),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("timeout")), 2000)
+      ),
+    ])
+    return (account as any).workspace.preferredLocale ?? DEFAULT_LOCALE
+  } catch {
+    // fallback to cookie
+    const cookieStore = await cookies()
+    const cookieLocale = cookieStore.get("i18next")?.value
+    if (cookieLocale === "sv" || cookieLocale === "en") return cookieLocale
+    return DEFAULT_LOCALE
+  }
+}
 
 
 export async function getMetadataT() {
