@@ -17,8 +17,8 @@ function buildAbsoluteTitle(title?: string) {
   return title ? `${title} | ${SITE_NAME}` : SITE_NAME
 }
 
-export async function getMetadataLocale() {
-return "sv"
+export async function getMetadataLocale(){
+return await getCurrentWorkspaceLocale()
 }
 
 export async function getCurrentWorkspaceLocale(): Promise<Locale> {
