@@ -17,6 +17,10 @@ function buildAbsoluteTitle(title?: string) {
   return title ? `${title} | ${SITE_NAME}` : SITE_NAME
 }
 
+export async function getMetadataLocale() {
+return "sv"
+}
+
 export async function getCurrentWorkspaceLocale(): Promise<Locale> {
   try {
     const client = globalThis.$client
