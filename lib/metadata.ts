@@ -1,7 +1,8 @@
 import type { Metadata } from "next"
 import { getT } from "next-i18next/server"
 import { getCurrentWorkspaceLocale } from "@/lib/workspace-locale"
-import type { Locale } from "@/lib/i18n"
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n"
+import { cookies } from "next/headers"
 
 const SITE_NAME = "Vidat"
 const DEFAULT_DESCRIPTION =
@@ -22,7 +23,15 @@ export async function getMetadataLocale(): Promise<Locale> {
 }
 
 export async function getMetadataT() {
-  const locale = await getMetadataLocale()
+  // const locale = await getMetadataLocale()
+  // return await getT("common", { lng: locale })
+  const cookieStore = await cookies()
+  const cookieLocale = cookieStore.get("i18next")?.value
+  const locale: Locale =
+    cookieLocale === "sv" || cookieLocale === "en"
+      ? cookieLocale
+      : DEFAULT_LOCALE
+
   return await getT("common", { lng: locale })
 }
 

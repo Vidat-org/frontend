@@ -67,7 +67,8 @@ export default async function RootLayout({
         className={`${fontSans.variable} ${fontSerif.variable} ${fontMono.variable} antialiased`}
       >
         <ClerkProvider
-          localization={locale === "sv" ? svSE : enGB}
+          // localization={locale === "sv" ? svSE : enGB}
+          localization={svSE}
           appearance={{
             theme: shadcn,
           }}
