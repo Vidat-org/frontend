@@ -19,6 +19,9 @@ Next.js frontend for Vidat, a multi-tenant performance monitoring SaaS with Cler
 - `DATABASE_URL`
 - `VALKEY_URL`
 - `VALKEY_PREFIX` (optional)
+- `BETTER_STACK_SOURCE_TOKEN` (optional)
+- `BETTER_STACK_INGESTING_URL` (optional)
+- `x-request-id` request header is accepted and echoed back on API responses
 - `NEXT_PUBLIC_DEFAULT_LOCALE`
 - `NEXT_PUBLIC_BILLING_PORTAL_URL` (optional)
 - `NEXT_PUBLIC_BILLING_PORTAL_FALLBACK_URL` (optional)

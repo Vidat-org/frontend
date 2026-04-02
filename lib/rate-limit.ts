@@ -1,5 +1,6 @@
 import "server-only"
 import Redis from "ioredis"
+import { logger } from "./logger"
 
 type RateLimitOptions = {
   key: string
@@ -33,7 +34,7 @@ function getRedisClient() {
   })
 
   redisClient.on("error", (error) => {
-    console.error("[rate-limit] valkey error", error)
+    logger.error("[rate-limit] valkey error", error)
   })
 
   return redisClient
@@ -88,7 +89,11 @@ export async function rateLimit(
       resetAt,
     }
   } catch (error) {
-    console.error("[rate-limit] fallback to memory", error)
+    logger.error("[rate-limit] fallback to memory", error, {
+      key: options.key,
+      windowMs: options.windowMs,
+      limit: options.limit,
+    })
     return runMemoryRateLimit(options)
   }
 }

@@ -3,6 +3,7 @@ import "server-only"
 import { db } from "@/db/drizzle"
 import { sql } from "drizzle-orm"
 import Redis from "ioredis"
+import { logger } from "./logger"
 
 type ComponentStatus = "operational" | "degraded" | "outage"
 
@@ -38,7 +39,7 @@ function getRedisClient() {
   })
 
   redisClient.on("error", (error) => {
-    console.error("[health] valkey error", error)
+    logger.error("[health] valkey error", error)
   })
 
   return redisClient
@@ -49,7 +50,7 @@ async function checkDatabase() {
     await db.execute(sql`select 1`)
     return true
   } catch (error) {
-    console.error("[health] database check failed", error)
+    logger.error("[health] database check failed", error)
     return false
   }
 }
@@ -74,7 +75,7 @@ async function checkValkey() {
       detailKey: "status.detailNotificationsOperational",
     }
   } catch (error) {
-    console.error("[health] valkey ping failed", error)
+    logger.error("[health] valkey ping failed", error)
     return {
       ok: false,
       detail: "Valkey is unavailable; caching and rate limiting are degraded.",

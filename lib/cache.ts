@@ -1,5 +1,6 @@
 import "server-only"
 import Redis from "ioredis"
+import { logger } from "./logger"
 
 type CacheTagScope = "workspace" | "user" | "website" | "scan" | "report"
 
@@ -26,7 +27,7 @@ function getValkeyClient(): Redis | null {
   }
 
   if (!valkeyUrl) {
-    console.warn("[valkey] VALKEY_URL not set, cache disabled")
+    logger.warn("[valkey] VALKEY_URL not set, cache disabled")
     client = null
     return client
   }
@@ -36,11 +37,11 @@ function getValkeyClient(): Redis | null {
   })
 
   client.on("connect", () => {
-    console.log("[valkey] connected")
+    logger.info("[valkey] connected")
   })
 
   client.on("error", (error) => {
-    console.error("[valkey] error", error)
+    logger.error("[valkey] error", error)
   })
 
   return client
@@ -102,7 +103,9 @@ export async function cachedQuery<T>(
           options.ttlSeconds
         )
       } catch (error) {
-        console.error("[valkey] cache write failed", error)
+        logger.error("[valkey] cache write failed", error, {
+          cacheKey,
+        })
       }
 
       return value
@@ -114,7 +117,9 @@ export async function cachedQuery<T>(
 
     return value
   } catch (error) {
-    console.error("[valkey] cache read failed", error)
+    logger.error("[valkey] cache read failed", error, {
+      key: options.key,
+    })
     return loader()
   } finally {
     if (inflightKey) {
@@ -139,7 +144,9 @@ export async function invalidateCacheTags(tags: CacheTag[]) {
 
     await pipeline.exec()
   } catch (error) {
-    console.error("[valkey] invalidation failed", error)
+    logger.error("[valkey] invalidation failed", error, {
+      tags,
+    })
   }
 }
 

@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server"
 import { ORPCError, os } from "@orpc/server"
 import { db } from "@/db/drizzle"
+import { logger } from "@/lib/logger"
 import { users } from "@/migrations/schema"
 import { eq } from "drizzle-orm"
 import { normalizePlanSlug } from "@/lib/plans"
@@ -11,6 +12,10 @@ import {
 import { ensureWorkspaceBillingSubscription } from "@/lib/saas"
 
 export const authMiddleware = os.$context().middleware(async ({ next }) => {
+  const log = logger.child({
+    route: "/rpc",
+    middleware: "auth",
+  })
   const {
     isAuthenticated,
     userId: clerkUserId,
@@ -19,6 +24,8 @@ export const authMiddleware = os.$context().middleware(async ({ next }) => {
   } = await auth()
 
   if (!isAuthenticated || !clerkUserId) {
+    log.warn("[rpc-auth] unauthenticated request")
+    await log.flush()
     throw new ORPCError("UNAUTHORIZED")
   }
 
@@ -40,10 +47,18 @@ export const authMiddleware = os.$context().middleware(async ({ next }) => {
   }
 
   if (!user) {
+    log.warn("[rpc-auth] user missing after upsert", {
+      clerkUserId,
+    })
+    await log.flush()
     throw new ORPCError("UNAUTHORIZED")
   }
 
   if (!clerkOrganizationId) {
+    log.warn("[rpc-auth] missing organization", {
+      clerkUserId,
+    })
+    await log.flush()
     throw new ORPCError("FORBIDDEN")
   }
 

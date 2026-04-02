@@ -1,16 +1,23 @@
 import { db } from "@/db/drizzle"
+import { getRequestLogger, withRequestId } from "@/lib/logger"
 import { users } from "@/migrations/schema"
 import { verifyWebhook } from "@clerk/nextjs/webhooks"
 import { eq } from "drizzle-orm"
 import { NextRequest } from "next/server"
 
 export async function POST(req: NextRequest) {
+  const log = getRequestLogger(req)
+
   try {
     const evt = await verifyWebhook(req, {
       signingSecret: process.env.CLERK_WEBHOOK_SIGNING_SECRET_USERS,
     })
 
     const eventType = evt.type
+    log.info("[users-webhook] received", {
+      eventType,
+      clerkUserId: evt.data.id ?? null,
+    })
 
     switch (eventType) {
       case "user.created":
@@ -42,9 +49,14 @@ export async function POST(req: NextRequest) {
         break
     }
 
-    return new Response("Webhook received", { status: 200 })
+    await log.flush()
+    return withRequestId(req, new Response("Webhook received", { status: 200 }))
   } catch (err) {
-    console.error("Error verifying webhook:", err)
-    return new Response("Error verifying webhook", { status: 400 })
+    log.error("[users-webhook] verification failed", err)
+    await log.flush()
+    return withRequestId(
+      req,
+      new Response("Error verifying webhook", { status: 400 })
+    )
   }
 }

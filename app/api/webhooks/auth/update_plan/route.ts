@@ -1,5 +1,6 @@
 import { db } from "@/db/drizzle"
 import { invalidateCacheTags, workspaceTag } from "@/lib/cache"
+import { getRequestLogger, withRequestId } from "@/lib/logger"
 import { updateWorkspaceBillingSubscription } from "@/lib/saas"
 import { normalizePlanSlug, planToWebsiteCount } from "@/lib/plans"
 import { websites, workspaces } from "@/migrations/schema"
@@ -8,6 +9,8 @@ import { desc, eq } from "drizzle-orm"
 import { NextRequest } from "next/server"
 
 export async function POST(request: NextRequest) {
+  const log = getRequestLogger(request)
+
   try {
     const evt = await verifyWebhook(request, {
       signingSecret: process.env.CLERK_WEBHOOK_SIGNING_SECRET_UPDATE_PLAN,
@@ -39,7 +42,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log("[plan-change] Webhook received", {
+    log.info("[plan-change] Webhook received", {
       clerkOrganizationId,
       newPlan,
     })
@@ -50,13 +53,17 @@ export async function POST(request: NextRequest) {
     })
 
     if (!workspace) {
-      console.error("[plan-change] Workspace not found", {
+      log.error("[plan-change] Workspace not found", undefined, {
         clerkOrganizationId,
       })
-      return Response.json({ message: "Workspace not found" }, { status: 404 })
+      await log.flush()
+      return withRequestId(
+        request,
+        Response.json({ message: "Workspace not found" }, { status: 404 })
+      )
     }
 
-    console.log("[plan-change] Found workspace", {
+    log.info("[plan-change] Found workspace", {
       workspaceId: workspace.id,
       workspaceName: workspace.name,
       newPlan,
@@ -74,7 +81,7 @@ export async function POST(request: NextRequest) {
 
     const limit = planToWebsiteCount(newPlan)
 
-    console.log("[plan-change] Website limit for plan", {
+    log.info("[plan-change] Website limit for plan", {
       plan: newPlan,
       limit,
     })
@@ -90,7 +97,7 @@ export async function POST(request: NextRequest) {
       .where(eq(websites.workspaceId, workspace.id))
       .orderBy(desc(websites.createdAt))
 
-    console.log("[plan-change] Fetched workspace websites", {
+    log.info("[plan-change] Fetched workspace websites", {
       workspaceId: workspace.id,
       totalCount: workspaceWebsites.length,
       enabledCount: workspaceWebsites.filter((w) => w.isEnabled).length,
@@ -110,7 +117,7 @@ export async function POST(request: NextRequest) {
       .filter((w) => w.isEnabled)
       .map((w) => w.id)
 
-    console.log("[plan-change] Website state changes needed", {
+    log.info("[plan-change] Website state changes needed", {
       toEnable: enableWebsites.length,
       toDisable: disableWebsites.length,
       keepActive: websitesToKeepActive.filter((w) => w.isEnabled).length,
@@ -119,7 +126,7 @@ export async function POST(request: NextRequest) {
 
     // Enable websites that should be active but aren't
     if (enableWebsites.length > 0) {
-      console.log("[plan-change] Enabling websites", { enableWebsites })
+      log.info("[plan-change] Enabling websites", { enableWebsites })
 
       for (const id of enableWebsites) {
         await db
@@ -127,13 +134,13 @@ export async function POST(request: NextRequest) {
           .set({ isEnabled: true })
           .where(eq(websites.id, id))
 
-        console.log("[plan-change] Enabled website", { websiteId: id })
+        log.info("[plan-change] Enabled website", { websiteId: id })
       }
     }
 
     // Disable websites that exceed the limit
     if (disableWebsites.length > 0) {
-      console.log("[plan-change] Disabling excess websites", {
+      log.info("[plan-change] Disabling excess websites", {
         disableWebsites,
       })
 
@@ -143,13 +150,13 @@ export async function POST(request: NextRequest) {
           .set({ isEnabled: false })
           .where(eq(websites.id, id))
 
-        console.log("[plan-change] Disabled website", { websiteId: id })
+        log.info("[plan-change] Disabled website", { websiteId: id })
       }
     }
 
     // If no changes were needed, log that
     if (enableWebsites.length === 0 && disableWebsites.length === 0) {
-      console.log("[plan-change] No website state changes needed", {
+      log.info("[plan-change] No website state changes needed", {
         totalWebsites: workspaceWebsites.length,
         limit,
         activeWebsites: workspaceWebsites.filter((w) => w.isEnabled).length,
@@ -159,7 +166,7 @@ export async function POST(request: NextRequest) {
     // Invalidate workspace cache
     await invalidateCacheTags([workspaceTag(workspace.id)])
 
-    console.log("[plan-change] Webhook handled successfully", {
+    log.info("[plan-change] Webhook handled successfully", {
       workspaceId: workspace.id,
       newPlan,
       totalWebsites: workspaceWebsites.length,
@@ -169,19 +176,27 @@ export async function POST(request: NextRequest) {
       websitesDisabled: disableWebsites.length,
     })
 
-    return Response.json({
-      message: "Updated plan for workspace",
-      details: {
-        workspaceId: workspace.id,
-        plan: newPlan,
-        websiteLimit: limit,
-        totalWebsites: workspaceWebsites.length,
-        enabledWebsites: websitesToKeepActive.length,
-        disabledWebsites: websitesToDisable.length,
-      },
-    })
+    await log.flush()
+    return withRequestId(
+      request,
+      Response.json({
+        message: "Updated plan for workspace",
+        details: {
+          workspaceId: workspace.id,
+          plan: newPlan,
+          websiteLimit: limit,
+          totalWebsites: workspaceWebsites.length,
+          enabledWebsites: websitesToKeepActive.length,
+          disabledWebsites: websitesToDisable.length,
+        },
+      })
+    )
   } catch (error) {
-    console.error("[plan-change] Error verifying webhook", error)
-    return Response.json({ message: "Invalid webhook" }, { status: 400 })
+    log.error("[plan-change] Error verifying webhook", error)
+    await log.flush()
+    return withRequestId(
+      request,
+      Response.json({ message: "Invalid webhook" }, { status: 400 })
+    )
   }
 }

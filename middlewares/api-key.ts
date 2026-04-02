@@ -1,4 +1,5 @@
 import { authenticateApiKey } from "@/lib/api-key"
+import { getRequestLogger } from "@/lib/logger"
 import { getRequestIp, rateLimit } from "@/lib/rate-limit"
 
 function getRawApiKey(request: Request) {
@@ -19,8 +20,13 @@ function getRawApiKey(request: Request) {
 export async function requireApiKey(request: Request) {
   const rawKey = getRawApiKey(request)
   const requestIp = getRequestIp(request)
+  const log = getRequestLogger(request, {
+    requestIp,
+  })
 
   if (!rawKey) {
+    log.warn("[api-key] missing API key")
+    await log.flush()
     return {
       error: Response.json(
         { error: "missing_api_key" },
@@ -36,6 +42,8 @@ export async function requireApiKey(request: Request) {
   })
 
   if (!preAuthLimit.allowed) {
+    log.warn("[api-key] pre-auth rate limited")
+    await log.flush()
     return {
       error: Response.json({ error: "rate_limited" }, { status: 429 }),
     }
@@ -44,6 +52,8 @@ export async function requireApiKey(request: Request) {
   const auth = await authenticateApiKey(rawKey)
 
   if (!auth) {
+    log.warn("[api-key] invalid API key")
+    await log.flush()
     return {
       error: Response.json(
         { error: "invalid_api_key" },
@@ -53,6 +63,12 @@ export async function requireApiKey(request: Request) {
   }
 
   if (auth.planSlug !== "enterprise") {
+    log.warn("[api-key] plan does not include API access", {
+      apiKeyId: auth.id,
+      workspaceId: auth.workspaceId,
+      planSlug: auth.planSlug ?? null,
+    })
+    await log.flush()
     return {
       error: Response.json(
         { error: "plan_does_not_include_api_access" },
@@ -68,6 +84,11 @@ export async function requireApiKey(request: Request) {
   })
 
   if (!keyLimit.allowed) {
+    log.warn("[api-key] key rate limited", {
+      apiKeyId: auth.id,
+      workspaceId: auth.workspaceId,
+    })
+    await log.flush()
     return {
       error: Response.json({ error: "rate_limited" }, { status: 429 }),
     }
