@@ -1,4 +1,3 @@
-import "../lib/orpc.server"
 import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n"
 import { cookies } from "next/headers"
 
