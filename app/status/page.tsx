@@ -1,6 +1,7 @@
 import { getT } from "next-i18next/server"
 import { getSystemHealth } from "@/lib/health"
 import { formatDate } from "@/lib/utils"
+import { createPageMetadata, getMetadataT } from "@/lib/metadata"
 
 const systemLabels = {
   scanning: "status.systemScanning",
@@ -19,6 +20,16 @@ function getStatusAppearance(status: "operational" | "degraded" | "outage") {
   }
 
   return "bg-destructive/10 text-destructive"
+}
+
+export async function generateMetadata() {
+  const { t } = await getMetadataT()
+
+  return createPageMetadata({
+    title: t("status.title"),
+    description: t("status.intro"),
+    path: "/status",
+  })
 }
 
 export default async function StatusPage() {

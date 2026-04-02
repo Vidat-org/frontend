@@ -15,9 +15,15 @@ import {
   initServerI18next,
 } from "next-i18next/server"
 import i18nConfig from "@/i18n.config"
-import { DEFAULT_LOCALE } from "@/lib/i18n"
+import type { Metadata } from "next"
+import { getSiteMetadata } from "@/lib/metadata"
+import { getCurrentWorkspaceLocale } from "@/lib/workspace-locale"
 
 initServerI18next(i18nConfig)
+
+export async function generateMetadata(): Promise<Metadata> {
+  return await getSiteMetadata()
+}
 
 export async function generateStaticParams() {
   return generateI18nStaticParams()
@@ -43,7 +49,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const locale = DEFAULT_LOCALE
+  const locale = await getCurrentWorkspaceLocale()
   const { i18n } = await getT("common", { lng: locale })
   const resources = getResources(i18n, ["common"])
   return (
@@ -67,7 +73,7 @@ export default async function RootLayout({
           }}
         >
           <I18nProvider
-            language={locale}
+            language={"sv"}
             resources={resources}
             defaultNS="common"
             supportedLngs={i18nConfig.supportedLngs}

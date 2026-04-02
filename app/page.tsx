@@ -1,5 +1,6 @@
 import Link from "next/link"
 import type { ReactNode } from "react"
+import { createPageMetadata, getMetadataT } from "@/lib/metadata"
 import {
   Activity,
   BellRing,
@@ -178,6 +179,15 @@ function TrustCard({
 }
 
 // --- Huvudsida ---
+
+export async function generateMetadata() {
+  const { t } = await getMetadataT()
+
+  return createPageMetadata({
+    description: t("home.hero.description"),
+    path: "/",
+  })
+}
 
 export default async function HomePage() {
   const { t } = await getT("common")

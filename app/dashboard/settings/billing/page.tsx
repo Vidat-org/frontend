@@ -8,6 +8,18 @@ import {
 } from "@/components/ui/card"
 import { PricingTable } from "@clerk/nextjs"
 import { getT } from "next-i18next/server"
+import { createPageMetadata, getMetadataT } from "@/lib/metadata"
+
+export async function generateMetadata() {
+  const { t } = await getMetadataT()
+
+  return createPageMetadata({
+    title: t("settingsNav.billing"),
+    description: t("settingsPage.billingDescription"),
+    path: "/dashboard/settings/billing",
+    noIndex: true,
+  })
+}
 
 export default async function Page() {
   const { t } = await getT("common")

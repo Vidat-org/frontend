@@ -1,4 +1,21 @@
 import { SignIn } from "@clerk/nextjs"
+import { createPageMetadata, getMetadataLocale } from "@/lib/metadata"
+
+export async function generateMetadata() {
+  const locale = await getMetadataLocale()
+  const title = locale === "en" ? "Sign in" : "Logga in"
+  const description =
+    locale === "en"
+      ? "Sign in to Vidat to access your dashboard, reports, and workspace settings."
+      : "Logga in till Vidat för att komma åt din dashboard, rapporter och workspace-inställningar."
+
+  return createPageMetadata({
+    title,
+    description,
+    path: "/sign-in",
+    noIndex: true,
+  })
+}
 
 export default function SignInPage() {
   return (

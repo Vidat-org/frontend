@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { createPageMetadata, getMetadataT } from "@/lib/metadata"
 import {
   Bell,
   CreditCard,
@@ -9,6 +10,17 @@ import {
   Webhook,
 } from "lucide-react"
 import { getT } from "next-i18next/server"
+
+export async function generateMetadata() {
+  const { t } = await getMetadataT()
+
+  return createPageMetadata({
+    title: t("settingsLayout.title"),
+    description: t("settingsCenter.subtitle"),
+    path: "/dashboard/settings",
+    noIndex: true,
+  })
+}
 
 const items = [
   {

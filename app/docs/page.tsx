@@ -1,5 +1,6 @@
 import { getT } from "next-i18next/server"
 import Link from "next/link"
+import { createPageMetadata, getMetadataT } from "@/lib/metadata"
 
 const currentCapabilities = [
   "docs.capability1",
@@ -15,6 +16,16 @@ const roadmap = [
   "docs.roadmap4",
   "docs.roadmap5",
 ]
+
+export async function generateMetadata() {
+  const { t } = await getMetadataT()
+
+  return createPageMetadata({
+    title: t("docs.title"),
+    description: t("docs.intro"),
+    path: "/docs",
+  })
+}
 
 export default async function DocsPage() {
   const { t } = await getT("common")

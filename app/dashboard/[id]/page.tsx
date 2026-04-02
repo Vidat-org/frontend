@@ -9,8 +9,34 @@ import WebsiteDetail from "@/components/dashboard-wrapper"
 import NewCheck from "@/components/new-check"
 import { Badge } from "@/components/ui/badge"
 import WebsiteDangerZone from "@/components/website-danger-zone"
+import { createPageMetadata, getMetadataLocale } from "@/lib/metadata"
 
 import { getT } from "next-i18next/server"
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const { id } = await params
+  const locale = await getMetadataLocale()
+  const website = await client.getWebsite({ id })
+  const title = website?.name || website?.url || "Website"
+  const description = website?.url
+    ? locale === "en"
+      ? `Performance overview, recent scans, and monitoring details for ${website.url}.`
+      : `Prestandaöversikt, senaste scanningar och övervakningsdetaljer för ${website.url}.`
+    : locale === "en"
+      ? "Performance overview, recent scans, and monitoring details for this website."
+      : "Prestandaöversikt, senaste scanningar och övervakningsdetaljer för den här webbplatsen."
+
+  return createPageMetadata({
+    title,
+    description,
+    path: `/dashboard/${id}`,
+    noIndex: true,
+  })
+}
 
 export default async function Page({
   params,

@@ -10,8 +10,20 @@ import {
 } from "@/components/ui/empty"
 import { client } from "@/lib/orpc"
 import { FileChartColumn } from "lucide-react"
+import { createPageMetadata, getMetadataT } from "@/lib/metadata"
 
 import { getT } from "next-i18next/server"
+
+export async function generateMetadata() {
+  const { t } = await getMetadataT()
+
+  return createPageMetadata({
+    title: t("sidebar.reports"),
+    description: t("reportsPage.reportEvery14Days"),
+    path: "/dashboard/reports",
+    noIndex: true,
+  })
+}
 
 export default async function Page() {
   const [{ t }, query] = await Promise.all([

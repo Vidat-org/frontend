@@ -1,4 +1,15 @@
 import { getT } from "next-i18next/server"
+import { createPageMetadata, getMetadataT } from "@/lib/metadata"
+
+export async function generateMetadata() {
+  const { t } = await getMetadataT()
+
+  return createPageMetadata({
+    title: t("contact.title"),
+    description: t("contact.intro"),
+    path: "/contact",
+  })
+}
 
 export default async function Page() {
   const { t } = await getT("common")

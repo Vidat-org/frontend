@@ -1,6 +1,18 @@
 import SettingsCenter from "@/components/settings-center"
+import { createPageMetadata, getMetadataT } from "@/lib/metadata"
 
 import { getT } from "next-i18next/server"
+
+export async function generateMetadata() {
+  const { t } = await getMetadataT()
+
+  return createPageMetadata({
+    title: t("settingsNav.api"),
+    description: t("settingsPage.apiDescription"),
+    path: "/dashboard/settings/api",
+    noIndex: true,
+  })
+}
 
 export default async function Page() {
   const { t } = await getT("common")
