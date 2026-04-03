@@ -3,7 +3,7 @@ import type { Website } from "@/migrations/schema"
 import { formatDate } from "@/lib/utils"
 import { Skeleton } from "./ui/skeleton"
 import Link from "next/link"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import type { TFunction } from "i18next"
 import { useTranslation } from "react-i18next"
 import { type Locale } from "@/lib/i18n"
@@ -153,6 +153,9 @@ export default function WebsiteCard({ website }: Props) {
             }`,
           }}
         />
+
+        <SiteFavicon url={website.url} />
+
         <span className="truncate text-[13px] font-medium">{website.url}</span>
 
         {!website.isEnabled && (
@@ -219,5 +222,30 @@ export function WebsiteCardSkeleton() {
         <Skeleton className="h-4 w-16 rounded" />
       </div>
     </div>
+  )
+}
+
+function SiteFavicon({ url }: { url: string }) {
+  const host = url.replace(/^(https?:\/\/)?(www\.)?/, "").replace(/\/$/, "")
+  const [failed, setFailed] = useState(false)
+  const initial = host.charAt(0).toUpperCase()
+
+  if (failed) {
+    return (
+      <span className="flex size-5 items-center justify-center rounded bg-muted text-[10px] font-bold text-muted-foreground">
+        {initial}
+      </span>
+    )
+  }
+
+  return (
+    <span className="flex size-7 items-center justify-center rounded bg-muted">
+      <img
+        src={`https://icons.duckduckgo.com/ip2/${host}.ico`}
+        className="size-6 object-contain"
+        onError={() => setFailed(true)}
+        alt=""
+      />
+    </span>
   )
 }

@@ -32,6 +32,7 @@ import {
 } from "@/lib/messages"
 import { client } from "@/lib/orpc"
 import { formatDate } from "@/lib/utils"
+import { useOrganization } from "@clerk/nextjs"
 import { useQuery } from "@tanstack/react-query"
 import type { TFunction } from "i18next"
 import {
@@ -62,6 +63,8 @@ export default function DashboardPage() {
     queryKey: ["dashboardOverview"],
     queryFn: async () => await client.getDashboardOverview(),
   })
+
+  const { organization } = useOrganization()
 
   if (isLoading) {
     return (
@@ -187,9 +190,14 @@ export default function DashboardPage() {
         <SummaryCard
           title={t("dashboard.workspace")}
           value={String(summary?.workspace.memberCount ?? 0)}
-          description={t("dashboard.pendingInvites", {
-            count: summary?.workspace.pendingInviteCount ?? 0,
-          })}
+          description={t(
+            organization?.pendingInvitationsCount > 1
+              ? "dashboard.pendingInvitesPlural"
+              : "dashboard.pendingInvitesSingle",
+            {
+              count: organization?.pendingInvitationsCount ?? 0,
+            }
+          )}
           icon={<Users className="h-4 w-4" />}
         />
         <SummaryCard
