@@ -24,8 +24,6 @@ export const authMiddleware = os.$context().middleware(async ({ next }) => {
   } = await auth()
 
   if (!isAuthenticated || !clerkUserId) {
-    log.warn("[rpc-auth] unauthenticated request")
-    await log.flush()
     throw new ORPCError("UNAUTHORIZED")
   }
 

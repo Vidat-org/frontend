@@ -90,13 +90,19 @@ export function createPageMetadata({
   title,
   description,
   path,
+  openGraph,
   noIndex = false,
 }: {
   title?: string
   description: string
   path: string
+  openGraph?: {
+    images?: NonNullable<Metadata["openGraph"]>["images"]
+  }
   noIndex?: boolean
 }): Metadata {
+  const images = openGraph?.images
+
   return {
     title,
     description,
@@ -109,11 +115,13 @@ export function createPageMetadata({
       title: buildAbsoluteTitle(title),
       description,
       url: path,
+      images,
     },
     twitter: {
       card: "summary_large_image",
       title: buildAbsoluteTitle(title),
       description,
+      images,
     },
     robots: noIndex
       ? {

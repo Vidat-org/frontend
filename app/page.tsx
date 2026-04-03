@@ -5,6 +5,7 @@ import {
   Activity,
   BellRing,
   Building2,
+  ChevronDown,
   ChevronRight,
   CreditCard,
   FileText,
@@ -185,7 +186,11 @@ export async function generateMetadata() {
 
   return createPageMetadata({
     description: t("home.hero.description"),
+    title: "Vidat",
     path: "/",
+    openGraph: {
+      images: [{ url: "/opengraph-image", width: 1200, height: 630 }],
+    },
   })
 }
 
@@ -195,7 +200,7 @@ export default async function HomePage() {
   const pricing = [
     {
       name: t("home.pricing.free.name"),
-      price: "0 kr",
+      price: "0 kr/mån",
       description: t("home.pricing.free.description"),
       features: [
         t("home.pricing.free.feature1"),
@@ -206,7 +211,7 @@ export default async function HomePage() {
     },
     {
       name: t("home.pricing.starter.name"),
-      price: "149 kr",
+      price: "149 kr/mån",
       description: t("home.pricing.starter.description"),
       features: [
         t("home.pricing.starter.feature1"),
@@ -218,7 +223,7 @@ export default async function HomePage() {
     },
     {
       name: t("home.pricing.pro.name"),
-      price: "399 kr",
+      price: "399 kr/mån",
       description: t("home.pricing.pro.description"),
       features: [
         t("home.pricing.pro.feature1"),
@@ -229,7 +234,7 @@ export default async function HomePage() {
     },
     {
       name: t("home.pricing.enterprise.name"),
-      price: "999 kr",
+      price: "999 kr/mån",
       description: t("home.pricing.enterprise.description"),
       features: [
         t("home.pricing.enterprise.feature1"),
@@ -244,12 +249,15 @@ export default async function HomePage() {
     { question: t("home.faq.q1.question"), answer: t("home.faq.q1.answer") },
     { question: t("home.faq.q2.question"), answer: t("home.faq.q2.answer") },
     { question: t("home.faq.q3.question"), answer: t("home.faq.q3.answer") },
+    { question: t("home.faq.q4.question"), answer: t("home.faq.q4.answer") },
+    { question: t("home.faq.q5.question"), answer: t("home.faq.q5.answer") },
+    { question: t("home.faq.q6.question"), answer: t("home.faq.q6.answer") },
   ]
 
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-background text-foreground">
       {/* Background Decorative Elements */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-136 bg-[radial-gradient(circle_at_top_left,_rgba(185,92,48,0.12),_transparent_45%),radial-gradient(circle_at_top_right,_rgba(41,37,36,0.1),_transparent_40%)]" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-136 bg-[radial-gradient(circle_at_top_left,_oklch(from_var(--chart-1)_l_c_h_/_0.12),_transparent_45%),radial-gradient(circle_at_top_right,_oklch(from_var(--chart-2)_l_c_h_/_0.1),_transparent_40%)]" />
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,transparent_0,transparent_calc(100%-1px),rgba(120,113,108,0.08)_calc(100%-1px)),linear-gradient(to_bottom,transparent_0,transparent_calc(100%-1px),rgba(120,113,108,0.08)_calc(100%-1px))] [mask-image:linear-gradient(to_bottom,rgba(0,0,0,0.3),transparent_90%)] bg-[size:60px_60px] md:bg-[size:80px_80px]" />
 
       <div className="relative mx-auto flex max-w-7xl flex-col px-4 pt-4 pb-12 sm:px-6 lg:px-10">
@@ -360,17 +368,17 @@ export default async function HomePage() {
               </Link>
 
               <Link
-                href="/dashboard/settings"
+                href="/docs"
                 className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full border border-border bg-card px-8 py-3 text-sm font-semibold transition-colors hover:bg-muted/70 sm:w-auto"
               >
-                {t("home.actions.viewSaasSettings")}
+                {t("home.actions.viewDocs")}
               </Link>
             </div>
 
             <div className="grid w-full grid-cols-2 gap-4 border-t border-border/80 pt-8 sm:grid-cols-3">
               {[
-                { val: "24/7", label: t("home.metrics.m1") },
-                { val: "4", label: t("home.metrics.m2") },
+                { val: "< 5 min", label: t("home.metrics.m1") },
+                { val: "100%", label: t("home.metrics.m2") },
                 { val: t("home.metrics.value3"), label: t("home.metrics.m3") },
               ].map((m, i) => (
                 <div
@@ -668,17 +676,20 @@ export default async function HomePage() {
           />
           <div className="space-y-4">
             {faq.map((item) => (
-              <article
+              <details
                 key={item.question}
-                className="rounded-3xl border border-border/80 bg-card/80 p-6 md:p-8"
+                className="group rounded-3xl border border-border/80 bg-card/80 p-6 transition-colors open:bg-card md:p-8"
               >
-                <h3 className="text-lg font-bold tracking-tight">
-                  {item.question}
-                </h3>
-                <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-6">
+                  <h3 className="text-left text-lg font-bold tracking-tight">
+                    {item.question}
+                  </h3>
+                  <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
+                </summary>
+                <p className="mt-4 pr-8 text-sm leading-relaxed text-muted-foreground">
                   {item.answer}
                 </p>
-              </article>
+              </details>
             ))}
           </div>
         </section>
@@ -699,10 +710,10 @@ export default async function HomePage() {
             </div>
             <div className="flex flex-wrap gap-4">
               <Link
-                href="/dashboard/settings"
+                href="/sign-in"
                 className="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-full bg-chart-1 px-8 py-4 text-sm font-bold whitespace-nowrap text-white transition-transform hover:-translate-y-1 active:scale-95 sm:w-auto"
               >
-                {t("home.nextSteps.actions.openSettings")}
+                {t("home.nextSteps.actions.signIn")}
                 <ChevronRight className="h-4 w-4 shrink-0" />
               </Link>
               <Link

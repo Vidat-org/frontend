@@ -124,7 +124,7 @@ export default function DashboardSidebar() {
 
       <SidebarFooter>
         <div className="space-y-3">
-          <OrganizationSwitcher
+          {/* <OrganizationSwitcher
             hidePersonal
             afterSelectOrganizationUrl="/dashboard"
             afterCreateOrganizationUrl="/dashboard"
@@ -135,7 +135,7 @@ export default function DashboardSidebar() {
                   "w-full justify-between rounded-lg border bg-background px-3 py-2",
               },
             }}
-          />
+          /> */}
           <div
             className={`flex items-center justify-between gap-2 ${state === "collapsed" && "flex-col flex-col-reverse"}`}
           >
