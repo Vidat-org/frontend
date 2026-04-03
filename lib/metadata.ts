@@ -17,43 +17,44 @@ function buildAbsoluteTitle(title?: string) {
   return title ? `${title} | ${SITE_NAME}` : SITE_NAME
 }
 
-export async function getMetadataLocale(){
-return await getCurrentWorkspaceLocale()
+export async function getMetadataLocale() {
+  return await getCurrentWorkspaceLocale()
 }
 
 export async function getCurrentWorkspaceLocale(): Promise<Locale> {
-  try {
-    const client = globalThis.$client
-    if (!client) throw new Error("missing client")
+  // try {
+  //   const client = globalThis.$client
+  //   if (!client) throw new Error("missing client")
 
-    const account = await Promise.race([
-      client.getAccountSummary(),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("timeout")), 2000)
-      ),
-    ])
-    return (account as any).workspace.preferredLocale ?? DEFAULT_LOCALE
-  } catch {
-    // fallback to cookie
-    const cookieStore = await cookies()
-    const cookieLocale = cookieStore.get("i18next")?.value
-    if (cookieLocale === "sv" || cookieLocale === "en") return cookieLocale
-    return DEFAULT_LOCALE
-  }
+  //   const account = await Promise.race([
+  //     client.getAccountSummary(),
+  //     new Promise((_, reject) =>
+  //       setTimeout(() => reject(new Error("timeout")), 2000)
+  //     ),
+  //   ])
+  //   return (account as any).workspace.preferredLocale ?? DEFAULT_LOCALE
+  // } catch {
+  //   // fallback to cookie
+  //   const cookieStore = await cookies()
+  //   const cookieLocale = cookieStore.get("i18next")?.value
+  //   if (cookieLocale === "sv" || cookieLocale === "en") return cookieLocale
+  //   return DEFAULT_LOCALE
+  // }
+  return "sv"
 }
-
 
 export async function getMetadataT() {
   // const locale = await getMetadataLocale()
   // return await getT("common", { lng: locale })
-  const cookieStore = await cookies()
-  const cookieLocale = cookieStore.get("i18next")?.value
-  const locale: Locale =
-    cookieLocale === "sv" || cookieLocale === "en"
-      ? cookieLocale
-      : DEFAULT_LOCALE
+  // const cookieStore = await cookies()
+  // const cookieLocale = cookieStore.get("i18next")?.value
+  // const locale: Locale =
+  //   cookieLocale === "sv" || cookieLocale === "en"
+  //     ? cookieLocale
+  //     : DEFAULT_LOCALE
 
-  return await getT("common", { lng: locale })
+  // return await getT("common", { lng: locale })
+  return await getT("common", { lng: "sv" })
 }
 
 export async function getSiteMetadata(): Promise<Metadata> {

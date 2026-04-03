@@ -10,11 +10,7 @@ import React from "react"
 import DashboardSidebar from "./dashboard-sidebar"
 import { getCurrentWorkspaceLocale } from "@/lib/workspace-locale"
 import { I18nProvider } from "next-i18next/client"
-import {
-  getResources,
-  getT,
-  initServerI18next,
-} from "next-i18next/server"
+import { getResources, getT, initServerI18next } from "next-i18next/server"
 import i18nConfig from "@/i18n.config"
 
 initServerI18next(i18nConfig)
@@ -34,7 +30,8 @@ export default async function Layout({
     return <NoOrganizationState />
   }
 
-  const locale = await getCurrentWorkspaceLocale()
+  // const locale = await getCurrentWorkspaceLocale()
+  const locale = "sv"
   const { i18n } = await getT("common", { lng: locale })
   const resources = getResources(i18n, ["common"])
 

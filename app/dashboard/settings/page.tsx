@@ -68,7 +68,7 @@ const items = [
 ] as const
 
 export default async function Page() {
-  const { t } = await getT("common")
+  const { t } = await getT("common", { lng: "sv" })
 
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">

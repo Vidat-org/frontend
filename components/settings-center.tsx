@@ -143,8 +143,11 @@ export default function SettingsCenter({
     scoreDropThreshold: undefined as number | undefined,
     slackWebhookUrl: undefined as string | undefined,
   })
+  // const [workspaceLocale, setWorkspaceLocale] = useState<Locale | undefined>(
+  //   undefined
+  // )
   const [workspaceLocale, setWorkspaceLocale] = useState<Locale | undefined>(
-    undefined
+    "sv"
   )
   const [webhookForm, setWebhookForm] = useState({
     label: "",
@@ -185,8 +188,9 @@ export default function SettingsCenter({
     onError: () => toast.error(t("settingsCenter.saveSettingsFailed")),
   })
 
-  const resolvedWorkspaceLocale =
-    workspaceLocale ?? account?.workspace.preferredLocale ?? "sv"
+  // const resolvedWorkspaceLocale =
+  //   workspaceLocale ?? account?.workspace.preferredLocale ?? "sv"
+  const resolvedWorkspaceLocale = "sv"
 
   const saveWorkspaceLanguage = useMutation({
     mutationFn: async () =>

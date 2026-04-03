@@ -71,6 +71,16 @@ export default async function RootLayout({
           localization={svSE}
           appearance={{
             theme: shadcn,
+            elements: {
+              organizationSwitcherPopoverRootBox: {
+                width: "100%",
+                pointerEvents: "auto",
+              },
+              userButtonPopoverRootBox: {
+                width: "100%",
+                pointerEvents: "auto",
+              },
+            },
           }}
         >
           <I18nProvider
