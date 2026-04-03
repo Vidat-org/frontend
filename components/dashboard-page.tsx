@@ -191,8 +191,10 @@ export default function DashboardPage() {
           title={t("dashboard.workspace")}
           value={String(summary?.workspace.memberCount ?? 0)}
           description={t(
-            organization?.pendingInvitationsCount > 1
-              ? "dashboard.pendingInvitesPlural"
+            organization
+              ? organization?.pendingInvitationsCount > 1
+                ? "dashboard.pendingInvitesPlural"
+                : "dashboard.pendingInvitesSingle"
               : "dashboard.pendingInvitesSingle",
             {
               count: organization?.pendingInvitationsCount ?? 0,
