@@ -98,10 +98,15 @@ export default function DashboardSidebar() {
           <SidebarMenuItem className="w-full">
             <SidebarMenuButton asChild size="lg">
               <Link href="/dashboard" className="flex items-center gap-2">
-                <img
-                  src={theme === "light" ? "/light-logo.svg" : "/dark-logo.svg"}
-                  className="size-8"
-                />
+                {theme ? (
+                  <img
+                    src={theme ? "/light-logo.svg" : "/dark-logo.svg"}
+                    className="size-8"
+                  />
+                ) : (
+                  <div className="size-8 rounded-lg bg-muted"></div>
+                )}
+
                 {state === "expanded" && (
                   <span className="text-base font-bold tracking-tight">
                     VIDAT
