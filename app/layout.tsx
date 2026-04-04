@@ -18,6 +18,7 @@ import i18nConfig from "@/i18n.config"
 import type { Metadata } from "next"
 import { getSiteMetadata } from "@/lib/metadata"
 import { getCurrentWorkspaceLocale } from "@/lib/workspace-locale"
+import Head from "next/head"
 
 initServerI18next(i18nConfig)
 
@@ -63,6 +64,9 @@ export default async function RootLayout({
       //   jetbrainsMono.variable
       // )}
     >
+      <Head>
+        <link rel="apple-touch-icon" href="/apple-icon.png" type="image/" />
+      </Head>
       <body
         className={`${fontSans.variable} ${fontSerif.variable} ${fontMono.variable} antialiased`}
       >

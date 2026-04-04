@@ -30,6 +30,7 @@ import {
   Zap,
 } from "lucide-react"
 import { useT } from "next-i18next/client"
+import { useTheme } from "next-themes"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
@@ -43,6 +44,8 @@ export default function DashboardSidebar() {
   const pathname = usePathname()
   const { state } = useSidebar()
   const { t } = useT("common")
+
+  const { theme } = useTheme()
 
   const productNav: NavItem[] = [
     { title: t("sidebar.mySites"), url: "/dashboard", icon: PanelsTopLeft },
@@ -95,9 +98,10 @@ export default function DashboardSidebar() {
           <SidebarMenuItem className="w-full">
             <SidebarMenuButton asChild size="lg">
               <Link href="/dashboard" className="flex items-center gap-2">
-                <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <Zap className="size-4" />
-                </div>
+                <img
+                  src={theme === "light" ? "/light-logo.svg" : "/dark-logo.svg"}
+                  className="size-8"
+                />
                 {state === "expanded" && (
                   <span className="text-base font-bold tracking-tight">
                     VIDAT
