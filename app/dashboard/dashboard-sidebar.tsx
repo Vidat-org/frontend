@@ -100,7 +100,9 @@ export default function DashboardSidebar() {
               <Link href="/dashboard" className="flex items-center gap-2">
                 {theme ? (
                   <img
-                    src={theme ? "/light-logo.svg" : "/dark-logo.svg"}
+                    src={
+                      theme === "light" ? "/light-logo.svg" : "/dark-logo.svg"
+                    }
                     className="size-8"
                   />
                 ) : (
