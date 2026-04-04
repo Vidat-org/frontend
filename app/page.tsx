@@ -1,5 +1,7 @@
 import Link from "next/link"
 import type { ReactNode } from "react"
+import { ThemeLogo } from "@/components/theme-logo"
+import { ThemeSwitcher } from "@/components/theme-switch"
 import { createPageMetadata, getMetadataT } from "@/lib/metadata"
 import {
   Activity,
@@ -260,28 +262,23 @@ export default async function HomePage() {
       <div className="pointer-events-none absolute inset-x-0 top-0 h-136 bg-[radial-gradient(circle_at_top_left,_oklch(from_var(--chart-1)_l_c_h_/_0.12),_transparent_45%),radial-gradient(circle_at_top_right,_oklch(from_var(--chart-2)_l_c_h_/_0.1),_transparent_40%)]" />
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,transparent_0,transparent_calc(100%-1px),rgba(120,113,108,0.08)_calc(100%-1px)),linear-gradient(to_bottom,transparent_0,transparent_calc(100%-1px),rgba(120,113,108,0.08)_calc(100%-1px))] [mask-image:linear-gradient(to_bottom,rgba(0,0,0,0.3),transparent_90%)] bg-[size:60px_60px] md:bg-[size:80px_80px]" />
 
-      <div className="relative mx-auto flex max-w-7xl flex-col px-4 pt-4 pb-12 sm:px-6 lg:px-10">
+      <div className="relative mx-auto flex max-w-7xl flex-col px-3 pt-3 pb-10 sm:px-6 sm:pt-4 sm:pb-12 lg:px-10">
         {/* Header */}
-        <header className="rounded-2xl border border-border/80 bg-background/85 px-4 py-3 backdrop-blur md:rounded-full md:px-6">
-          <div className="flex items-center justify-between gap-4">
-            <Link href="/" className="flex shrink-0 items-center gap-3">
-              <div className="grid h-8 w-8 shrink-0 grid-cols-2 gap-1 rounded-md bg-card p-1 shadow-sm md:h-9 md:w-9">
-                <span className="rounded-sm bg-chart-1" />
-                <span className="rounded-sm bg-chart-2/25" />
-                <span className="rounded-sm bg-chart-2/25" />
-                <span className="rounded-sm bg-chart-1" />
-              </div>
-              <div className="hidden sm:block">
-                <p className="text-xs font-bold tracking-widest uppercase">
+        <header className="sticky top-3 z-30 rounded-2xl border border-border/80 bg-background/88 px-3 py-3 backdrop-blur md:top-4 sm:px-4 md:px-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <Link href="/" className="flex min-w-0 shrink items-center gap-3">
+              <ThemeLogo className="h-8 w-auto shrink-0 md:h-9" />
+              <div className="hidden min-w-0 sm:block">
+                <p className="text-xs font-bold tracking-[0.24em] text-foreground uppercase">
                   {t("home.brand")}
                 </p>
-                <p className="text-[10px] text-muted-foreground">
+                <p className="truncate text-[10px] text-muted-foreground">
                   {t("home.tagline")}
                 </p>
               </div>
             </Link>
 
-            <nav className="hidden items-center gap-6 text-sm font-medium text-muted-foreground lg:flex">
+            <nav className="hidden items-center gap-5 text-sm font-medium text-muted-foreground lg:flex">
               <a
                 href="#features"
                 className="transition-colors hover:text-foreground"
@@ -308,7 +305,10 @@ export default async function HomePage() {
               </Link>
             </nav>
 
-            <div className="flex items-center gap-3">
+            <div className="ml-auto flex items-center gap-2 sm:gap-3">
+              <div className="shrink-0">
+                <ThemeSwitcher />
+              </div>
               <Link
                 href="/sign-in"
                 className="hidden shrink-0 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline-block"
@@ -317,7 +317,7 @@ export default async function HomePage() {
               </Link>
               <Link
                 href="/sign-in"
-                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-chart-1 px-4 py-2 text-xs font-semibold text-white transition-all hover:brightness-110 active:scale-95 md:text-sm"
+                className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-full bg-foreground px-4 py-2 text-[11px] font-semibold text-background transition-colors hover:bg-foreground/90 active:scale-95 sm:px-5 sm:text-xs md:text-sm"
               >
                 <span className="whitespace-nowrap">
                   {t("home.actions.startFree")}
@@ -332,7 +332,7 @@ export default async function HomePage() {
               <a
                 key={id}
                 href={id === "docs" ? "/docs" : `#${id}`}
-                className="shrink-0 rounded-full border border-border/80 bg-background/50 px-3 py-1 text-[10px] font-medium whitespace-nowrap text-muted-foreground"
+                className="shrink-0 rounded-full border border-border/80 bg-background px-3 py-1.5 text-[10px] font-medium whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground"
               >
                 {t(`home.nav.${id === "complete-saas" ? "saasShort" : id}`)}
               </a>
@@ -341,18 +341,18 @@ export default async function HomePage() {
         </header>
 
         {/* Hero Section */}
-        <section className="grid gap-12 pt-12 pb-16 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:pt-24">
-          <div className="flex flex-col items-center space-y-8 text-center lg:items-start lg:text-left">
-            <div className="inline-flex shrink-0 items-center gap-2 rounded-full border border-chart-1/20 bg-chart-1/8 px-4 py-2 text-[10px] tracking-widest text-chart-1 uppercase md:text-xs">
+        <section className="grid gap-10 pt-10 pb-14 sm:gap-12 sm:pt-12 sm:pb-16 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:pt-24">
+          <div className="flex flex-col items-center space-y-6 text-center sm:space-y-8 lg:items-start lg:text-left">
+            <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-chart-1/20 bg-chart-1/8 px-3 py-2 text-[10px] leading-relaxed tracking-[0.18em] text-chart-1 uppercase md:text-xs">
               <BellRing className="h-3.5 w-3.5 shrink-0" />
-              <span className="whitespace-nowrap">{t("home.hero.pill")}</span>
+              <span className="whitespace-normal sm:whitespace-nowrap">{t("home.hero.pill")}</span>
             </div>
 
-            <div className="space-y-6">
-              <h1 className="font-serif text-4xl leading-[1.1] tracking-tight text-foreground sm:text-5xl md:text-6xl lg:text-7xl">
+            <div className="space-y-5 sm:space-y-6">
+              <h1 className="font-serif text-[2.35rem] leading-[1.02] tracking-tight text-foreground sm:text-5xl md:text-6xl lg:text-7xl">
                 {t("home.hero.title")}
               </h1>
-              <p className="mx-auto max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg md:leading-8 lg:mx-0">
+              <p className="mx-auto max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base md:text-lg md:leading-8 lg:mx-0">
                 {t("home.hero.description")}
               </p>
             </div>
@@ -375,7 +375,7 @@ export default async function HomePage() {
               </Link>
             </div>
 
-            <div className="grid w-full grid-cols-2 gap-4 border-t border-border/80 pt-8 sm:grid-cols-3">
+            <div className="grid w-full grid-cols-2 gap-4 border-t border-border/80 pt-6 sm:pt-8 sm:grid-cols-3">
               {[
                 { val: "< 5 min", label: t("home.metrics.m1") },
                 { val: "100%", label: t("home.metrics.m2") },
@@ -399,7 +399,7 @@ export default async function HomePage() {
           {/* Demo Card Mockup */}
           <div className="relative mx-auto w-full max-w-xl lg:max-w-none">
             <div className="absolute inset-0 -translate-x-2 -translate-y-2 rounded-[2rem] bg-chart-1/12 blur-3xl sm:-translate-x-4 sm:-translate-y-4" />
-            <div className="relative overflow-hidden rounded-[2rem] border border-border/80 bg-card/90 p-4 shadow-2xl sm:p-6">
+            <div className="relative overflow-hidden rounded-[1.75rem] border border-border/80 bg-card/90 p-4 shadow-2xl sm:rounded-[2rem] sm:p-6">
               <div className="flex flex-col gap-4 border-b border-border/80 pb-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-[10px] tracking-widest text-muted-foreground uppercase">
@@ -414,7 +414,7 @@ export default async function HomePage() {
                 </span>
               </div>
 
-              <div className="xsm:grid-cols-3 grid grid-cols-1 gap-3 py-5">
+              <div className="grid grid-cols-1 gap-3 py-5 sm:grid-cols-3">
                 <MetricCard
                   label={t("home.demo.metrics.performance")}
                   value="92"
@@ -508,7 +508,7 @@ export default async function HomePage() {
         {/* Features Row */}
         <section
           id="features"
-          className="grid gap-12 py-20 lg:grid-cols-[0.8fr_1.2fr]"
+          className="grid gap-10 py-16 sm:gap-12 sm:py-20 lg:grid-cols-[0.8fr_1.2fr]"
         >
           <SectionHeading
             eyebrow={t("home.sections.features.eyebrow")}
@@ -548,7 +548,7 @@ export default async function HomePage() {
         {/* Complete SaaS Section */}
         <section
           id="complete-saas"
-          className="rounded-[2.5rem] border border-border/80 bg-card/75 px-6 py-16 md:px-12"
+          className="rounded-[2rem] border border-border/80 bg-card/75 px-4 py-14 sm:px-6 sm:py-16 md:rounded-[2.5rem] md:px-12"
         >
           <SectionHeading
             eyebrow={t("home.sections.completeSaas.eyebrow")}
@@ -579,7 +579,7 @@ export default async function HomePage() {
         </section>
 
         {/* Trust Section */}
-        <section className="grid gap-12 py-20 lg:grid-cols-[0.9fr_1.1fr]">
+        <section className="grid gap-10 py-16 sm:gap-12 sm:py-20 lg:grid-cols-[0.9fr_1.1fr]">
           <SectionHeading
             eyebrow={t("home.sections.trust.eyebrow")}
             title={t("home.sections.trust.title")}
@@ -605,7 +605,7 @@ export default async function HomePage() {
         </section>
 
         {/* Pricing Section */}
-        <section id="pricing" className="py-20">
+        <section id="pricing" className="py-16 sm:py-20">
           <SectionHeading
             eyebrow={t("home.sections.pricing.eyebrow")}
             title={t("home.sections.pricing.title")}
@@ -617,7 +617,7 @@ export default async function HomePage() {
                 key={plan.name}
                 className={`flex flex-col rounded-[2rem] border p-8 transition-all hover:shadow-lg ${
                   plan.featured
-                    ? "z-10 scale-105 border-chart-1 bg-foreground text-background shadow-xl"
+                    ? "border-chart-1 bg-foreground text-background shadow-xl lg:z-10 lg:scale-105"
                     : "border-border/80 bg-card/80"
                 }`}
               >
@@ -669,7 +669,7 @@ export default async function HomePage() {
         </section>
 
         {/* FAQ Section */}
-        <section className="grid gap-12 py-20 lg:grid-cols-[0.9fr_1.1fr]">
+        <section className="grid gap-10 py-16 sm:gap-12 sm:py-20 lg:grid-cols-[0.9fr_1.1fr]">
           <SectionHeading
             eyebrow={t("home.sections.faq.eyebrow")}
             title={t("home.sections.faq.title")}
@@ -695,7 +695,7 @@ export default async function HomePage() {
         </section>
 
         {/* CTA Section */}
-        <section className="relative overflow-hidden rounded-[2.5rem] border border-border/80 bg-foreground px-6 py-16 text-background md:px-16">
+        <section className="relative overflow-hidden rounded-[2rem] border border-border/80 bg-foreground px-4 py-14 text-background sm:px-6 sm:py-16 md:rounded-[2.5rem] md:px-16">
           <div className="relative z-10 grid gap-10 lg:grid-cols-[1fr_auto] lg:items-center">
             <div className="max-w-2xl space-y-6">
               <p className="text-[10px] font-bold tracking-[0.3em] text-chart-1 uppercase">
@@ -728,7 +728,7 @@ export default async function HomePage() {
         </section>
 
         {/* Footer */}
-        <footer className="mt-20 flex flex-col gap-10 border-t border-border/80 py-12 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between">
+        <footer className="mt-16 flex flex-col gap-8 border-t border-border/80 py-10 text-sm text-muted-foreground sm:mt-20 sm:gap-10 sm:py-12 md:flex-row md:items-center md:justify-between">
           <div className="space-y-2">
             <p className="font-bold tracking-[0.24em] text-foreground uppercase">
               {t("home.brand")}

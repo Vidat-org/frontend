@@ -14,7 +14,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { OrganizationSwitcher, UserButton } from "@clerk/nextjs"
+import { UserButton } from "@clerk/nextjs"
 import {
   Bell,
   CreditCard,
@@ -27,12 +27,11 @@ import {
   Settings,
   Users,
   Webhook,
-  Zap,
 } from "lucide-react"
 import { useT } from "next-i18next/client"
-import { useTheme } from "next-themes"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { ThemeLogo } from "@/components/theme-logo"
 
 type NavItem = {
   title: string
@@ -44,8 +43,6 @@ export default function DashboardSidebar() {
   const pathname = usePathname()
   const { state } = useSidebar()
   const { t } = useT("common")
-
-  const { theme } = useTheme()
 
   const productNav: NavItem[] = [
     { title: t("sidebar.mySites"), url: "/dashboard", icon: PanelsTopLeft },
@@ -98,16 +95,7 @@ export default function DashboardSidebar() {
           <SidebarMenuItem className="w-full">
             <SidebarMenuButton asChild size="lg">
               <Link href="/dashboard" className="flex items-center gap-2">
-                {theme ? (
-                  <img
-                    src={
-                      theme === "light" ? "/light-logo.svg" : "/dark-logo.svg"
-                    }
-                    className="size-8"
-                  />
-                ) : (
-                  <div className="size-8 rounded-lg bg-muted"></div>
-                )}
+                <ThemeLogo className="h-8 w-auto" width={32} height={32} />
 
                 {state === "expanded" && (
                   <span className="text-base font-bold tracking-tight">
