@@ -19,6 +19,7 @@ import type { Metadata } from "next"
 import { getSiteMetadata } from "@/lib/metadata"
 import { getCurrentWorkspaceLocale } from "@/lib/workspace-locale"
 import Head from "next/head"
+import { swedishLng } from "@/lib/languages"
 
 initServerI18next(i18nConfig)
 
@@ -50,7 +51,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const locale = await getCurrentWorkspaceLocale()
+  const locale = "sv"
   const { i18n } = await getT("common", { lng: locale })
   const resources = getResources(i18n, ["common"])
   return (
@@ -72,7 +73,7 @@ export default async function RootLayout({
       >
         <ClerkProvider
           // localization={locale === "sv" ? svSE : enGB}
-          localization={svSE}
+          localization={swedishLng}
           appearance={{
             theme: shadcn,
             elements: {

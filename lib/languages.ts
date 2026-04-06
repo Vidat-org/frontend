@@ -1,0 +1,146 @@
+import { svSE } from "@clerk/localizations"
+
+export const swedishLng = {
+  ...svSE,
+  badge__activePlan: "Aktiv",
+  billing: {
+    addPaymentMethod__label: "Lägg till betalningsmetod",
+    alwaysFree: "Alltid gratis",
+    annually: "Årligen",
+    availableFeatures: "Tillgängliga funktioner",
+    billedAnnually: "Faktureras årligen",
+    billedMonthlyOnly: "Faktureras endast månadsvis",
+    billedAnnuallyOnly: "Faktureras endast årligen",
+    cancelFreeTrial: "Avsluta gratis provperiod",
+    cancelFreeTrialAccessUntil:
+      "Din provperiod förblir aktiv till {{ date | longDate('sv-SE') }}. Efter det förlorar du tillgång till provperiodens funktioner. Du kommer inte att debiteras.",
+    cancelFreeTrialTitle: "Avsluta gratis provperiod för {{plan}}-planen?",
+    cancelSubscription: "Avsluta prenumeration",
+    cancelSubscriptionAccessUntil:
+      "Du kan fortsätta använda '{{plan}}':s funktioner till {{ date | longDate('sv-SE') }}, efter vilket du inte längre har tillgång.",
+    cancelSubscriptionNoCharge:
+      "Du kommer inte att debiteras för den här prenumerationen.",
+    cancelSubscriptionPastDue:
+      "Din prenumeration avslutas omedelbart och du förlorar tillgång till alla planens funktioner. Du kommer att bli ombedd att betala det förfallna beloppet vid din nästa prenumeration.",
+    cancelSubscriptionTitle: "Avsluta {{plan}}-prenumerationen?",
+    cannotSubscribeMonthly:
+      "Du kan inte prenumerera på den här planen genom att betala månadsvis. För att prenumerera på den här planen måste du välja att betala årligen.",
+    cannotSubscribeUnrecoverable:
+      "Du kan inte prenumerera på den här planen. Din befintliga prenumeration är dyrare än den här planen.",
+    checkout: {
+      description__paymentSuccessful: "Din betalning lyckades.",
+      description__subscriptionSuccessful: "Din nya prenumeration är klar.",
+      downgradeNotice:
+        "Du behåller din nuvarande prenumeration och dess funktioner till slutet av faktureringsperioden, då du byter till den här prenumerationen.",
+      emailForm: {
+        subtitle:
+          "Innan du kan slutföra ditt köp måste du lägga till en e-postadress dit kvitton skickas.",
+        title: "Lägg till en e-postadress",
+      },
+      lineItems: {
+        title__freeTrialEndsAt: "Provperioden slutar den",
+        title__paymentMethod: "Betalningsmetod",
+        title__statementId: "Kontoutdrag-ID",
+        title__subscriptionBegins: "Prenumerationen börjar",
+        title__totalPaid: "Totalt betalt",
+      },
+      pastDueNotice: "Din tidigare prenumeration var förfallen utan betalning.",
+      perMonth: "per månad",
+      title: "Kassa",
+      title__paymentSuccessful: "Betalningen lyckades!",
+      title__subscriptionSuccessful: "Klart!",
+      title__trialSuccess: "Provperioden startades!",
+      totalDueAfterTrial:
+        "Totalt att betala efter att provperioden slutar om {{days}} dagar",
+    },
+    credit: "Kredit",
+    prorationCredit: "Proportionell kredit",
+    accountCredit: "Kontokredit",
+    creditRemainder: "Kredit för återstoden av din nuvarande prenumeration.",
+    payerCreditRemainder: "Kredit från kontosaldo.",
+    defaultFreePlanActive: "Du använder för närvarande gratisplanen",
+    free: "Gratis",
+    getStarted: "Kom igång",
+    keepFreeTrial: "Behåll gratis provperiod",
+    keepSubscription: "Behåll prenumeration",
+    manage: "Hantera",
+    manageSubscription: "Hantera prenumeration",
+    month: "Månad",
+    monthAbbreviation: "mån",
+    monthPerUnit: "Månad per {{unitName}}",
+    monthly: "Månadsvis",
+    pastDue: "Förfallen",
+    pay: "Betala {{amount}}",
+    paymentMethod: {
+      applePayDescription: {
+        annual: "Årlig betalning",
+        monthly: "Månadsbetalning",
+      },
+      dev: {
+        anyNumbers: "Valfria siffror",
+        cardNumber: "Kortnummer",
+        cvcZip: "CVC, postnummer",
+        developmentMode: "Utvecklingsläge",
+        expirationDate: "Utgångsdatum",
+        testCardInfo: "Testkortsinformation",
+      },
+    },
+    paymentMethods__label: "Betalningsmetoder",
+    popular: "Populär",
+    pricingTable: {
+      billingCycle: "Faktureringsperiod",
+      included: "Ingår",
+      seatCost: {
+        freeUpToSeats: "Gratis upp till {{endsAfterBlock}} platser",
+        upToSeats: "Upp till {{endsAfterBlock}} platser",
+        perSeat: "{{feePerBlockAmount}}/{{periodAbbreviation}} per plats",
+        includedSeats: "{{includedSeats}} platser ingår",
+        additionalSeats:
+          "({{additionalTierFeePerBlockAmount}}/{{periodAbbreviation}} för ytterligare)",
+        unlimitedSeats: "Obegränsat antal platser",
+        tooltip: {
+          freeForUpToSeats: "Gratis för upp till {{endsAfterBlock}} platser.",
+          additionalSeatsEach:
+            "Ytterligare platser kostar {{feePerBlockAmount}}/{{period}} styck.",
+          firstSeatsIncludedInPlan:
+            "De första {{endsAfterBlock}} platserna ingår i planen.",
+        },
+      },
+    },
+    reSubscribe: "Återprenumerera",
+    seats: "Platser",
+    seeAllFeatures: "Se alla funktioner",
+    startFreeTrial: "Starta gratis provperiod",
+    startFreeTrial__days: "Starta {{days}}-dagars gratis provperiod",
+    subscribe: "Prenumerera",
+    subscriptionDetails: {
+      beginsOn: "Börjar den",
+      currentBillingCycle: "Nuvarande faktureringsperiod",
+      endsOn: "Slutar den",
+      firstPaymentAmount: "Första betalningsbelopp",
+      firstPaymentOn: "Första betalning den",
+      nextPaymentAmount: "Nästa betalningsbelopp",
+      nextPaymentOn: "Nästa betalning den",
+      pastDueAt: "Förfallen den",
+      renewsAt: "Förnyas till",
+      subscribedOn: "Prenumererade den",
+      title: "Prenumeration",
+      trialEndsOn: "Provperioden slutar den",
+      trialStartedOn: "Provperioden startades den",
+    },
+    subtotal: "Delsumma",
+    switchPlan: "Byt till den här planen",
+    switchToAnnual: "Byt till årlig",
+    switchToAnnualWithAnnualPrice: "Byt till årlig {{currency}}{{price}} / år",
+    switchToMonthly: "Byt till månadsvis",
+    switchToMonthlyWithPrice:
+      "Byt till månadsvis {{currency}}{{price}} / månad",
+    totalDue: "Totalt att betala",
+    totalDueToday: "Totalt att betala idag",
+    viewFeatures: "Visa funktioner",
+    viewPayment: "Visa betalning",
+    year: "År",
+    yearAbbreviation: "år",
+    yearPerUnit: "År per {{unitName}}",
+  },
+}
