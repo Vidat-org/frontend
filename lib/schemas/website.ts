@@ -4,8 +4,12 @@ export const intervals = ["12h", "24h", "36h", "48h", "72h"] as const
 
 export const createWebsiteSchema = z.object({
   name: z.string(),
-  url: z.url(),
-  interval: z.enum(intervals),
+  url: z.url({
+    error: "Felaktig url",
+  }),
+  interval: z.enum(intervals, {
+    error: "Välj ett giltigt intervall",
+  }),
 })
 
 export const updateWebsiteSchema = createWebsiteSchema.extend({
@@ -22,6 +26,7 @@ export const intervalToSeconds: Record<(typeof intervals)[number], number> = {
 
 export function secondsToInterval(seconds: number): (typeof intervals)[number] {
   return (
-    intervals.find((interval) => intervalToSeconds[interval] === seconds) ?? "72h"
+    intervals.find((interval) => intervalToSeconds[interval] === seconds) ??
+    "72h"
   )
 }
