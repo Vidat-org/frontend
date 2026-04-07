@@ -821,7 +821,7 @@ function BillingOverviewCard({
   const recommendedUpgrade = billing?.recommendedUpgrade as
     | "starter"
     | "pro"
-    | "enterprise"
+    | "agency"
     | undefined
   const amount =
     billing?.amountSek && billing.amountSek > 0

@@ -28,10 +28,7 @@ export async function requireApiKey(request: Request) {
     log.warn("[api-key] missing API key")
     await log.flush()
     return {
-      error: Response.json(
-        { error: "missing_api_key" },
-        { status: 401 }
-      ),
+      error: Response.json({ error: "missing_api_key" }, { status: 401 }),
     }
   }
 
@@ -55,14 +52,11 @@ export async function requireApiKey(request: Request) {
     log.warn("[api-key] invalid API key")
     await log.flush()
     return {
-      error: Response.json(
-        { error: "invalid_api_key" },
-        { status: 401 }
-      ),
+      error: Response.json({ error: "invalid_api_key" }, { status: 401 }),
     }
   }
 
-  if (auth.planSlug !== "enterprise") {
+  if (auth.planSlug !== "agency") {
     log.warn("[api-key] plan does not include API access", {
       apiKeyId: auth.id,
       workspaceId: auth.workspaceId,

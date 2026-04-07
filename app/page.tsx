@@ -213,7 +213,7 @@ export default async function HomePage() {
     },
     {
       name: t("home.pricing.starter.name"),
-      price: "149 kr/mån",
+      price: "129 kr/mån",
       description: t("home.pricing.starter.description"),
       features: [
         t("home.pricing.starter.feature1"),
@@ -225,7 +225,7 @@ export default async function HomePage() {
     },
     {
       name: t("home.pricing.pro.name"),
-      price: "399 kr/mån",
+      price: "349 kr/mån",
       description: t("home.pricing.pro.description"),
       features: [
         t("home.pricing.pro.feature1"),
@@ -235,14 +235,14 @@ export default async function HomePage() {
       ],
     },
     {
-      name: t("home.pricing.enterprise.name"),
-      price: "999 kr/mån",
-      description: t("home.pricing.enterprise.description"),
+      name: t("home.pricing.agency.name"),
+      price: "799 kr/mån",
+      description: t("home.pricing.agency.description"),
       features: [
-        t("home.pricing.enterprise.feature1"),
-        t("home.pricing.enterprise.feature2"),
-        t("home.pricing.enterprise.feature3"),
-        t("home.pricing.enterprise.feature4"),
+        t("home.pricing.agency.feature1"),
+        t("home.pricing.agency.feature2"),
+        t("home.pricing.agency.feature3"),
+        t("home.pricing.agency.feature4"),
       ],
     },
   ]
@@ -264,7 +264,7 @@ export default async function HomePage() {
 
       <div className="relative mx-auto flex max-w-7xl flex-col px-3 pt-3 pb-10 sm:px-6 sm:pt-4 sm:pb-12 lg:px-10">
         {/* Header */}
-        <header className="sticky top-3 z-30 rounded-2xl border border-border/80 bg-background/88 px-3 py-3 backdrop-blur md:top-4 sm:px-4 md:px-5">
+        <header className="sticky top-3 z-30 rounded-2xl border border-border/80 bg-background/88 px-3 py-3 backdrop-blur sm:px-4 md:top-4 md:px-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <Link href="/" className="flex min-w-0 shrink items-center gap-3">
               <ThemeLogo className="h-8 w-auto shrink-0 md:h-9" />
@@ -345,7 +345,9 @@ export default async function HomePage() {
           <div className="flex flex-col items-center space-y-6 text-center sm:space-y-8 lg:items-start lg:text-left">
             <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-chart-1/20 bg-chart-1/8 px-3 py-2 text-[10px] leading-relaxed tracking-[0.18em] text-chart-1 uppercase md:text-xs">
               <BellRing className="h-3.5 w-3.5 shrink-0" />
-              <span className="whitespace-normal sm:whitespace-nowrap">{t("home.hero.pill")}</span>
+              <span className="whitespace-normal sm:whitespace-nowrap">
+                {t("home.hero.pill")}
+              </span>
             </div>
 
             <div className="space-y-5 sm:space-y-6">
@@ -375,7 +377,7 @@ export default async function HomePage() {
               </Link>
             </div>
 
-            <div className="grid w-full grid-cols-2 gap-4 border-t border-border/80 pt-6 sm:pt-8 sm:grid-cols-3">
+            <div className="grid w-full grid-cols-2 gap-4 border-t border-border/80 pt-6 sm:grid-cols-3 sm:pt-8">
               {[
                 { val: "< 5 min", label: t("home.metrics.m1") },
                 { val: "100%", label: t("home.metrics.m2") },

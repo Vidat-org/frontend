@@ -77,7 +77,7 @@ const billingSchema = z.object({
   provider: z.string().trim().min(2).max(40).default("manual"),
   providerCustomerId: z.string().trim().max(120).nullable().optional(),
   providerSubscriptionId: z.string().trim().max(120).nullable().optional(),
-  planSlug: z.enum(["free_user", "starter", "pro", "enterprise"]),
+  planSlug: z.enum(["free_user", "starter", "pro", "agency"]),
   status: z.enum(["trialing", "active", "past_due", "canceled", "incomplete"]),
   amountSek: z.number().int().min(0).max(500000),
   dunningStatus: z.enum(["clear", "at_risk", "in_dunning", "write_off"]),
@@ -248,8 +248,8 @@ async function buildAccountSummary(context: {
       scheduledScans: normalizedPlan !== "free_org",
       emailAlerts: normalizedPlan !== "free_org",
       slackAlerts:
-        normalizedPlan === "pro_org" || normalizedPlan === "enterprise_org",
-      apiAccess: normalizedPlan === "enterprise_org",
+        normalizedPlan === "pro_org" || normalizedPlan === "agency_org",
+      apiAccess: normalizedPlan === "agency_org",
       teamManagement: normalizedPlan !== "free_org",
       auditLogs: normalizedPlan !== "free_org",
     },
@@ -268,10 +268,8 @@ async function buildAccountSummary(context: {
         starter:
           subscription.planSlug === "starter" ? null : links.checkout.starter,
         pro: subscription.planSlug === "pro" ? null : links.checkout.pro,
-        enterprise:
-          subscription.planSlug === "enterprise"
-            ? null
-            : links.checkout.enterprise,
+        agency:
+          subscription.planSlug === "agency" ? null : links.checkout.agency,
       },
     },
     onboarding: {
@@ -293,9 +291,9 @@ function requireWorkspaceAdmin(role: string) {
   }
 }
 
-function requireEnterprisePlan(plan: string) {
-  if (normalizePlanSlug(plan) !== "enterprise_org") {
-    throw new Error("PLAN_REQUIRES_ENTERPRISE")
+function requireAgencyPlan(plan: string) {
+  if (normalizePlanSlug(plan) !== "agency_org") {
+    throw new Error("PLAN_REQUIRES_AGENCY")
   }
 }
 
@@ -809,7 +807,7 @@ export const updateOnboardingStep = protectedProcedure
   })
 
 export const listApiKeys = protectedProcedure.handler(async ({ context }) => {
-  requireEnterprisePlan(context.plan)
+  requireAgencyPlan(context.plan)
 
   return cachedQuery(
     {
@@ -829,7 +827,7 @@ export const createApiKey = protectedProcedure
   .input(apiKeySchema)
   .handler(async ({ context, input }) => {
     requireWorkspaceAdmin(context.workspaceRole)
-    requireEnterprisePlan(context.plan)
+    requireAgencyPlan(context.plan)
     await assertRateLimit({
       key: `ratelimit:account:api-keys:${context.workspaceId}:${context.userId}`,
       windowMs: 60_000,
@@ -870,7 +868,7 @@ export const revokeApiKey = protectedProcedure
   .input(z.object({ id: z.string() }))
   .handler(async ({ context, input }) => {
     requireWorkspaceAdmin(context.workspaceRole)
-    requireEnterprisePlan(context.plan)
+    requireAgencyPlan(context.plan)
 
     const updated = await db
       .update(apiKeys)

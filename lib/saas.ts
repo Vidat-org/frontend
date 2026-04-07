@@ -20,14 +20,14 @@ export function getBillingLinks(planSlug: string) {
     checkout: {
       starter: process.env.NEXT_PUBLIC_CHECKOUT_STARTER_URL ?? null,
       pro: process.env.NEXT_PUBLIC_CHECKOUT_PRO_URL ?? null,
-      enterprise: process.env.NEXT_PUBLIC_CHECKOUT_ENTERPRISE_URL ?? null,
+      agency: process.env.NEXT_PUBLIC_CHECKOUT_AGENCY_URL ?? null,
     },
     recommendedUpgrade:
       normalized === "free_org"
         ? "starter"
         : normalized === "starter_org"
           ? "pro"
-          : "enterprise",
+          : "agency",
   }
 }
 

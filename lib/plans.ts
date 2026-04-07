@@ -2,7 +2,7 @@ export type CanonicalPlan =
   | "free_org"
   | "starter_org"
   | "pro_org"
-  | "enterprise_org"
+  | "agency_org"
 
 type PlanDefinition = {
   slug: CanonicalPlan
@@ -18,7 +18,7 @@ const BILLING_SLUG_ALIASES: Record<string, CanonicalPlan> = {
   free_org: "free_org",
   starter_org: "starter_org",
   pro_org: "pro_org",
-  enterprise_org: "enterprise_org",
+  agency_org: "agency_org",
   // free aliases
   free: "free_org",
   free_user: "free_org",
@@ -32,9 +32,9 @@ const BILLING_SLUG_ALIASES: Record<string, CanonicalPlan> = {
   pro: "pro_org",
   professional: "pro_org",
   business: "pro_org",
-  // enterprise aliases
-  enterprise: "enterprise_org",
-  custom: "enterprise_org",
+  // agency aliases
+  agency: "agency_org",
+  custom: "agency_org",
 }
 
 export const PLAN_DEFINITIONS: Record<CanonicalPlan, PlanDefinition> = {
@@ -77,11 +77,11 @@ export const PLAN_DEFINITIONS: Record<CanonicalPlan, PlanDefinition> = {
       "Webhook- och Slack-integrationer",
     ],
   },
-  enterprise_org: {
-    slug: "enterprise_org",
-    label: "Enterprise",
+  agency_org: {
+    slug: "agency_org",
+    label: "Agency",
     monthlyPriceSek: 999,
-    websiteLimit: 9999,
+    websiteLimit: 125,
     historyDays: null,
     features: [
       "Obegransade webbplatser",

@@ -1177,7 +1177,7 @@ export default function SettingsCenter({
               <CardContent className="space-y-4">
                 {!account.capabilities.apiAccess ? (
                   <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-                    {t("settingsCenter.apiKeys.enterpriseOnly")}
+                    {t("settingsCenter.apiKeys.agencyOnly")}
                   </div>
                 ) : null}
                 {latestApiKey ? (
@@ -1579,7 +1579,7 @@ function getUpgradeHref(
   const recommendedUpgrade = billing.recommendedUpgrade as
     | "starter"
     | "pro"
-    | "enterprise"
+    | "agency"
     | undefined
 
   return recommendedUpgrade ? billing.checkout[recommendedUpgrade] : null

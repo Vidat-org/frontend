@@ -98,7 +98,7 @@ const planNameKeys: Record<string, string> = {
   free_org: "home.pricing.free.name",
   starter_org: "home.pricing.starter.name",
   pro_org: "home.pricing.pro.name",
-  enterprise_org: "home.pricing.enterprise.name",
+  agency_org: "home.pricing.agency.name",
 }
 
 function translateMappedValue(
