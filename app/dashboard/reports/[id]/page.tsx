@@ -33,7 +33,7 @@ export default async function Page({
 
   return (
     report?.content && (
-      <div className="mx-auto w-fit max-w-3xl space-y-6 pt-16">
+      <div className="mx-auto w-fit max-w-3xl space-y-6 md:pt-14">
         <ReportOnboardingBanner />
         <ReportContent content={report?.content} />
       </div>
