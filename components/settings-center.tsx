@@ -415,7 +415,7 @@ export default function SettingsCenter({
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="w-full space-y-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="text-sm text-muted-foreground">
@@ -428,10 +428,10 @@ export default function SettingsCenter({
             {t("settingsCenter.subtitle")}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        {/* <div className="flex flex-wrap items-center gap-2">
           <Badge variant="outline">{account.workspace.name}</Badge>
           <Badge variant="outline">{getPlanLabel(account.plan.slug, t)}</Badge>
-        </div>
+        </div> */}
       </div>
       {showSection("all") ? (
         <div className="grid gap-4 md:grid-cols-4">
