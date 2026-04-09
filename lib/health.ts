@@ -7,6 +7,12 @@ import { logger } from "./logger"
 
 type ComponentStatus = "operational" | "degraded" | "outage"
 
+type DependencyCheck = {
+  ok: boolean
+  detail: string
+  detailKey: string
+}
+
 export type HealthComponent = {
   key: "scanning" | "reports" | "billing" | "notifications"
   status: ComponentStatus
@@ -84,6 +90,74 @@ async function checkValkey() {
   }
 }
 
+function hasRequiredEnv(name: string) {
+  return Boolean(process.env[name]?.trim())
+}
+
+function checkBilling(): DependencyCheck {
+  const requiredWebhookSecrets = [
+    "CLERK_WEBHOOK_SIGNING_SECRET_USERS",
+    "CLERK_WEBHOOK_SIGNING_SECRET_ORGANIZATIONS",
+    "CLERK_WEBHOOK_SIGNING_SECRET_UPDATE_PLAN",
+  ]
+
+  const missing = requiredWebhookSecrets.filter((key) => !hasRequiredEnv(key))
+
+  if (missing.length > 0) {
+    return {
+      ok: false,
+      detail:
+        "Billing webhooks are not fully configured; subscription state can drift from Clerk.",
+      detailKey: "status.detailBillingMissingWebhooks",
+    }
+  }
+
+  return {
+    ok: true,
+    detail:
+      "Clerk Billing webhooks are configured and subscription sync is ready.",
+    detailKey: "status.detailBillingOperational",
+  }
+}
+
+function checkNotificationDependencies(valkeyOk: boolean): DependencyCheck {
+  const missingEmailEnv = ["RESEND_API_KEY", "SUPPORT_FROM_EMAIL"].filter(
+    (key) => !hasRequiredEnv(key)
+  )
+
+  if (!valkeyOk && missingEmailEnv.length > 0) {
+    return {
+      ok: false,
+      detail:
+        "Valkey and email delivery are not fully configured; notifications are degraded.",
+      detailKey: "status.detailNotificationsMissingCacheAndEmail",
+    }
+  }
+
+  if (!valkeyOk) {
+    return {
+      ok: false,
+      detail: "Valkey is unavailable; caching and rate limiting are degraded.",
+      detailKey: "status.detailNotificationsUnavailable",
+    }
+  }
+
+  if (missingEmailEnv.length > 0) {
+    return {
+      ok: false,
+      detail:
+        "Email delivery is not fully configured; webhook and Slack flows may work but support email is degraded.",
+      detailKey: "status.detailNotificationsMissingEmail",
+    }
+  }
+
+  return {
+    ok: true,
+    detail: "Delivery cache, rate limiting, and email dependencies are ready.",
+    detailKey: "status.detailNotificationsOperational",
+  }
+}
+
 function summarizeStatus(statuses: ComponentStatus[]): ComponentStatus {
   if (statuses.includes("outage")) {
     return "outage"
@@ -101,6 +175,8 @@ export async function getSystemHealth(): Promise<SystemHealth> {
     checkDatabase(),
     checkValkey(),
   ])
+  const billing = checkBilling()
+  const notifications = checkNotificationDependencies(valkey.ok)
 
   const components: HealthComponent[] = [
     {
@@ -125,16 +201,15 @@ export async function getSystemHealth(): Promise<SystemHealth> {
     },
     {
       key: "billing",
-      status: "operational",
-      detail:
-        "Clerk Billing is the source of truth for subscription state and billing events.",
-      detailKey: "status.detailBillingOperational",
+      status: billing.ok ? "operational" : "degraded",
+      detail: billing.detail,
+      detailKey: billing.detailKey,
     },
     {
       key: "notifications",
-      status: valkey.ok ? "operational" : "degraded",
-      detail: valkey.detail,
-      detailKey: valkey.detailKey,
+      status: notifications.ok ? "operational" : "degraded",
+      detail: notifications.detail,
+      detailKey: notifications.detailKey,
     },
   ]
 

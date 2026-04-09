@@ -3,7 +3,7 @@ import { protectedProcedure } from "../orpc"
 import { reports, websites } from "@/migrations/schema"
 import { and, asc, desc, eq } from "drizzle-orm"
 import z from "zod"
-import { appendAuditLog, markOnboardingStep } from "@/lib/saas"
+import { markOnboardingStep } from "@/lib/saas"
 import { cachedQuery, reportTag, workspaceTag } from "@/lib/cache"
 
 export const listReports = protectedProcedure.handler(async ({ context }) => {
@@ -37,7 +37,6 @@ export const listReports = protectedProcedure.handler(async ({ context }) => {
           }
         }
 
-        // ✅ Only push if report exists
         if (row.report) {
           acc[row.websiteUrl].reports.push(row.report)
         }
@@ -85,15 +84,6 @@ export const getReportById = protectedProcedure
     if (report[0]?.report) {
       await markOnboardingStep(context.workspaceId, {
         hasViewedReport: true,
-      })
-
-      await appendAuditLog({
-        workspaceId: context.workspaceId,
-        actorUserId: context.userId,
-        targetType: "report",
-        targetId: input.id,
-        action: "report.viewed",
-        summary: "En rapport öppnades",
       })
     }
 

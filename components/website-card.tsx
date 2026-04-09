@@ -240,11 +240,15 @@ function SiteFavicon({ url }: { url: string }) {
 
   return (
     <span className="flex size-7 items-center justify-center rounded bg-muted">
-      <img
-        src={`https://icons.duckduckgo.com/ip2/${host}.ico`}
-        className="size-6 object-contain"
+      <span
+        className="size-6 rounded bg-center bg-no-repeat"
+        style={{
+          backgroundImage: `url(https://icons.duckduckgo.com/ip2/${host}.ico)`,
+          backgroundSize: "contain",
+        }}
+        role="img"
+        aria-hidden="true"
         onError={() => setFailed(true)}
-        alt=""
       />
     </span>
   )

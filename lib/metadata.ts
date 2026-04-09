@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 import { getT } from "next-i18next/server"
-import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n"
-import { cookies } from "next/headers"
+import type { Locale } from "@/lib/i18n"
 
 const SITE_NAME = "Vidat"
 const DEFAULT_DESCRIPTION =

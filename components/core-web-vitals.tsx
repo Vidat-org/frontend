@@ -197,7 +197,11 @@ export default function CoreWebVitals({ scanId }: { scanId: string }) {
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {metrics.map((m) => (
-              <MetricTile key={m.label} metric={m} statusConfig={statusConfig} />
+              <MetricTile
+                key={m.label}
+                metric={m}
+                statusConfig={statusConfig}
+              />
             ))}
           </div>
         )}
@@ -226,7 +230,7 @@ function getStatusConfig(t: TFunction) {
       label: t("vitals.statusPoor"),
       bar: "bg-destructive",
       text: "text-destructive dark:text-red-400",
-      bg: "bg-destructive/15 dark:bg-destructive/25",
+      bg: "bg-destructive/15 dark:bg-destructive/10",
       border: "border-destructive/30 dark:border-destructive/50",
     },
     unknown: {

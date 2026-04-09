@@ -740,10 +740,10 @@ export default async function HomePage() {
 
           <nav className="flex flex-wrap gap-x-8 gap-y-4 font-medium">
             {[
-              { href: "/trust", label: "Trust Center" },
-              { href: "/privacy", label: "Privacy" },
-              { href: "/terms", label: "Terms" },
-              { href: "/security", label: "Security" },
+              { href: "/trust", label: t("home.footer.links.trust") },
+              { href: "/privacy", label: t("home.footer.links.privacy") },
+              { href: "/terms", label: t("home.footer.links.terms") },
+              { href: "/security", label: t("home.footer.links.security") },
               { href: "/contact", label: t("home.footer.links.contact") },
             ].map((item) => (
               <Link

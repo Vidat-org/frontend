@@ -1,6 +1,5 @@
 import { OrganizationProfile } from "@clerk/nextjs"
 import { createPageMetadata, getMetadataT } from "@/lib/metadata"
-import SettingsCenter from "@/components/settings-center"
 
 export async function generateMetadata() {
   const { t } = await getMetadataT()

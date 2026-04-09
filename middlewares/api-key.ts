@@ -1,5 +1,6 @@
 import { authenticateApiKey } from "@/lib/api-key"
 import { getRequestLogger } from "@/lib/logger"
+import { normalizePlanSlug } from "@/lib/plans"
 import { getRequestIp, rateLimit } from "@/lib/rate-limit"
 
 function getRawApiKey(request: Request) {
@@ -56,7 +57,7 @@ export async function requireApiKey(request: Request) {
     }
   }
 
-  if (auth.planSlug !== "agency") {
+  if (normalizePlanSlug(auth.planSlug) !== "agency_org") {
     log.warn("[api-key] plan does not include API access", {
       apiKeyId: auth.id,
       workspaceId: auth.workspaceId,

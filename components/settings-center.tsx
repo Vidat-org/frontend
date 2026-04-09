@@ -143,18 +143,13 @@ export default function SettingsCenter({
     scoreDropThreshold: undefined as number | undefined,
     slackWebhookUrl: undefined as string | undefined,
   })
-  // const [workspaceLocale, setWorkspaceLocale] = useState<Locale | undefined>(
-  //   undefined
-  // )
-  const [workspaceLocale, setWorkspaceLocale] = useState<Locale | undefined>(
-    "sv"
-  )
   const [webhookForm, setWebhookForm] = useState({
     label: "",
     url: "",
     eventTypes: ["scan.failed", "score.regression"] as string[],
     secret: "",
   })
+  const [workspaceLocale, setWorkspaceLocale] = useState<Locale | undefined>()
   const [apiKeyLabel, setApiKeyLabel] = useState("")
   const [latestApiKey, setLatestApiKey] = useState<string | null>(null)
   const [supportForm, setSupportForm] = useState<SupportFormState>({
@@ -188,9 +183,8 @@ export default function SettingsCenter({
     onError: () => toast.error(t("settingsCenter.saveSettingsFailed")),
   })
 
-  // const resolvedWorkspaceLocale =
-  //   workspaceLocale ?? account?.workspace.preferredLocale ?? "sv"
-  const resolvedWorkspaceLocale = "sv"
+  const resolvedWorkspaceLocale =
+    workspaceLocale ?? account?.workspace.preferredLocale ?? "sv"
 
   const saveWorkspaceLanguage = useMutation({
     mutationFn: async () =>
@@ -1619,19 +1613,6 @@ function getBillingCycleLabel(amountSek: number, t: TFunction) {
   }
 
   return t("settingsCenter.billingCycleUnknown")
-}
-
-function formatSekAmount(amountSek: number, locale: Locale) {
-  if (amountSek <= 0) {
-    return "SEK -"
-  }
-
-  // return new Intl.NumberFormat(locale === "sv" ? "sv-SE" : "en-US", {
-  //   style: "currency",
-  //   currency: "SEK",
-  //   maximumFractionDigits: 0,
-  // }).format(amountSek)
-  return amountSek
 }
 
 function formatAmount(amountCents: number, locale: Locale) {

@@ -1,8 +1,14 @@
 import { svSE } from "@clerk/localizations"
-
 export const swedishLng = {
   ...svSE,
   badge__activePlan: "Aktiv",
+  signIn: {
+    ...svSE.signIn,
+    start: {
+      ...svSE.signIn?.start,
+      titleCombined: "Fortsätt till {{applicationName}}",
+    },
+  },
   billing: {
     addPaymentMethod__label: "Lägg till betalningsmetod",
     alwaysFree: "Alltid gratis",

@@ -30,8 +30,7 @@ export default async function Layout({
     return <NoOrganizationState />
   }
 
-  // const locale = await getCurrentWorkspaceLocale()
-  const locale = "sv"
+  const locale = await getCurrentWorkspaceLocale()
   const { i18n } = await getT("common", { lng: locale })
   const resources = getResources(i18n, ["common"])
 

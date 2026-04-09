@@ -1,12 +1,15 @@
-import { Inter, Playfair_Display, JetBrains_Mono } from "next/font/google"
-import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
-import { ClerkProvider } from "@clerk/nextjs"
-import { svSE, enGB } from "@clerk/localizations"
-import Providers from "./providers"
 import { Toaster } from "@/components/ui/sonner"
+import { ClerkProvider } from "@clerk/nextjs"
 import { shadcn } from "@clerk/themes"
+import { Geist_Mono, JetBrains_Mono, Playfair_Display } from "next/font/google"
+import "./globals.css"
+import Providers from "./providers"
 
+import i18nConfig from "@/i18n.config"
+import { swedishLng } from "@/lib/languages"
+import { getSiteMetadata } from "@/lib/metadata"
+import type { Metadata } from "next"
 import { I18nProvider } from "next-i18next/client"
 import {
   generateI18nStaticParams,
@@ -14,12 +17,8 @@ import {
   getT,
   initServerI18next,
 } from "next-i18next/server"
-import i18nConfig from "@/i18n.config"
-import type { Metadata } from "next"
-import { getSiteMetadata } from "@/lib/metadata"
-import { getCurrentWorkspaceLocale } from "@/lib/workspace-locale"
 import Head from "next/head"
-import { swedishLng } from "@/lib/languages"
+import { CookieConsent } from "@/components/cookie-consent"
 
 initServerI18next(i18nConfig)
 
@@ -31,21 +30,20 @@ export async function generateStaticParams() {
   return generateI18nStaticParams()
 }
 
-const fontSans = Inter({
+const fontSans = Geist_Mono({
   subsets: ["latin"],
-  variable: "--font-sans",
+  variable: "--font-geist",
 })
 
 const fontSerif = Playfair_Display({
   subsets: ["latin"],
-  variable: "--font-serif",
+  variable: "--font-playfair",
 })
 
 const fontMono = JetBrains_Mono({
   subsets: ["latin"],
-  variable: "--font-mono",
+  variable: "--font-jetbrains",
 })
-
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -58,19 +56,12 @@ export default async function RootLayout({
     <html
       lang={locale}
       suppressHydrationWarning
-      // className={cn(
-      //   "antialiased",
-      //   fontSans.variable,
-      //   "font-mono",
-      //   jetbrainsMono.variable
-      // )}
+      className={`${fontSans.variable} ${fontSerif.variable} ${fontMono.variable} antialiased`}
     >
       <Head>
         <link rel="apple-touch-icon" href="/apple-icon.png" type="image/" />
       </Head>
-      <body
-        className={`${fontSans.variable} ${fontSerif.variable} ${fontMono.variable} antialiased`}
-      >
+      <body>
         <ClerkProvider
           // localization={locale === "sv" ? svSE : enGB}
           localization={swedishLng}
@@ -103,6 +94,7 @@ export default async function RootLayout({
                 {children}
                 {/*</main>*/}
                 <Toaster richColors />
+                <CookieConsent variant="small" />
               </ThemeProvider>
             </Providers>
           </I18nProvider>

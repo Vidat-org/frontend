@@ -34,39 +34,39 @@ export const trustPageContent: Record<TrustPageKey, LocalizedTrustContent> = {
       eyebrow: "Integritet",
       title: "Integritetspolicy",
       intro:
-        "Den här sidan förklarar vilken data Vidat behandlar, varför den behövs och hur kunder kan begära insyn, export eller radering.",
+        "Här beskriver vi vilka personuppgifter Vidat behandlar, varför uppgifterna behövs och hur du kan begära tillgång, rättelse eller radering.",
       highlight:
-        "Inför publik lansering bör policyn granskas juridiskt och uppdateras med korrekt bolagsnamn, adress, personuppgiftsansvarig och laglig grund per behandling.",
+        "Vidat behandlar bara den information som krävs för att leverera tjänsten, skydda konton, ge support och följa tillämpliga rättsliga krav.",
       sections: [
         {
-          title: "Vilken data vi behandlar",
+          title: "Vilka uppgifter vi behandlar",
           body: [
-            "Vi behandlar kontouppgifter som namn, e-postadress, workspace-medlemskap, roller och autentiseringsrelaterade identifierare.",
-            "Vi lagrar produktdata som webbplatsadresser, scanresultat, rapporter, notifieringsinställningar, webhook-destinationer, supportärenden och audit-händelser.",
-            "Vi kan även behandla teknisk driftdata som IP-adresser, loggar, rate-limit-händelser och felspårning för att hålla tjänsten stabil och säker.",
+            "Vi behandlar kontouppgifter som namn, e-postadress, arbetsyta, roller och autentiseringsrelaterade identifierare.",
+            "Vi lagrar produktdata som webbplatsadresser, scanresultat, rapporter, notifieringsinställningar, webhook-mål, supportärenden och loggade händelser i tjänsten.",
+            "Vi behandlar också teknisk driftdata, till exempel IP-adresser, sessionsinformation, felspårning och säkerhetsloggar, för att hålla tjänsten stabil och säker.",
           ],
         },
         {
-          title: "Varför vi behandlar datan",
+          title: "Varför vi behandlar uppgifterna",
           body: [
-            "Kontodata behövs för inloggning, åtkomstkontroll, workspace-hantering och support.",
-            "Scanresultat och rapportdata behövs för att leverera övervakning, historik, regressionsdetektering och delbara rapporter.",
-            "Drift- och säkerhetsdata används för incidenthantering, missbruksdetektion, felsökning och för att skydda tjänsten och våra kunder.",
+            "Kontouppgifter används för inloggning, åtkomstkontroll, arbetsytehantering och support.",
+            "Scanresultat och rapportdata används för att leverera övervakning, historik, analys och delbara rapporter.",
+            "Drift- och säkerhetsdata används för incidenthantering, missbruksdetektion, felsökning och skydd av tjänsten och våra användare.",
           ],
         },
         {
-          title: "Lagring, retention och radering",
+          title: "Lagring och radering",
           body: [
-            "Kunddata bör bara sparas så länge det krävs för att leverera tjänsten, uppfylla legala skyldigheter och hantera rimliga backup-fönster.",
-            "Inför lansering bör du dokumentera exakta retention-regler för scanhistorik, supportärenden, audit-loggar och avslutade konton.",
-            "Radering bör omfatta både primärdata och dokumenterade rutiner för backup-livscykel, export och verifiering av att åtkomst verkligen stängs av.",
+            "Vi sparar uppgifter så länge de behövs för att leverera tjänsten, uppfylla avtal, följa lagkrav och hantera rimliga backup- och säkerhetsbehov.",
+            "När ett konto avslutas raderas eller anonymiseras uppgifter enligt våra interna rutiner, med hänsyn till bokföringskrav, säkerhetsloggar och nödvändig spårbarhet.",
+            "Radering omfattar både data i aktiva system och data som omfattas av våra backup- och återställningsprocesser.",
           ],
         },
         {
-          title: "Kundens rättigheter",
+          title: "Dina rättigheter",
           body: [
-            "Kunder ska kunna begära tillgång till sina personuppgifter, rättelse av felaktiga uppgifter, export av relevanta data och radering där lagkrav tillåter det.",
-            "Det bör också framgå hur invändningar, begränsningar och klagomål hanteras, särskilt för kunder inom EU/EES.",
+            "Du kan begära information om vilka personuppgifter vi behandlar om dig, få felaktiga uppgifter rättade och begära export eller radering där det är möjligt.",
+            "Du kan också invända mot viss behandling eller lämna klagomål till relevant tillsynsmyndighet om du anser att behandlingen strider mot gällande regler.",
           ],
         },
       ],
@@ -79,39 +79,39 @@ export const trustPageContent: Record<TrustPageKey, LocalizedTrustContent> = {
       eyebrow: "Privacy",
       title: "Privacy policy",
       intro:
-        "This page explains what data Vidat processes, why it is needed, and how customers can request access, export, or deletion.",
+        "This page explains what personal data Vidat processes, why it is needed, and how you can request access, correction, or deletion.",
       highlight:
-        "Before public launch, this policy should be reviewed by counsel and updated with the correct legal entity, address, controller details, and lawful basis per processing activity.",
+        "Vidat only processes the information needed to provide the service, protect accounts, deliver support, and comply with applicable legal obligations.",
       sections: [
         {
           title: "What data we process",
           body: [
-            "We process account details such as name, email address, workspace membership, roles, and authentication-related identifiers.",
-            "We store product data such as website URLs, scan results, reports, notification settings, webhook destinations, support requests, and audit events.",
-            "We may also process technical operations data such as IP addresses, logs, rate-limit events, and error traces to keep the service secure and stable.",
+            "We process account data such as name, email address, workspace membership, roles, and authentication-related identifiers.",
+            "We store product data such as website URLs, scan results, reports, notification settings, webhook targets, support requests, and operational events within the service.",
+            "We also process technical operations data such as IP addresses, session information, error traces, and security logs to keep the service stable and secure.",
           ],
         },
         {
           title: "Why we process it",
           body: [
-            "Account data is required for sign-in, access control, workspace management, and support.",
-            "Scan and reporting data is required to deliver monitoring, history, regression detection, and shareable reports.",
-            "Operational and security data is used for incident response, abuse detection, troubleshooting, and protecting the service and our customers.",
+            "Account data is used for sign-in, access control, workspace management, and support.",
+            "Scan and reporting data is used to deliver monitoring, history, analysis, and shareable reports.",
+            "Operational and security data is used for incident handling, abuse detection, troubleshooting, and protection of the service and its users.",
           ],
         },
         {
-          title: "Storage, retention, and deletion",
+          title: "Storage and deletion",
           body: [
-            "Customer data should be retained only as long as required to deliver the service, meet legal obligations, and support reasonable backup windows.",
-            "Before launch, document exact retention rules for scan history, support requests, audit logs, and canceled accounts.",
-            "Deletion should cover both primary data and documented backup lifecycle, export, and verification that access is fully revoked.",
+            "We retain data for as long as needed to provide the service, fulfill contractual commitments, comply with legal obligations, and support reasonable backup and security requirements.",
+            "When an account is closed, data is deleted or anonymized according to internal routines, taking into account accounting requirements, security logs, and necessary traceability.",
+            "Deletion covers both active systems and data that is part of backup and recovery processes.",
           ],
         },
         {
-          title: "Customer rights",
+          title: "Your rights",
           body: [
-            "Customers should be able to request access to their personal data, correction of inaccurate data, export of relevant records, and deletion where legally permitted.",
-            "The policy should also explain how objections, restrictions, and complaints are handled, especially for customers in the EU/EEA.",
+            "You can request information about the personal data we process about you, have inaccurate data corrected, and request export or deletion where applicable.",
+            "You may also object to certain processing or lodge a complaint with the relevant supervisory authority if you believe the processing conflicts with applicable rules.",
           ],
         },
       ],
@@ -126,36 +126,36 @@ export const trustPageContent: Record<TrustPageKey, LocalizedTrustContent> = {
       eyebrow: "Juridik",
       title: "Användarvillkor",
       intro:
-        "De här villkoren beskriver grundreglerna för hur tjänsten får användas, vad kunder kan förvänta sig och vilka begränsningar som gäller.",
+        "De här villkoren beskriver hur Vidat får användas, vad som ingår i tjänsten och vilket ansvar som gäller mellan kund och leverantör.",
       highlight:
-        "Detta är ett produktnära utkast. Inför lansering bör det kompletteras med bolagsuppgifter, jurisdiktion, ansvarstak, uppsägning, återbetalningsvillkor och juridiskt godkänd formulering.",
+        "Genom att använda Vidat accepterar du dessa villkor och ansvarar för att tjänsten används lagligt, ansvarsfullt och inom ramen för er behörighet.",
       sections: [
         {
           title: "Tillåten användning",
           body: [
-            "Tjänsten får bara användas för webbplatser och resurser som kunden äger, driver eller uttryckligen har tillstånd att övervaka.",
-            "Kunden ansvarar för att användningen följer tillämpliga lagar, avtal, robots-regler och interna säkerhetspolicys.",
+            "Tjänsten får bara användas för webbplatser och resurser som kunden äger, driver eller uttryckligen har rätt att övervaka.",
+            "Kunden ansvarar för att användningen följer tillämpliga lagar, avtal, robots-regler och interna säkerhetskrav.",
           ],
         },
         {
           title: "Planer, avgifter och gränser",
           body: [
-            "Betalda planer styr vilka funktioner, användningsgränser, retention-nivåer och supportnivåer som ingår.",
-            "Överträdelser av planbegränsningar kan leda till pausad funktionalitet, uppgradering eller manuell kontakt från support/billing.",
+            "Vald plan avgör vilka funktioner, användningsgränser, lagringsnivåer och supportnivåer som ingår.",
+            "Om gränser överskrids kan funktionalitet begränsas tills planen uppgraderas eller användningen anpassas.",
           ],
         },
         {
           title: "Tillgänglighet och support",
           body: [
-            "Vidat ska drivas med rimliga säkerhets- och driftåtgärder, men ingen SaaS bör lova mer än vad dess operativa processer faktiskt klarar.",
-            "Om särskilda SLA:er eller svarstider erbjuds ska de beskrivas separat per plan eller i enterprise-avtal.",
+            "Vidat drivs med rimliga säkerhets- och driftrutiner för att ge en stabil och tillförlitlig tjänst.",
+            "Eventuella särskilda SLA:er, svarstider eller utökade supportåtaganden regleras separat per plan eller avtal.",
           ],
         },
         {
           title: "Uppsägning och avslut",
           body: [
-            "Vid avslut av konto eller prenumeration bör kunden få rimlig tid att exportera relevant data innan retention-regler och raderingsrutiner tar vid.",
-            "Vidat ska kunna stänga av konton som missbrukar tjänsten, försöker kringgå gränser eller utsätter infrastrukturen eller andra kunder för risk.",
+            "När ett konto eller en prenumeration avslutas får kunden möjlighet att exportera relevant data innan ordinarie raderingsrutiner träder i kraft.",
+            "Vidat kan tillfälligt begränsa eller stänga av konton som missbrukar tjänsten, kringgår gränser eller skapar risk för infrastrukturen eller andra kunder.",
           ],
         },
       ],
@@ -171,36 +171,36 @@ export const trustPageContent: Record<TrustPageKey, LocalizedTrustContent> = {
       eyebrow: "Legal",
       title: "Terms of use",
       intro:
-        "These terms describe the baseline rules for using the service, what customers can expect, and which limitations apply.",
+        "These terms describe how Vidat may be used, what is included in the service, and which responsibilities apply between customer and provider.",
       highlight:
-        "This is a product-oriented draft. Before launch, it should be completed with company details, jurisdiction, liability caps, termination terms, refund rules, and counsel-approved language.",
+        "By using Vidat, you accept these terms and agree to use the service lawfully, responsibly, and within the scope of your authorization.",
       sections: [
         {
           title: "Permitted use",
           body: [
             "The service may only be used for websites and resources the customer owns, operates, or is explicitly authorized to monitor.",
-            "The customer is responsible for ensuring use complies with applicable law, contracts, robots rules, and internal security policies.",
+            "The customer is responsible for ensuring use complies with applicable law, contracts, robots rules, and internal security requirements.",
           ],
         },
         {
           title: "Plans, fees, and limits",
           body: [
-            "Paid plans define the included features, usage limits, retention level, and support level.",
-            "Exceeding plan limits may lead to paused functionality, upgrade requirements, or manual outreach from support or billing.",
+            "The selected plan determines which features, usage limits, retention levels, and support levels are included.",
+            "If limits are exceeded, functionality may be restricted until the plan is upgraded or the usage is adjusted.",
           ],
         },
         {
           title: "Availability and support",
           body: [
-            "Vidat should be operated with reasonable security and reliability measures, but no SaaS should promise more than its actual operational processes can support.",
-            "If specific SLAs or response times are offered, they should be documented separately by plan or in enterprise agreements.",
+            "Vidat is operated with reasonable security and reliability routines to provide a stable and dependable service.",
+            "Any specific SLAs, response times, or extended support commitments are governed separately by plan or contract.",
           ],
         },
         {
           title: "Termination and offboarding",
           body: [
-            "When an account or subscription ends, customers should have a reasonable opportunity to export relevant data before retention and deletion rules apply.",
-            "Vidat may suspend accounts that abuse the service, attempt to bypass limits, or expose the infrastructure or other customers to risk.",
+            "When an account or subscription ends, the customer is given the opportunity to export relevant data before standard deletion routines take effect.",
+            "Vidat may temporarily restrict or suspend accounts that abuse the service, bypass limits, or create risk for the infrastructure or other customers.",
           ],
         },
       ],
@@ -215,29 +215,29 @@ export const trustPageContent: Record<TrustPageKey, LocalizedTrustContent> = {
       eyebrow: "Cookies",
       title: "Cookiepolicy",
       intro:
-        "En cookiepolicy behövs när tjänsten använder cookies eller liknande teknik för inloggning, preferenser, analys eller säkerhet.",
+        "Den här sidan beskriver hur Vidat använder cookies och liknande tekniker för att webbplatsen och tjänsten ska fungera korrekt.",
       highlight:
-        "Om du använder analys, marknadsföringspixlar eller tredjepartscookies måste samtyckesflöde och cookiebanner spegla det som faktiskt laddas i frontend.",
+        "Vi använder främst cookies för inloggning, säkerhet, språkval och andra funktioner som behövs för att ge en stabil användarupplevelse.",
       sections: [
         {
           title: "Nödvändiga cookies",
           body: [
-            "Nödvändiga cookies kan användas för sessionshantering, inloggning, säkerhetskontroller, rate limiting och grundläggande drift av applikationen.",
-            "Sådana cookies bör beskrivas tydligt eftersom de normalt inte kräver samma samtycke som icke-nödvändiga cookies i EU-flöden.",
+            "Nödvändiga cookies används för sessionshantering, inloggning, säkerhetskontroller och grundläggande drift av applikationen.",
+            "Dessa cookies krävs för att centrala delar av tjänsten ska fungera och kan därför inte stängas av utan att funktionaliteten påverkas.",
           ],
         },
         {
-          title: "Preferenser och analys",
+          title: "Preferenser",
           body: [
-            "Om du sparar språkval, tema eller andra preferenser via cookies bör det framgå här.",
-            "Om du använder analysverktyg måste du ange leverantör, syfte, datatyper och hur användaren kan neka eller återkalla samtycke.",
+            "Cookies kan användas för att spara språkval, tema och andra inställningar som gör upplevelsen mer relevant och konsekvent mellan besök.",
+            "Om vi inför ytterligare analys- eller preferenscookies uppdateras den här sidan så att användningsområdet framgår tydligt.",
           ],
         },
         {
           title: "Tredjepart",
           body: [
-            "Autentisering, betalning, support-widgetar och statusverktyg kan sätta egna cookies beroende på vilka tjänster som bäddas in.",
-            "Inför lansering bör du inventera exakt vilka tredjepartsskript som finns på marknadswebb, app, checkout och supportytor.",
+            "Vissa integrerade tjänster, till exempel autentisering eller betalningsflöden, kan sätta egna cookies när de används i anslutning till Vidat.",
+            "Sådana tredjepartscookies omfattas även av respektive leverantörs egna villkor och integritetspolicyer.",
           ],
         },
       ],
@@ -250,29 +250,29 @@ export const trustPageContent: Record<TrustPageKey, LocalizedTrustContent> = {
       eyebrow: "Cookies",
       title: "Cookie policy",
       intro:
-        "A cookie policy is needed when the service uses cookies or similar technologies for sign-in, preferences, analytics, or security.",
+        "This page explains how Vidat uses cookies and similar technologies to keep the website and service working properly.",
       highlight:
-        "If you use analytics, marketing pixels, or third-party cookies, the consent flow and cookie banner must match what actually loads in the frontend.",
+        "We primarily use cookies for sign-in, security, language preferences, and other functions required for a stable user experience.",
       sections: [
         {
           title: "Necessary cookies",
           body: [
-            "Necessary cookies may be used for session handling, authentication, security controls, rate limiting, and the core operation of the app.",
-            "These cookies should be clearly documented because they are generally treated differently from non-essential cookies in EU consent flows.",
+            "Necessary cookies are used for session handling, authentication, security checks, and the core operation of the application.",
+            "These cookies are required for essential parts of the service to work and cannot be disabled without affecting functionality.",
           ],
         },
         {
-          title: "Preferences and analytics",
+          title: "Preferences",
           body: [
-            "If you store language, theme, or other user preferences in cookies, that should be stated here.",
-            "If you use analytics tools, specify the provider, purpose, data categories, and how users can refuse or withdraw consent.",
+            "Cookies may be used to remember language, theme, and other settings that make the experience more relevant and consistent between visits.",
+            "If we introduce additional analytics or preference cookies, this page will be updated so their use is clearly described.",
           ],
         },
         {
           title: "Third parties",
           body: [
-            "Authentication, billing, support widgets, and status tooling may set their own cookies depending on which services are embedded.",
-            "Before launch, inventory exactly which third-party scripts exist across marketing pages, app surfaces, checkout, and support flows.",
+            "Some integrated services, such as authentication or billing flows, may set their own cookies when used together with Vidat.",
+            "Such third-party cookies are also governed by the respective provider's own terms and privacy policies.",
           ],
         },
       ],
@@ -285,38 +285,38 @@ export const trustPageContent: Record<TrustPageKey, LocalizedTrustContent> = {
   security: {
     sv: {
       eyebrow: "Säkerhet",
-      title: "Security",
+      title: "Säkerhet",
       intro:
-        "Den här sidan sammanfattar hur Vidat arbetar med säkerhet, incidenter och ansvarsfull rapportering av sårbarheter.",
+        "Här beskriver vi hur Vidat arbetar med säkerhet, incidenthantering och rapportering av sårbarheter.",
       highlight:
-        "Större kunder letar efter den här sidan direkt. Den behöver inte vara lång, men den måste vara trovärdig och spegla verkliga rutiner.",
+        "Säkerhet är en del av den löpande driften. Vi arbetar med förebyggande kontroller, tydliga åtkomstrutiner och snabb hantering av avvikelser.",
       sections: [
         {
           title: "Produkt- och driftkontroller",
           body: [
-            "Åtkomst ska begränsas med autentisering, rollstyrning, minst möjliga behörighet och tydlig separation mellan kunddata och administrativa verktyg.",
-            "Loggning, rate limiting, hemlighetshantering, backup-rutiner och övervakning av kritiska integrationsflöden bör vara etablerade innan betalande kunder onboardas.",
+            "Åtkomst till system och data begränsas med autentisering, rollstyrning och principen om minsta möjliga behörighet.",
+            "Loggning, säkerhetsövervakning, backup-rutiner och hantering av känsliga hemligheter används för att minska risk och förbättra spårbarhet.",
           ],
         },
         {
           title: "Incidenthantering",
           body: [
-            "Vidat bör ha en dokumenterad rutin för incidenttriage, intern eskalering, kundkommunikation, statusuppdateringar och efteranalys.",
-            "Om en incident påverkar kunddata eller tillgänglighet ska statussidan och berörda kunder kunna uppdateras snabbt och konsekvent.",
+            "Vidat hanterar incidenter genom triage, intern eskalering, felsökning och tydlig kommunikation till berörda kunder när det behövs.",
+            "Om en incident påverkar tillgänglighet eller kunddata uppdateras statussidan och berörda kunder informeras så snabbt som möjligt.",
           ],
         },
         {
           title: "Vulnerability disclosure",
           body: [
-            "Säkerhetsforskare och kunder ska få en tydlig väg för att rapportera sårbarheter, helst via en särskild adress som security@vidat.app.",
-            "Kommunicera att rapporter tas på allvar, att reproduktionssteg hjälper, och att god tro förväntas vid testning.",
+            "Säkerhetsforskare, kunder och partners kan rapportera sårbarheter till security@vidat.app.",
+            "Vi uppskattar tydliga reproduktionssteg och ansvarsfull rapportering i god tro så att problem kan verifieras och åtgärdas snabbt.",
           ],
         },
         {
-          title: "Saker du bör dokumentera innan lansering",
+          title: "Praktiskt säkerhetsarbete",
           body: [
-            "Datalagringsregion, backup-frekvens, nyckelrotation, loggretention, återställningstid och vilka tredjepartsleverantörer som behandlar kunddata.",
-            "Om du tänker sälja till bolag med högre krav bör du även förbereda en subprocessor-lista, DPA-process och säkerhetsfrågeformulär.",
+            "Vi arbetar löpande med att följa upp datalagring, backup, återställning, loggning och tredjepartsberoenden som påverkar tjänsten.",
+            "För företagskunder tillhandahåller vi relevanta kontaktvägar och kompletterande information vid behov i samband med utvärdering eller upphandling.",
           ],
         },
       ],
@@ -329,36 +329,36 @@ export const trustPageContent: Record<TrustPageKey, LocalizedTrustContent> = {
       eyebrow: "Security",
       title: "Security",
       intro:
-        "This page summarizes how Vidat handles security, incidents, and responsible vulnerability reporting.",
+        "This page explains how Vidat works with security, incident handling, and vulnerability reporting.",
       highlight:
-        "Larger customers look for this page immediately. It does not need to be long, but it must be credible and reflect real operational practice.",
+        "Security is part of day-to-day operations. We use preventive controls, clear access routines, and timely handling of incidents and deviations.",
       sections: [
         {
           title: "Product and operational controls",
           body: [
-            "Access should be limited through authentication, role controls, least privilege, and clear separation between customer data and administrative tooling.",
-            "Logging, rate limiting, secret handling, backup routines, and monitoring of critical integration flows should be established before onboarding paying customers.",
+            "Access to systems and data is limited through authentication, role-based access, and the principle of least privilege.",
+            "Logging, security monitoring, backup routines, and handling of sensitive secrets are used to reduce risk and improve traceability.",
           ],
         },
         {
           title: "Incident handling",
           body: [
-            "Vidat should maintain a documented process for incident triage, internal escalation, customer communication, status updates, and post-incident review.",
-            "If an incident affects customer data or availability, the status page and impacted customers should be updated quickly and consistently.",
+            "Vidat handles incidents through triage, internal escalation, troubleshooting, and clear communication to affected customers when needed.",
+            "If an incident affects availability or customer data, the status page is updated and affected customers are informed as quickly as possible.",
           ],
         },
         {
           title: "Vulnerability disclosure",
           body: [
-            "Security researchers and customers should have a clear way to report vulnerabilities, ideally through a dedicated address such as security@vidat.app.",
-            "Communicate that reports are taken seriously, reproduction steps are helpful, and good-faith testing is expected.",
+            "Security researchers, customers, and partners can report vulnerabilities to security@vidat.app.",
+            "We appreciate clear reproduction steps and responsible good-faith disclosure so issues can be verified and fixed quickly.",
           ],
         },
         {
-          title: "What to document before launch",
+          title: "Practical security work",
           body: [
-            "Data hosting region, backup frequency, key rotation, log retention, recovery targets, and which third-party vendors process customer data.",
-            "If you plan to sell to higher-compliance customers, prepare a subprocessor list, DPA workflow, and security questionnaire responses.",
+            "We continuously review data storage, backup, recovery, logging, and third-party dependencies that affect the service.",
+            "For business customers, we provide relevant contact paths and supporting information when needed during evaluation or procurement.",
           ],
         },
       ],
@@ -373,36 +373,36 @@ export const trustPageContent: Record<TrustPageKey, LocalizedTrustContent> = {
       eyebrow: "Dataskydd",
       title: "Personuppgiftsbiträdesavtal",
       intro:
-        "Kunder som använder tjänsten för affärsdata behöver ofta ett DPA som beskriver roller, instruktioner och säkerhetsåtgärder kring personuppgiftsbehandling.",
+        "Kunder som använder Vidat i sin verksamhet kan begära ett personuppgiftsbiträdesavtal som reglerar behandling av personuppgifter i tjänsten.",
       highlight:
-        "Det här är en sammanfattning av vad sidan bör täcka. Ett riktigt DPA ska normalt tas fram eller granskas av jurist innan signering.",
+        "Vidat agerar personuppgiftsbiträde i den utsträckning vi behandlar personuppgifter för kundens räkning för att leverera tjänsten.",
       sections: [
         {
           title: "Roller och syfte",
           body: [
-            "Kunden är normalt personuppgiftsansvarig för data som laddas upp eller genereras i tjänsten, medan Vidat agerar personuppgiftsbiträde för den behandling som krävs för att leverera tjänsten.",
-            "DPA:t bör beskriva vilka kategorier av registrerade och uppgifter som kan förekomma, även om tjänsten främst behandlar kontodata och driftmetadata.",
+            "Kunden är normalt personuppgiftsansvarig för den data som förs in i eller skapas genom användningen av tjänsten.",
+            "Vidat agerar personuppgiftsbiträde för den behandling som krävs för att driva, underhålla, säkra och supporta tjänsten enligt kundens instruktioner.",
           ],
         },
         {
           title: "Instruktioner och underbiträden",
           body: [
-            "Avtalet bör slå fast att Vidat bara behandlar personuppgifter enligt dokumenterade instruktioner och för att driva, säkra och supporta tjänsten.",
-            "Underbiträden som autentisering, hosting, e-post, billing och övervakning bör listas eller omfattas av en offentlig subprocessor-process.",
+            "Vidat behandlar personuppgifter enligt dokumenterade instruktioner från kunden och i den omfattning som krävs för att leverera tjänsten.",
+            "Eventuella underbiträden som används för drift, autentisering, e-post eller andra stödfunktioner hanteras inom ramen för gällande avtal och processer.",
           ],
         },
         {
           title: "Säkerhet och incidenter",
           body: [
-            "DPA:t bör hänvisa till tekniska och organisatoriska säkerhetsåtgärder samt beskriva hur personuppgiftsincidenter rapporteras till kund.",
-            "Svarstider, kontaktvägar och kundens ansvar att lämna korrekt kontaktinformation behöver vara tydliga.",
+            "Avtalet beskriver de tekniska och organisatoriska säkerhetsåtgärder som används för att skydda personuppgifter i tjänsten.",
+            "Om en personuppgiftsincident inträffar informerar Vidat berörda kunder i enlighet med avtal och tillämpliga regler.",
           ],
         },
         {
           title: "Radering och återlämning",
           body: [
-            "När avtalet upphör bör kunden kunna få ut relevant data eller få den raderad enligt avtalade retention-regler och backup-processer.",
-            "Det är viktigt att beskriva om viss data måste behållas av legala skäl och hur länge.",
+            "När avtalet upphör kan kunden begära export eller radering av relevant data enligt överenskomna rutiner och gällande lagkrav.",
+            "Uppgifter som måste sparas av rättsliga skäl eller inom definierade backupfönster hanteras enligt dokumenterade raderingsprocesser.",
           ],
         },
       ],
@@ -415,36 +415,36 @@ export const trustPageContent: Record<TrustPageKey, LocalizedTrustContent> = {
       eyebrow: "Data protection",
       title: "Data processing addendum",
       intro:
-        "Customers using the service for business data often require a DPA that describes roles, instructions, and safeguards around personal data processing.",
+        "Customers using Vidat in their business can request a data processing addendum governing the processing of personal data in the service.",
       highlight:
-        "This is a summary of what the page should cover. A real DPA should usually be drafted or reviewed by legal counsel before signature.",
+        "Vidat acts as a processor to the extent that we process personal data on the customer's behalf in order to provide the service.",
       sections: [
         {
           title: "Roles and purpose",
           body: [
-            "The customer is typically the controller for data uploaded to or generated in the service, while Vidat acts as processor for the processing needed to provide the service.",
-            "The DPA should describe which categories of data subjects and personal data may be involved, even if the product mainly handles account and operational metadata.",
+            "The customer is normally the controller for data entered into or generated through the use of the service.",
+            "Vidat acts as processor for the processing required to operate, maintain, secure, and support the service in accordance with the customer's instructions.",
           ],
         },
         {
           title: "Instructions and subprocessors",
           body: [
-            "The agreement should state that Vidat processes personal data only on documented instructions and as required to operate, secure, and support the service.",
-            "Subprocessors such as authentication, hosting, email, billing, and observability vendors should be listed or covered by a public subprocessor process.",
+            "Vidat processes personal data according to documented customer instructions and only to the extent required to deliver the service.",
+            "Any subprocessors used for hosting, authentication, email, or other supporting functions are handled within the framework of applicable agreements and processes.",
           ],
         },
         {
           title: "Security and incidents",
           body: [
-            "The DPA should reference technical and organizational security measures and explain how personal data incidents are reported to the customer.",
-            "Response expectations, contact paths, and the customer's obligation to provide accurate notice contacts should be clear.",
+            "The agreement describes the technical and organizational security measures used to protect personal data in the service.",
+            "If a personal data incident occurs, Vidat informs affected customers in accordance with the agreement and applicable rules.",
           ],
         },
         {
           title: "Deletion and return",
           body: [
-            "When the agreement ends, the customer should be able to retrieve relevant data or have it deleted according to the agreed retention and backup process.",
-            "It is important to explain whether any data must be retained for legal reasons and for how long.",
+            "When the agreement ends, the customer may request export or deletion of relevant data according to agreed routines and applicable legal requirements.",
+            "Data that must be retained for legal reasons or within defined backup windows is handled according to documented deletion processes.",
           ],
         },
       ],
@@ -459,29 +459,29 @@ export const trustPageContent: Record<TrustPageKey, LocalizedTrustContent> = {
       eyebrow: "Användning",
       title: "Policy för acceptabel användning",
       intro:
-        "En AUP hjälper dig att tydligt säga nej till missbruk utan att behöva gömma kritiska regler djupt inne i användarvillkoren.",
+        "Den här policyn förklarar vilken användning av Vidat som är tillåten och vilka beteenden som inte accepteras.",
       highlight:
-        "Det här är ofta den enklaste sidan att glömma, men den är praktisk när du behöver stoppa aggressiv scanning, spam eller kontomissbruk snabbt.",
+        "Målet är att skydda tjänsten, våra användare och tredje part från missbruk, överbelastning och otillåten användning.",
       sections: [
         {
           title: "Förbjudna beteenden",
           body: [
-            "Det är inte tillåtet att använda tjänsten för otillåten scanning, intrångsförsök, överbelastning, spam, bedrägeri eller aktiviteter som bryter mot lag eller avtal.",
-            "Kunder får inte försöka kringgå planbegränsningar, manipulera usage-mätning eller använda tjänsten på sätt som skadar andra kunder eller infrastrukturen.",
+            "Det är inte tillåtet att använda tjänsten för otillåten scanning, intrångsförsök, överbelastning, spam, bedrägeri eller annan aktivitet som strider mot lag eller avtal.",
+            "Det är inte heller tillåtet att kringgå planbegränsningar, manipulera användningsmätning eller använda tjänsten på ett sätt som skadar andra kunder eller infrastrukturen.",
           ],
         },
         {
           title: "Respekt för tredje part",
           body: [
-            "Övervakning och scanning ska ske med rimlig frekvens och endast mot resurser som kunden har rätt att testa.",
-            "Om externa integrationer används ansvarar kunden för att webhook-mål, notifieringslistor och API-anrop hanteras ansvarsfullt.",
+            "Övervakning och scanning ska ske med rimlig frekvens och endast mot resurser som kunden har rätt att testa eller övervaka.",
+            "Om externa integrationer används ansvarar kunden för att webhook-mål, notifieringslistor och API-anrop hanteras på ett ansvarsfullt sätt.",
           ],
         },
         {
           title: "Efterlevnad och åtgärder",
           body: [
-            "Vidat bör kunna pausa, begränsa eller stänga av konton vid misstänkt missbruk, säkerhetsrisk eller tydliga avtalsbrott.",
-            "I allvarliga fall bör tjänsten också kunna bevara relevanta loggar för felsökning, tvist eller rättslig skyldighet.",
+            "Vidat kan pausa, begränsa eller stänga av konton vid misstänkt missbruk, säkerhetsrisk eller väsentliga avtalsbrott.",
+            "Vid behov kan relevanta loggar sparas för felsökning, tvistlösning eller för att uppfylla rättsliga skyldigheter.",
           ],
         },
       ],
@@ -494,29 +494,29 @@ export const trustPageContent: Record<TrustPageKey, LocalizedTrustContent> = {
       eyebrow: "Usage",
       title: "Acceptable use policy",
       intro:
-        "An AUP gives you a clear way to prohibit misuse without hiding critical rules deep inside the terms of service.",
+        "This policy explains which uses of Vidat are allowed and which behaviors are not accepted.",
       highlight:
-        "This is one of the easiest pages to forget, but it is practical when you need to stop aggressive scanning, spam, or account abuse quickly.",
+        "The goal is to protect the service, our users, and third parties from abuse, overload, and unauthorized use.",
       sections: [
         {
           title: "Prohibited behavior",
           body: [
-            "The service may not be used for unauthorized scanning, intrusion attempts, overload activity, spam, fraud, or conduct that violates law or contract.",
-            "Customers may not attempt to bypass plan limits, manipulate usage tracking, or use the service in ways that harm other customers or the infrastructure.",
+            "The service may not be used for unauthorized scanning, intrusion attempts, overload activity, spam, fraud, or any conduct that violates law or contract.",
+            "It is also prohibited to bypass plan limits, manipulate usage measurement, or use the service in ways that harm other customers or the infrastructure.",
           ],
         },
         {
           title: "Respect for third parties",
           body: [
-            "Monitoring and scanning should be performed at a reasonable frequency and only against resources the customer is authorized to test.",
+            "Monitoring and scanning must take place at a reasonable frequency and only against resources the customer is authorized to test or monitor.",
             "If external integrations are used, the customer is responsible for handling webhook targets, notification lists, and API calls responsibly.",
           ],
         },
         {
           title: "Enforcement",
           body: [
-            "Vidat should be able to pause, restrict, or suspend accounts in response to suspected abuse, security risk, or material policy violations.",
-            "In serious cases, the service should also be able to preserve relevant logs for troubleshooting, disputes, or legal obligations.",
+            "Vidat may pause, restrict, or suspend accounts in response to suspected abuse, security risk, or material breaches of contract.",
+            "When necessary, relevant logs may be retained for troubleshooting, dispute handling, or compliance with legal obligations.",
           ],
         },
       ],
@@ -528,53 +528,53 @@ export const trustPageContent: Record<TrustPageKey, LocalizedTrustContent> = {
   },
   trust: {
     sv: {
-      eyebrow: "Trust center",
-      title: "Policyer och lanseringsunderlag",
+      eyebrow: "Trustcenter",
+      title: "Policyer och förtroendesidor",
       intro:
-        "Här samlas de sidor kunder, inköp och säkerhetsteam brukar leta efter när en SaaS går från demo till riktig produkt.",
+        "Här samlar vi de sidor som kunder, inköpsteam och säkerhetsansvariga oftast vill se när de utvärderar Vidat.",
       highlight:
-        "Det viktigaste är inte att ha flest sidor, utan att varje sida speglar hur produkten faktiskt fungerar idag.",
+        "Sidorna nedan ger en samlad bild av hur Vidat arbetar med integritet, villkor, säkerhet, dataskydd och kundkommunikation.",
       sections: [
         {
-          title: "Grundpaketet du nästan alltid behöver",
+          title: "Det här hittar du här",
           body: [
-            "Integritetspolicy, användarvillkor, cookiepolicy, säkerhetssida, kontaktvägar och publik statussida.",
-            "Om du säljer till företag behöver du ofta även DPA, subprocessor-lista och tydliga svar om datalagring, retention och incidenthantering.",
+            "Här finns integritetspolicy, användarvillkor, cookiepolicy, säkerhetssida, kontaktvägar och offentlig statussida samlade på ett ställe.",
+            "För företagskunder finns även information om personuppgiftsbiträdesavtal och vilka principer som gäller för dataskydd och behandling.",
           ],
         },
         {
-          title: "Bra nästa steg efter att sidorna finns",
+          title: "Varför de här sidorna finns",
           body: [
-            "Se till att mailadresser, bolagsuppgifter, retention-regler, support-SLA och incidentrutiner faktiskt finns bakom texten.",
-            "Koppla gärna policyerna till produktens riktiga flöden: checkout, account deletion, supportärenden, statussida och säkerhetskontakt.",
+            "Tydlig information minskar friktion i utvärdering, upphandling och onboarding och gör det enklare att bedöma tjänsten.",
+            "Vi uppdaterar sidorna när produktflöden, arbetssätt eller kontaktvägar förändras så att informationen hålls relevant och användbar.",
           ],
         },
       ],
       ctas: [
         { href: "/privacy", label: "Integritet" },
-        { href: "/security", label: "Security" },
+        { href: "/security", label: "Säkerhet" },
       ],
     },
     en: {
       eyebrow: "Trust center",
-      title: "Policies and launch readiness",
+      title: "Policies and trust pages",
       intro:
-        "This is the set of pages customers, procurement, and security teams usually look for when a SaaS moves from demo to a real product.",
+        "This section brings together the pages customers, procurement teams, and security stakeholders usually want to review when evaluating Vidat.",
       highlight:
-        "The goal is not to have the most pages. The goal is for each page to accurately reflect how the product actually operates.",
+        "The pages below provide a consolidated view of how Vidat works with privacy, terms, security, data protection, and customer communication.",
       sections: [
         {
-          title: "The baseline package you almost always need",
+          title: "What you will find here",
           body: [
-            "Privacy policy, terms of use, cookie policy, security page, contact paths, and a public status page.",
-            "If you sell to companies, you will often also need a DPA, subprocessor list, and clear answers on data hosting, retention, and incident handling.",
+            "This area collects the privacy policy, terms of use, cookie policy, security page, contact paths, and public status page in one place.",
+            "For business customers, it also includes information about the data processing addendum and the principles that govern data protection and processing.",
           ],
         },
         {
-          title: "Good next steps after the pages exist",
+          title: "Why these pages exist",
           body: [
-            "Make sure email addresses, company details, retention rules, support SLAs, and incident procedures actually exist behind the copy.",
-            "Tie these policies to real product flows where possible: checkout, account deletion, support requests, status communication, and security reporting.",
+            "Clear information reduces friction during evaluation, procurement, and onboarding and makes the service easier to assess.",
+            "We update these pages when product flows, operational routines, or contact paths change so the information stays relevant and useful.",
           ],
         },
       ],
@@ -592,23 +592,23 @@ export const trustDirectoryLinks = {
       href: "/privacy",
       title: "Integritetspolicy",
       description:
-        "Vad ni samlar in, varför ni gör det och hur radering/export ska fungera.",
+        "Vilka uppgifter som behandlas, varför de behövs och hur tillgång, export och radering fungerar.",
     },
     {
       href: "/terms",
       title: "Användarvillkor",
       description:
-        "Grundregler för användning, planer, gränser och avslut av konto.",
+        "Grundregler för användning, planer, ansvar och avslut av konto eller prenumeration.",
     },
     {
       href: "/cookies",
       title: "Cookiepolicy",
       description:
-        "Vilka cookies som används i app, marknadssida och eventuella tredjepartsflöden.",
+        "Hur cookies används i tjänsten och vilka funktioner de stödjer.",
     },
     {
       href: "/security",
-      title: "Security",
+      title: "Säkerhet",
       description:
         "Säkerhetsrutiner, incidenthantering och hur sårbarheter rapporteras.",
     },
@@ -616,25 +616,25 @@ export const trustDirectoryLinks = {
       href: "/dpa",
       title: "Personuppgiftsbiträdesavtal",
       description:
-        "Roller, instruktioner, underbiträden och radering för B2B-kunder.",
+        "Roller, instruktioner, underbiträden och radering för företagskunder.",
     },
     {
       href: "/acceptable-use",
       title: "Acceptabel användning",
       description:
-        "Tydlig policy mot missbruk, aggressiv scanning och otillåten användning.",
+        "Regler mot missbruk, aggressiv scanning och annan otillåten användning.",
     },
     {
       href: "/status",
       title: "Status",
       description:
-        "Publik driftsida för incidenter, störningar och operativ transparens.",
+        "Publik driftsida för incidenter, störningar och löpande statuskommunikation.",
     },
     {
       href: "/contact",
       title: "Kontakt",
       description:
-        "Support, billing, security och tydliga vägar in till teamet.",
+        "Support, billing, säkerhet och tydliga kontaktvägar till teamet.",
     },
   ],
   en: [
@@ -642,48 +642,49 @@ export const trustDirectoryLinks = {
       href: "/privacy",
       title: "Privacy policy",
       description:
-        "What you collect, why you collect it, and how deletion or export should work.",
+        "What data is processed, why it is needed, and how access, export, and deletion work.",
     },
     {
       href: "/terms",
       title: "Terms of use",
       description:
-        "Baseline rules for use, plans, limits, and customer offboarding.",
+        "Core rules for use, plans, responsibilities, and account or subscription termination.",
     },
     {
       href: "/cookies",
       title: "Cookie policy",
       description:
-        "What cookies are used across the app, marketing site, and any third-party flows.",
+        "How cookies are used in the service and which functions they support.",
     },
     {
       href: "/security",
       title: "Security",
       description:
-        "Security practices, incident handling, and how vulnerabilities are reported.",
+        "Security routines, incident handling, and how vulnerabilities are reported.",
     },
     {
       href: "/dpa",
       title: "Data processing addendum",
       description:
-        "Roles, instructions, subprocessors, and deletion terms for B2B buyers.",
+        "Roles, instructions, subprocessors, and deletion terms for business customers.",
     },
     {
       href: "/acceptable-use",
       title: "Acceptable use policy",
       description:
-        "A clear policy against abuse, aggressive scanning, and unauthorized use.",
+        "Rules against abuse, aggressive scanning, and other unauthorized use.",
     },
     {
       href: "/status",
       title: "Status",
       description:
-        "Public operating status for incidents, disruptions, and transparency.",
+        "Public operating page for incidents, disruptions, and ongoing status communication.",
     },
     {
       href: "/contact",
       title: "Contact",
-      description: "Support, billing, security, and clear paths into the team.",
+      description:
+        "Support, billing, security, and clear contact paths into the team.",
     },
   ],
 }
