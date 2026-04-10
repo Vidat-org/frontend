@@ -4,6 +4,14 @@ import { Logtail } from "@logtail/node"
 
 type LogContext = Record<string, unknown>
 type LogLevel = "debug" | "info" | "warn" | "error"
+type NormalizedError =
+  | {
+      name?: string
+      message?: string
+      stack?: string
+      cause?: NormalizedError
+    }
+  | { error: unknown }
 
 const requestIds = new WeakMap<Request, string>()
 const sensitiveKeys = new Set([
@@ -32,12 +40,15 @@ const betterStack =
       })
     : null
 
-function normalizeError(error: unknown) {
+function normalizeError(error: unknown): NormalizedError {
   if (error instanceof Error) {
     return {
       name: error.name,
       message: error.message,
       stack: error.stack,
+      ...(error.cause === undefined
+        ? {}
+        : { cause: normalizeError(error.cause) }),
     }
   }
 

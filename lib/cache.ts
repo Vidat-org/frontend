@@ -117,10 +117,20 @@ export async function cachedQuery<T>(
 
     return value
   } catch (error) {
-    logger.error("[valkey] cache read failed", error, {
-      key: options.key,
-    })
-    return loader()
+    const cacheError =
+      error instanceof Error &&
+      (error.message.includes("ECONN") ||
+        error.message.includes("Redis") ||
+        error.message.includes("valkey"))
+
+    if (cacheError) {
+      logger.error("[valkey] cache read failed", error, {
+        key: options.key,
+      })
+      return loader()
+    }
+
+    throw error
   } finally {
     if (inflightKey) {
       inflightQueries.delete(inflightKey)

@@ -48,6 +48,7 @@ import {
   getClerkOrganization,
   getPendingOrganizationInviteCount,
 } from "@/lib/clerk-organizations"
+import { logger } from "@/lib/logger"
 
 const notificationSettingsSchema = z.object({
   emailAlerts: z.boolean(),
@@ -152,6 +153,22 @@ async function buildAccountSummary(context: {
   workspaceRole: string
   workspaceName: string
 }) {
+  const safeMetric = async <T>(
+    label: string,
+    loader: () => Promise<T>,
+    fallback: T
+  ) => {
+    try {
+      return await loader()
+    } catch (error) {
+      logger.error("[account] dashboard metric failed", error, {
+        workspaceId: context.workspaceId,
+        metric: label,
+      })
+      return fallback
+    }
+  }
+
   const [
     user,
     workspace,
@@ -189,23 +206,38 @@ async function buildAccountSummary(context: {
       })
       .from(websites)
       .where(eq(websites.workspaceId, context.workspaceId)),
-    db
-      .select({ count: count() })
-      .from(scans)
-      .innerJoin(websites, eq(websites.id, scans.websiteId))
-      .where(eq(websites.workspaceId, context.workspaceId)),
-    db
-      .select({ count: count() })
-      .from(reports)
-      .innerJoin(websites, eq(websites.id, reports.websiteId))
-      .where(eq(websites.workspaceId, context.workspaceId)),
-    db
-      .select({
-        failed: sql<number>`coalesce(sum(case when ${notificationDeliveries.status} = 'failed' then 1 else 0 end), 0)`,
-        sent: sql<number>`coalesce(sum(case when ${notificationDeliveries.status} = 'sent' then 1 else 0 end), 0)`,
-      })
-      .from(notificationDeliveries)
-      .where(eq(notificationDeliveries.workspaceId, context.workspaceId)),
+    safeMetric(
+      "totalScans",
+      () =>
+        db
+          .select({ count: count() })
+          .from(scans)
+          .innerJoin(websites, eq(websites.id, scans.websiteId))
+          .where(eq(websites.workspaceId, context.workspaceId)),
+      [{ count: 0 }]
+    ),
+    safeMetric(
+      "totalReports",
+      () =>
+        db
+          .select({ count: count() })
+          .from(reports)
+          .innerJoin(websites, eq(websites.id, reports.websiteId))
+          .where(eq(websites.workspaceId, context.workspaceId)),
+      [{ count: 0 }]
+    ),
+    safeMetric(
+      "deliveryHealth",
+      () =>
+        db
+          .select({
+            failed: sql<number>`coalesce(sum(case when ${notificationDeliveries.status} = 'failed' then 1 else 0 end), 0)`,
+            sent: sql<number>`coalesce(sum(case when ${notificationDeliveries.status} = 'sent' then 1 else 0 end), 0)`,
+          })
+          .from(notificationDeliveries)
+          .where(eq(notificationDeliveries.workspaceId, context.workspaceId)),
+      [{ failed: 0, sent: 0 }]
+    ),
   ])
 
   const normalizedPlan = normalizePlanSlug(

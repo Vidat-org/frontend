@@ -6,6 +6,7 @@ import { Geist_Mono, JetBrains_Mono, Playfair_Display } from "next/font/google"
 import "./globals.css"
 import Providers from "./providers"
 
+import { CookieConsentProvider } from "@/components/cookie-consent-provider"
 import i18nConfig from "@/i18n.config"
 import { swedishLng } from "@/lib/languages"
 import { getSiteMetadata } from "@/lib/metadata"
@@ -88,14 +89,16 @@ export default async function RootLayout({
             i18nextOptions={i18nConfig.i18nextOptions}
           >
             <Providers>
-              <ThemeProvider>
-                {/*<Navbar />*/}
-                {/*<main className="container mx-auto min-h-screen px-8 pt-16">*/}
-                {children}
-                {/*</main>*/}
-                <Toaster richColors />
-                <CookieConsent variant="small" />
-              </ThemeProvider>
+              <CookieConsentProvider>
+                <ThemeProvider>
+                  {/*<Navbar />*/}
+                  {/*<main className="container mx-auto min-h-screen px-8 pt-16">*/}
+                  {children}
+                  {/*</main>*/}
+                  <Toaster richColors />
+                  <CookieConsent variant="small" />
+                </ThemeProvider>
+              </CookieConsentProvider>
             </Providers>
           </I18nProvider>
         </ClerkProvider>

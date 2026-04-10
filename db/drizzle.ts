@@ -1,9 +1,32 @@
 import { drizzle } from "drizzle-orm/node-postgres"
+import { Pool } from "pg"
 import * as schema from "../migrations/schema"
 
-export const db = drizzle(process.env.DATABASE_URL!, {
-  schema,
-})
+type Database = ReturnType<typeof drizzle<typeof schema>>
+
+declare global {
+  // Reuse the pool across Next.js dev reloads to avoid connection churn.
+  var __vidatDbPool: InstanceType<typeof Pool> | undefined
+  var __vidatDb: Database | undefined
+}
+
+const pool =
+  globalThis.__vidatDbPool ??
+  new Pool({
+    connectionString: process.env.DATABASE_URL!,
+    max: process.env.NODE_ENV === "development" ? 5 : 10,
+  })
+
+export const db =
+  globalThis.__vidatDb ??
+  drizzle(pool, {
+    schema,
+  })
+
+if (process.env.NODE_ENV !== "production") {
+  globalThis.__vidatDbPool = pool
+  globalThis.__vidatDb = db
+}
 
 // const WEBSITE_ID = "web_XKJ06BcMrPmMm5Zz4s"
 

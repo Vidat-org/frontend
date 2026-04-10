@@ -1,10 +1,17 @@
 "use client"
 
 import * as React from "react"
+import { useCookieConsent } from "@/components/cookie-consent-provider"
 import { cva, type VariantProps } from "class-variance-authority"
 import { Slot } from "radix-ui"
 
 import { useIsMobile } from "@/hooks/use-mobile"
+import {
+  SIDEBAR_COOKIE_MAX_AGE,
+  SIDEBAR_COOKIE_NAME,
+  deleteCookie,
+  writeOptionalCookie,
+} from "@/lib/cookie-consent"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -24,9 +31,6 @@ import {
 } from "@/components/ui/tooltip"
 import { PanelLeftIcon } from "lucide-react"
 import { useT } from "next-i18next/client"
-
-const SIDEBAR_COOKIE_NAME = "sidebar_state"
-const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
 const SIDEBAR_WIDTH = "16rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
@@ -67,6 +71,7 @@ function SidebarProvider({
   onOpenChange?: (open: boolean) => void
 }) {
   const isMobile = useIsMobile()
+  const { status } = useCookieConsent()
   const [openMobile, setOpenMobile] = React.useState(false)
 
   // This is the internal state of the sidebar.
@@ -82,11 +87,23 @@ function SidebarProvider({
         _setOpen(openState)
       }
 
-      // This sets the cookie to keep the sidebar state.
-      document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
+      writeOptionalCookie(
+        SIDEBAR_COOKIE_NAME,
+        String(openState),
+        SIDEBAR_COOKIE_MAX_AGE,
+        status
+      )
     },
-    [setOpenProp, open]
+    [open, setOpenProp, status]
   )
+
+  React.useEffect(() => {
+    if (status === "accepted") {
+      return
+    }
+
+    deleteCookie(SIDEBAR_COOKIE_NAME)
+  }, [status])
 
   // Helper to toggle the sidebar.
   const toggleSidebar = React.useCallback(() => {

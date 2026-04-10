@@ -1,23 +1,113 @@
 "use client"
 
 import * as React from "react"
-import { ThemeProvider as NextThemesProvider, useTheme } from "next-themes"
+import { useCookieConsent } from "@/components/cookie-consent-provider"
+import {
+  readOptionalLocalStorage,
+  THEME_STORAGE_KEY,
+  writeOptionalLocalStorage,
+} from "@/lib/cookie-consent"
+
+type Theme = "light" | "dark" | "system"
+type ResolvedTheme = "light" | "dark"
+
+type ThemeContextValue = {
+  theme: Theme
+  resolvedTheme: ResolvedTheme
+  setTheme: (theme: Theme) => void
+}
+
+const ThemeContext = React.createContext<ThemeContextValue | null>(null)
+
+function getSystemTheme(): ResolvedTheme {
+  if (typeof window === "undefined") {
+    return "light"
+  }
+
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light"
+}
+
+function isTheme(value: string | null): value is Theme {
+  return value === "light" || value === "dark" || value === "system"
+}
+
+function applyTheme(theme: Theme): ResolvedTheme {
+  const resolvedTheme = theme === "system" ? getSystemTheme() : theme
+
+  if (typeof document === "undefined") {
+    return resolvedTheme
+  }
+
+  const root = document.documentElement
+  root.classList.remove("light", "dark")
+  root.classList.add(resolvedTheme)
+  root.style.colorScheme = resolvedTheme
+
+  return resolvedTheme
+}
 
 function ThemeProvider({
   children,
-  ...props
-}: React.ComponentProps<typeof NextThemesProvider>) {
+}: {
+  children: React.ReactNode
+}) {
+  const { status } = useCookieConsent()
+  const [theme, setThemeState] = React.useState<Theme>("system")
+  const [resolvedTheme, setResolvedTheme] =
+    React.useState<ResolvedTheme>("light")
+
+  React.useEffect(() => {
+    const nextTheme =
+      status === "accepted"
+        ? (() => {
+            const storedTheme = readOptionalLocalStorage(
+              THEME_STORAGE_KEY,
+              status
+            )
+            return isTheme(storedTheme) ? storedTheme : "system"
+          })()
+        : "system"
+
+    setThemeState(nextTheme)
+    setResolvedTheme(applyTheme(nextTheme))
+  }, [status])
+
+  React.useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
+
+    const handleChange = () => {
+      if (theme === "system") {
+        setResolvedTheme(applyTheme("system"))
+      }
+    }
+
+    handleChange()
+    mediaQuery.addEventListener("change", handleChange)
+
+    return () => {
+      mediaQuery.removeEventListener("change", handleChange)
+    }
+  }, [theme])
+
+  function setTheme(nextTheme: Theme) {
+    setThemeState(nextTheme)
+    setResolvedTheme(applyTheme(nextTheme))
+    writeOptionalLocalStorage(THEME_STORAGE_KEY, nextTheme, status)
+  }
+
   return (
-    <NextThemesProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
-      {...props}
+    <ThemeContext.Provider
+      value={{
+        theme,
+        resolvedTheme,
+        setTheme,
+      }}
     >
       <ThemeHotkey />
       {children}
-    </NextThemesProvider>
+    </ThemeContext.Provider>
   )
 }
 
@@ -32,6 +122,16 @@ function isTypingTarget(target: EventTarget | null) {
     target.tagName === "TEXTAREA" ||
     target.tagName === "SELECT"
   )
+}
+
+function useTheme() {
+  const context = React.useContext(ThemeContext)
+
+  if (!context) {
+    throw new Error("useTheme must be used within a ThemeProvider.")
+  }
+
+  return context
 }
 
 function ThemeHotkey() {
@@ -68,4 +168,4 @@ function ThemeHotkey() {
   return null
 }
 
-export { ThemeProvider }
+export { ThemeProvider, useTheme }

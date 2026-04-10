@@ -229,8 +229,9 @@ export const trustPageContent: Record<TrustPageKey, LocalizedTrustContent> = {
         {
           title: "Preferenser",
           body: [
-            "Cookies kan användas för att spara språkval, tema och andra inställningar som gör upplevelsen mer relevant och konsekvent mellan besök.",
-            "Om vi inför ytterligare analys- eller preferenscookies uppdateras den här sidan så att användningsområdet framgår tydligt.",
+            "Cookies kan användas för att spara språkval, tema och andra inställningar som gör upplevelsen mer relevant och konsekvent mellan besök, men bara om du har godkänt valfria cookies.",
+            "Om du tackar nej sparas inte sådana preferenser mellan besök och tidigare sparade preferensdata rensas bort.",
+            "Om vi inför ytterligare analys- eller preferenscookies, eller ändrar hur samtycket fungerar, uppdateras den här sidan och du får ta ställning på nytt.",
           ],
         },
         {
@@ -264,8 +265,9 @@ export const trustPageContent: Record<TrustPageKey, LocalizedTrustContent> = {
         {
           title: "Preferences",
           body: [
-            "Cookies may be used to remember language, theme, and other settings that make the experience more relevant and consistent between visits.",
-            "If we introduce additional analytics or preference cookies, this page will be updated so their use is clearly described.",
+            "Cookies may be used to remember language, theme, and other settings that make the experience more relevant and consistent between visits, but only if you approve optional cookies.",
+            "If you decline, those preferences are not stored between visits and previously saved preference data is cleared.",
+            "If we introduce additional analytics or preference cookies, or change how consent works, this page will be updated and you will be asked to make a new choice.",
           ],
         },
         {
