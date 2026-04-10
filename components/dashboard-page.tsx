@@ -193,7 +193,9 @@ export default function DashboardPage() {
             organization
               ? organization?.pendingInvitationsCount > 1
                 ? "dashboard.pendingInvitesPlural"
-                : "dashboard.pendingInvitesSingle"
+                : organization.pendingInvitationsCount === 0
+                  ? "dashboard.pendingInvitesPlural"
+                  : "dashboard.pendingInvitesSingle"
               : "dashboard.pendingInvitesSingle",
             {
               count: organization?.pendingInvitationsCount ?? 0,
@@ -289,7 +291,6 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
-
       </section>
 
       <section className="grid gap-4 xl:grid-cols-2">

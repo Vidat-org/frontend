@@ -65,11 +65,12 @@ export function CookieConsent({
       <Button
         type="button"
         variant="outline"
-        className="fixed right-4 bottom-4 z-200 h-10 rounded-full border-border bg-background/95 px-4 shadow-lg backdrop-blur sm:right-6 sm:bottom-6"
+        className="fixed right-4 bottom-4 z-200 h-10 rounded-full border-border bg-background/95 shadow-lg backdrop-blur sm:right-6 sm:bottom-6 dark:bg-background/95"
         onClick={() => setIsSettingsOpen(true)}
       >
-        <CookieIcon className="mr-2 h-4 w-4" />
-        {copy.manage}
+        {/* <CookieIcon className="mr-2 h-4 w-4" /> */}
+        <CookieIcon className="h-4 w-4" />
+        {/* {copy.manage} */}
       </Button>
     ) : null
 

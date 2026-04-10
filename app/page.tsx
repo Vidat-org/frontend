@@ -247,6 +247,15 @@ export default async function HomePage() {
     },
   ]
 
+  pricing[0].price = "0 kr/mån"
+  pricing[1].price = "149 kr/mån"
+  pricing[2].price = "399 kr/mån"
+  pricing[3].price = "999 kr/mån"
+  pricing[0].features[1] = t("home.pricing.free.feature2Launch")
+  pricing[3].description = t("home.pricing.agency.descriptionLaunch")
+  pricing[3].features[0] = t("home.pricing.agency.feature1Launch")
+  pricing[3].features[2] = t("home.pricing.agency.feature3Launch")
+
   const faq = [
     { question: t("home.faq.q1.question"), answer: t("home.faq.q1.answer") },
     { question: t("home.faq.q2.question"), answer: t("home.faq.q2.answer") },

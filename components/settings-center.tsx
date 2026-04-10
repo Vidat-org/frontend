@@ -390,7 +390,8 @@ export default function SettingsCenter({
     },
   }
   const showSection = (...sections: SettingsSection[]) =>
-    section === "all" || sections.includes(section)
+    !sections.includes("team") &&
+    (section === "all" || sections.includes(section))
 
   const resolvedSettings = {
     emailAlerts: settingsForm.emailAlerts ?? account.settings.emailAlerts,
@@ -627,7 +628,7 @@ export default function SettingsCenter({
         </div>
       ) : null}
 
-      {showSection("notifications", "team") ? (
+      {showSection("notifications") ? (
         <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
           {showSection("notifications") ? (
             <Card>

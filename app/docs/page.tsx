@@ -3,18 +3,24 @@ import Link from "next/link"
 import { createPageMetadata, getMetadataT } from "@/lib/metadata"
 
 const currentCapabilities = [
-  "docs.capability1",
-  "docs.capability2",
-  "docs.capability3",
-  "docs.capability4",
+  "docs.v1.capability1",
+  "docs.v1.capability2",
+  "docs.v1.capability3",
+  "docs.v1.capability4",
 ]
 
-const roadmap = [
-  "docs.roadmap1",
-  "docs.roadmap2",
-  "docs.roadmap3",
-  "docs.roadmap4",
-  "docs.roadmap5",
+const launchReadiness = [
+  "docs.v1.launch1",
+  "docs.v1.launch2",
+  "docs.v1.launch3",
+  "docs.v1.launch4",
+]
+
+const scanContract = [
+  "docs.v1.contract1",
+  "docs.v1.contract2",
+  "docs.v1.contract3",
+  "docs.v1.contract4",
 ]
 
 export async function generateMetadata() {
@@ -22,7 +28,7 @@ export async function generateMetadata() {
 
   return createPageMetadata({
     title: t("docs.title"),
-    description: t("docs.intro"),
+    description: t("docs.v1.intro"),
     path: "/docs",
   })
 }
@@ -40,7 +46,7 @@ export default async function DocsPage() {
           {t("docs.title")}
         </h1>
         <p className="max-w-2xl text-sm leading-7 text-muted-foreground md:text-base">
-          {t("docs.intro")}
+          {t("docs.v1.intro")}
         </p>
       </section>
 
@@ -62,10 +68,26 @@ export default async function DocsPage() {
 
       <section className="rounded-[1.75rem] border bg-card p-6 md:p-8">
         <h2 className="text-2xl font-semibold tracking-tight">
-          {t("docs.roadmapTitle")}
+          {t("docs.v1.launchTitle")}
         </h2>
         <div className="mt-5 grid gap-3">
-          {roadmap.map((item) => (
+          {launchReadiness.map((item) => (
+            <div
+              key={item}
+              className="rounded-2xl border bg-background/80 p-4 text-sm leading-7 text-muted-foreground"
+            >
+              {t(item)}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[1.75rem] border bg-card p-6 md:p-8">
+        <h2 className="text-2xl font-semibold tracking-tight">
+          {t("docs.v1.contractTitle")}
+        </h2>
+        <div className="mt-5 grid gap-3">
+          {scanContract.map((item) => (
             <div
               key={item}
               className="rounded-2xl border bg-background/80 p-4 text-sm leading-7 text-muted-foreground"
